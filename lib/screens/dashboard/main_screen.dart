@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:uvip/core/theme/app_theme.dart';
 import 'package:uvip/screens/aicam/aicam_screen.dart';
-import 'package:uvip/screens/home/home_screen.dart';
-import 'package:uvip/screens/map/map_screen.dart';
+import 'package:uvip/screens/dashboard/home_screen.dart';
+import 'package:uvip/screens/map/map_analysis_screen.dart';
 import 'package:uvip/screens/profile/profile_screen.dart';
 import 'package:uvip/screens/upload/upload_screen.dart';
 
@@ -22,7 +22,7 @@ class _MainScreenState extends State<MainScreen> {
   // List of screens for the bottom navigation
   final List<Widget> _screens = [
     const HomeScreen(key: PageStorageKey('HomeScreen')),
-    const MapScreen(key: PageStorageKey('MapScreen')),
+    const MapAnalysisScreen(key: PageStorageKey('MapAnalysisScreen')),
     const AiCamScreen(key: PageStorageKey('AiCamScreen')),
     const UploadScreen(key: PageStorageKey('UploadScreen')),
     const ProfileScreen(key: PageStorageKey('ProfileScreen')),

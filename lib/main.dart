@@ -4,6 +4,9 @@ import 'package:uvip/core/theme/app_theme.dart';
 import 'package:uvip/screens/dashboard/main_screen.dart';
 import 'package:uvip/providers/profile_provider.dart';
 import 'package:uvip/providers/upload_provider.dart';
+import 'package:uvip/providers/home_provider.dart';
+import 'package:uvip/providers/map_provider.dart';
+import 'package:uvip/providers/aicam_provider.dart';
 
 void main() {
   runApp(
@@ -11,6 +14,9 @@ void main() {
       providers: [
         ChangeNotifierProvider(create: (_) => ProfileProvider()),
         ChangeNotifierProvider(create: (_) => UploadProvider()),
+        ChangeNotifierProvider(create: (_) => HomeProvider()),
+        ChangeNotifierProvider(create: (_) => MapProvider()),
+        ChangeNotifierProvider(create: (_) => AiCamProvider()),
       ],
       child: const MyApp(),
     ),
