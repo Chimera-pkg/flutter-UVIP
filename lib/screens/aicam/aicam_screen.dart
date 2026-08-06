@@ -47,8 +47,13 @@ class _AiCamScreenState extends State<AiCamScreen> with WidgetsBindingObserver {
       _cameras = await availableCameras();
       if (_cameras != null && _cameras!.isNotEmpty) {
         if (!mounted) return;
-        // Gunakan Medium resolution untuk mencegah Out Of Memory (OOM) / Force Close
-        final controller = CameraController(_cameras![0], ResolutionPreset.medium);
+        // Gunakan Medium resolution dan matikan audio (enableAudio: false)
+        // Jika enableAudio true (default), aplikasi akan force close karena tidak ada izin RECORD_AUDIO
+        final controller = CameraController(
+          _cameras![0], 
+          ResolutionPreset.medium,
+          enableAudio: false,
+        );
         _controller = controller;
         await controller.initialize();
         
