@@ -5,7 +5,8 @@ import 'package:provider/provider.dart';
 import 'package:uvip/core/theme/app_theme.dart';
 import 'package:uvip/providers/map_provider.dart';
 import 'package:uvip/widgets/data_summary_card.dart';
-
+import 'package:uvip/widgets/common/section_header.dart';
+import 'package:uvip/widgets/common/time_filter_dropdown.dart';
 class MapAnalysisScreen extends StatefulWidget {
   const MapAnalysisScreen({super.key});
 
@@ -168,13 +169,7 @@ class _MapAnalysisScreenState extends State<MapAnalysisScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        'Ringkasan Area Terpilih',
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 18,
-                            ),
-                      ),
+                      const SectionHeader(title: 'Ringkasan Area Terpilih'),
                       const SizedBox(height: 4),
                       Row(
                         children: [
@@ -258,21 +253,9 @@ class _MapAnalysisScreenState extends State<MapAnalysisScreen> {
                                     ),
                                   ],
                                 ),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                  decoration: BoxDecoration(
-                                    color: AppTheme.secondaryColor, // Navy blue
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: Row(
-                                    children: const [
-                                      Text(
-                                        'Last 5 days',
-                                        style: TextStyle(color: Colors.white, fontSize: 10),
-                                      ),
-                                      Icon(Icons.arrow_drop_down, color: Colors.white, size: 16),
-                                    ],
-                                  ),
+                                const TimeFilterDropdown(
+                                  backgroundColor: AppTheme.secondaryColor,
+                                  textColor: Colors.white,
                                 ),
                               ],
                             ),

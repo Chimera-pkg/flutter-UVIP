@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+/// Model untuk objek yang terdeteksi oleh AI.
 class DetectedObject {
   final Rect rect;
   final String label;
@@ -14,6 +15,9 @@ class DetectedObject {
   });
 }
 
+/// [AiCamProvider] mengelola data terkait deteksi kamera AI (*Live Camera*).
+/// Provider ini menyuplai skor lingkungan *real-time* dan
+/// daftar objek tiruan [DetectedObject] (Bounding Boxes) yang digambar pada [AiCamScreen].
 class AiCamProvider with ChangeNotifier {
   // Live Scores
   final double liveUvi = 8.4;

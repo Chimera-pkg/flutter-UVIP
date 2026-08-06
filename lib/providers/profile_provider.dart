@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+/// [ProfileProvider] mengelola state data profil pengguna.
+/// Provider ini menyediakan data *dummy* berupa nama, peran (role), telepon,
+/// email, dan alamat yang akan ditampilkan pada layar Profil (ProfileScreen).
 class ProfileProvider with ChangeNotifier {
   // Mock Data
   String _name = "Herry Tan";

@@ -1,5 +1,10 @@
 import 'package:flutter/material.dart';
 
+/// [MapProvider] mengelola state untuk MapAnalysisScreen.
+/// Menyimpan informasi:
+/// - Koordinat pusat peta (latitude, longitude)
+/// - Filter map yang sedang aktif (UVI, Safety, dsb.)
+/// - Data summary terkait area yang dipilih di peta
 class MapProvider with ChangeNotifier {
   // Filter Options
   final List<String> filters = ['UVI', 'Safety', 'Beauty', 'Comfort', 'GVI'];

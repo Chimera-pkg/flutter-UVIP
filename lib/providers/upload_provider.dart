@@ -7,6 +7,9 @@ class UploadedFile {
   UploadedFile({required this.name, required this.size});
 }
 
+/// [UploadProvider] mengelola state proses upload file ke server.
+/// Provider ini mensimulasikan daftar file yang telah berhasil diunggah (uploaded),
+/// file yang sedang dalam proses unggah (uploading), serta progres bar.
 class UploadProvider with ChangeNotifier {
   // Mock Data
   final List<UploadedFile> _uploadedFiles = [

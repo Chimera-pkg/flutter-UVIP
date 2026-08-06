@@ -5,7 +5,8 @@ import 'package:uvip/core/theme/app_theme.dart';
 import 'package:uvip/providers/home_provider.dart';
 import 'package:uvip/widgets/summary_card.dart';
 import 'package:uvip/widgets/survey_item_tile.dart';
-
+import 'package:uvip/widgets/common/section_header.dart';
+import 'package:uvip/widgets/common/time_filter_dropdown.dart';
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
@@ -118,27 +119,10 @@ class HomeScreen extends StatelessWidget {
                   // Survei Terbaru Section
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'Survei Terbaru',
-                          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                                fontWeight: FontWeight.bold,
-                              ),
-                        ),
-                        TextButton(
-                          onPressed: () {},
-                          child: const Text(
-                            'Lihat Semua',
-                            style: TextStyle(
-                              color: AppTheme.primaryColor,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 14,
-                            ),
-                          ),
-                        ),
-                      ],
+                    child: SectionHeader(
+                      title: 'Survei Terbaru',
+                      actionText: 'Lihat Semua',
+                      onActionPressed: () {},
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -346,22 +330,7 @@ class HomeScreen extends StatelessWidget {
                     ),
                   ],
                 ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: Colors.black12,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Row(
-                    children: const [
-                      Text(
-                        'Last 5 days',
-                        style: TextStyle(color: Colors.white70, fontSize: 10),
-                      ),
-                      Icon(Icons.arrow_drop_down, color: Colors.white70, size: 16),
-                    ],
-                  ),
-                ),
+                const TimeFilterDropdown(),
               ],
             ),
             const SizedBox(height: 24),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+
 class SurveyItem {
   final String title;
   final String subtitle;
@@ -14,6 +15,11 @@ class SurveyItem {
   });
 }
 
+/// [HomeProvider] mengelola data utama untuk dashboard (HomeScreen).
+/// State yang dikelola meliputi:
+/// - Data poin grafik historis (chartData)
+/// - Skor summary harian (Safety, Beauty, Comfort)
+/// - Daftar survei terbaru
 class HomeProvider with ChangeNotifier {
   // Chart Data: [Mon, Tue, Wed, Thu, Fri] -> [60, 80, 20, 60, 110]
   final List<double> chartData = [60.0, 80.0, 20.0, 60.0, 110.0];

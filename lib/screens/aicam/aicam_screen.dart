@@ -13,7 +13,7 @@ class AiCamScreen extends StatefulWidget {
   State<AiCamScreen> createState() => _AiCamScreenState();
 }
 
-class _AiCamScreenState extends State<AiCamScreen> {
+class _AiCamScreenState extends State<AiCamScreen> with WidgetsBindingObserver {
   CameraController? _controller;
   List<CameraDescription>? _cameras;
   
@@ -24,18 +24,39 @@ class _AiCamScreenState extends State<AiCamScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _initializeCamera();
     _startTimer();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    final CameraController? cameraController = _controller;
+    if (cameraController == null || !cameraController.value.isInitialized) {
+      return;
+    }
+    if (state == AppLifecycleState.inactive) {
+      cameraController.dispose();
+    } else if (state == AppLifecycleState.resumed) {
+      _initializeCamera();
+    }
   }
 
   Future<void> _initializeCamera() async {
     try {
       _cameras = await availableCameras();
       if (_cameras != null && _cameras!.isNotEmpty) {
-        // Use the first camera (usually the back camera)
-        _controller = CameraController(_cameras![0], ResolutionPreset.high);
-        await _controller!.initialize();
         if (!mounted) return;
+        // Gunakan Medium resolution untuk mencegah Out Of Memory (OOM) / Force Close
+        final controller = CameraController(_cameras![0], ResolutionPreset.medium);
+        _controller = controller;
+        await controller.initialize();
+        
+        // Jika widget sudah di-dispose saat proses inisialisasi tertunda
+        if (!mounted) {
+          controller.dispose();
+          return;
+        }
         setState(() {});
       }
     } catch (e) {
@@ -79,6 +100,7 @@ class _AiCamScreenState extends State<AiCamScreen> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _timer?.cancel();
     _controller?.dispose();
     super.dispose();
