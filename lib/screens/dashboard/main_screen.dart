@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:uvip/core/theme/app_theme.dart';
+import 'package:uvip/providers/auth_provider.dart';
 import 'package:uvip/screens/aicam/aicam_screen.dart';
 import 'package:uvip/screens/dashboard/home_screen.dart';
 import 'package:uvip/screens/map/map_analysis_screen.dart';
@@ -15,6 +17,17 @@ class MainScreen extends StatefulWidget {
 
 class _MainScreenState extends State<MainScreen> {
   int _selectedIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      if (authProvider.user == null) {
+        authProvider.fetchMe();
+      }
+    });
+  }
 
   // We use PageStorageBucket to keep state of all pages
   final PageStorageBucket _bucket = PageStorageBucket();
@@ -36,8 +49,12 @@ class _MainScreenState extends State<MainScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: PageStorage(bucket: _bucket, child: _screens[_selectedIndex]),
+    final authProvider = Provider.of<AuthProvider>(context);
+
+    return Stack(
+      children: [
+        Scaffold(
+          body: PageStorage(bucket: _bucket, child: _screens[_selectedIndex]),
       floatingActionButton: Container(
         height: 72.0, // Make the FAB a bit larger
         width: 72.0,
@@ -108,8 +125,17 @@ class _MainScreenState extends State<MainScreen> {
               ),
             ],
           ),
-        ),
-      ),
+        ), // closes SizedBox
+      ), // closes BottomAppBar
+    ), // closes Scaffold
+    if (authProvider.isFetchingMe)
+      Container(
+            color: Colors.black.withValues(alpha: 0.3),
+            child: const Center(
+              child: CircularProgressIndicator(),
+            ),
+          ),
+      ],
     );
   }
 

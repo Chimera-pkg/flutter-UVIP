@@ -40,6 +40,8 @@ dependencies:
   fl_chart: ^1.2.0
   google_maps_flutter: ^2.14.2
   camera: ^0.12.0+1
+  dio: ^5.11.0
+  shared_preferences: ^2.5.5
 
 dev_dependencies:
   flutter_test:
