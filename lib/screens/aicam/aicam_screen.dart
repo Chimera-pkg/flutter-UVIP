@@ -16,7 +16,7 @@ class AiCamScreen extends StatefulWidget {
 class _AiCamScreenState extends State<AiCamScreen> with WidgetsBindingObserver {
   CameraController? _controller;
   List<CameraDescription>? _cameras;
-  
+
   Timer? _timer;
   int _liveSeconds = 15; // Starting from 15 as in mockup
   bool _isFlashOn = false;
@@ -32,11 +32,15 @@ class _AiCamScreenState extends State<AiCamScreen> with WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     final CameraController? cameraController = _controller;
+
     if (cameraController == null || !cameraController.value.isInitialized) {
       return;
     }
+
     if (state == AppLifecycleState.inactive) {
       cameraController.dispose();
+      _controller = null; // Tambahkan ini agar CameraPreview berhenti merender
+      if (mounted) setState(() {}); // Segarkan UI
     } else if (state == AppLifecycleState.resumed) {
       _initializeCamera();
     }
@@ -50,13 +54,13 @@ class _AiCamScreenState extends State<AiCamScreen> with WidgetsBindingObserver {
         // Gunakan Medium resolution dan matikan audio (enableAudio: false)
         // Jika enableAudio true (default), aplikasi akan force close karena tidak ada izin RECORD_AUDIO
         final controller = CameraController(
-          _cameras![0], 
+          _cameras![0],
           ResolutionPreset.medium,
           enableAudio: false,
         );
         _controller = controller;
         await controller.initialize();
-        
+
         // Jika widget sudah di-dispose saat proses inisialisasi tertunda
         if (!mounted) {
           controller.dispose();
@@ -123,9 +127,13 @@ class _AiCamScreenState extends State<AiCamScreen> with WidgetsBindingObserver {
             height: double.infinity,
             child: _controller != null && _controller!.value.isInitialized
                 ? CameraPreview(_controller!)
-                : const Center(child: CircularProgressIndicator(color: AppTheme.primaryColor)),
+                : const Center(
+                    child: CircularProgressIndicator(
+                      color: AppTheme.primaryColor,
+                    ),
+                  ),
           ),
-          
+
           // Bounding Boxes Layer
           Consumer<AiCamProvider>(
             builder: (context, provider, child) {
@@ -145,7 +153,10 @@ class _AiCamScreenState extends State<AiCamScreen> with WidgetsBindingObserver {
           // Safe Area for UI Overlays
           SafeArea(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 16.0,
+                vertical: 8.0,
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -154,7 +165,11 @@ class _AiCamScreenState extends State<AiCamScreen> with WidgetsBindingObserver {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       IconButton(
-                        icon: const Icon(Icons.close, color: Colors.white, size: 28),
+                        icon: const Icon(
+                          Icons.close,
+                          color: Colors.white,
+                          size: 28,
+                        ),
                         onPressed: () {},
                       ),
                       const Text(
@@ -167,8 +182,10 @@ class _AiCamScreenState extends State<AiCamScreen> with WidgetsBindingObserver {
                       ),
                       IconButton(
                         icon: Icon(
-                          _isFlashOn ? Icons.flash_on : Icons.flash_off, 
-                          color: _isFlashOn ? Colors.yellowAccent : Colors.white, 
+                          _isFlashOn ? Icons.flash_on : Icons.flash_off,
+                          color: _isFlashOn
+                              ? Colors.yellowAccent
+                              : Colors.white,
                           size: 28,
                         ),
                         onPressed: _toggleFlash,
@@ -183,7 +200,10 @@ class _AiCamScreenState extends State<AiCamScreen> with WidgetsBindingObserver {
                     children: [
                       // Live Badge
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 6.0),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12.0,
+                          vertical: 6.0,
+                        ),
                         decoration: BoxDecoration(
                           color: Colors.black45,
                           borderRadius: BorderRadius.circular(16.0),
@@ -201,21 +221,31 @@ class _AiCamScreenState extends State<AiCamScreen> with WidgetsBindingObserver {
                             const SizedBox(width: 8),
                             Text(
                               'Live $_formattedTime',
-                              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                           ],
                         ),
                       ),
                       // Location Chip
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 6.0),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12.0,
+                          vertical: 6.0,
+                        ),
                         decoration: BoxDecoration(
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(16.0),
                         ),
                         child: Row(
                           children: [
-                            const Icon(Icons.location_on, color: AppTheme.primaryColor, size: 16),
+                            const Icon(
+                              Icons.location_on,
+                              color: AppTheme.primaryColor,
+                              size: 16,
+                            ),
                             const SizedBox(width: 4),
                             const Text(
                               'Jl. Ijen',
@@ -253,10 +283,26 @@ class _AiCamScreenState extends State<AiCamScreen> with WidgetsBindingObserver {
                               ),
                             ),
                             const SizedBox(height: 12),
-                            _buildLiveScoreItem('UVI', provider.liveUvi, Colors.blue),
-                            _buildLiveScoreItem('Beauty', provider.liveBeauty, Colors.pink),
-                            _buildLiveScoreItem('Comfort', provider.liveComfort, Colors.orange),
-                            _buildLiveScoreItem('Safety', provider.liveSafety, Colors.green),
+                            _buildLiveScoreItem(
+                              'UVI',
+                              provider.liveUvi,
+                              Colors.blue,
+                            ),
+                            _buildLiveScoreItem(
+                              'Beauty',
+                              provider.liveBeauty,
+                              Colors.pink,
+                            ),
+                            _buildLiveScoreItem(
+                              'Comfort',
+                              provider.liveComfort,
+                              Colors.orange,
+                            ),
+                            _buildLiveScoreItem(
+                              'Safety',
+                              provider.liveSafety,
+                              Colors.green,
+                            ),
                           ],
                         );
                       },
@@ -268,7 +314,9 @@ class _AiCamScreenState extends State<AiCamScreen> with WidgetsBindingObserver {
                   // Bottom Auto Capture Button
                   Center(
                     child: Padding(
-                      padding: const EdgeInsets.only(bottom: 90.0), // Above bottom nav
+                      padding: const EdgeInsets.only(
+                        bottom: 90.0,
+                      ), // Above bottom nav
                       child: ElevatedButton.icon(
                         onPressed: () {},
                         icon: const Icon(Icons.timer_outlined, size: 20),
@@ -279,7 +327,10 @@ class _AiCamScreenState extends State<AiCamScreen> with WidgetsBindingObserver {
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.white,
                           foregroundColor: Colors.black87,
-                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 24,
+                            vertical: 12,
+                          ),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(24.0),
                           ),
