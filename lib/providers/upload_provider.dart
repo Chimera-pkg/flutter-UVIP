@@ -1,46 +1,111 @@
 import 'package:flutter/material.dart';
+import 'package:dio/dio.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:uvip/models/street_photo_model.dart';
+import 'package:uvip/services/upload_service.dart';
 
-class UploadedFile {
-  final String name;
-  final String size;
-
-  UploadedFile({required this.name, required this.size});
-}
-
-/// [UploadProvider] mengelola state proses upload file ke server.
-/// Provider ini mensimulasikan daftar file yang telah berhasil diunggah (uploaded),
-/// file yang sedang dalam proses unggah (uploading), serta progres bar.
 class UploadProvider with ChangeNotifier {
-  // Mock Data
-  final List<UploadedFile> _uploadedFiles = [
-    UploadedFile(name: 'IMG 2091.png', size: '1 MB'),
-    UploadedFile(name: 'IMG 2091.png', size: '1 MB'),
-    UploadedFile(name: 'IMG 2091.png', size: '1 MB'),
-  ];
+  final UploadService _uploadService = UploadService();
 
-  final List<UploadedFile> _uploadingFiles = [
-    UploadedFile(name: 'IMG 2092.png', size: '2 MB'),
-    UploadedFile(name: 'IMG 2093.png', size: '3 MB'),
-  ];
+  List<StreetPhotoModel> _uploadedPhotos = [];
+  List<StreetPhotoModel> get uploadedPhotos => _uploadedPhotos;
 
-  double _uploadProgress = 0.65; // Dummy progress (65%)
-  final String _timeRemaining = "23 Sec";
+  bool _isLoading = false;
+  bool get isLoading => _isLoading;
 
-  // Getters
-  List<UploadedFile> get uploadedFiles => _uploadedFiles;
-  List<UploadedFile> get uploadingFiles => _uploadingFiles;
+  bool _isUploading = false;
+  bool get isUploading => _isUploading;
+
+  double _uploadProgress = 0.0;
   double get uploadProgress => _uploadProgress;
-  String get timeRemaining => _timeRemaining;
 
-  // Mock methods to update state
+  String? _errorMessage;
+  String? get errorMessage => _errorMessage;
+
+  Future<void> fetchStreetPhotos() async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      final response = await _uploadService.getStreetPhotos();
+      if (response.statusCode == 200) {
+        final List<dynamic> data = response.data;
+        _uploadedPhotos = data.map((json) => StreetPhotoModel.fromJson(json)).toList();
+      }
+    } catch (e) {
+      _errorMessage = 'Failed to load photos: $e';
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<bool> uploadPhoto(XFile file) async {
+    _isUploading = true;
+    _uploadProgress = 0.0;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      final bytes = await file.readAsBytes();
+      final multipartFile = MultipartFile.fromBytes(
+        bytes,
+        filename: file.name,
+      );
+
+      final response = await _uploadService.uploadStreetPhoto(
+        multipartFile,
+        onSendProgress: (sent, total) {
+          _uploadProgress = sent / total;
+          notifyListeners();
+        },
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        await fetchStreetPhotos(); // Refresh list after success
+        return true;
+      } else {
+        _errorMessage = 'Upload failed: ${response.statusCode}';
+        return false;
+      }
+    } catch (e) {
+      _errorMessage = 'Upload error: $e';
+      return false;
+    } finally {
+      _isUploading = false;
+      _uploadProgress = 0.0;
+      notifyListeners();
+    }
+  }
+
   void removeUploadedFile(int index) {
-    _uploadedFiles.removeAt(index);
+    // Optional: Add API call to delete if backend supports it
+    _uploadedPhotos.removeAt(index);
     notifyListeners();
   }
 
   void cancelUpload() {
-    _uploadingFiles.clear();
+    _isUploading = false;
     _uploadProgress = 0.0;
     notifyListeners();
   }
+
+  StreetPhotoModel? _selectedPhoto;
+  StreetPhotoModel? get selectedPhoto => _selectedPhoto;
+
+  void togglePhotoSelection(StreetPhotoModel photo) {
+    if (_selectedPhoto?.id == photo.id) {
+      _selectedPhoto = null;
+    } else {
+      _selectedPhoto = photo;
+    }
+    notifyListeners();
+  }
+
+  void clearError() {
+    _errorMessage = null;
+    notifyListeners();
+  }
 }
+

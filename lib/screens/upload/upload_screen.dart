@@ -1,12 +1,37 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:dotted_border/dotted_border.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:uvip/core/theme/app_theme.dart';
 import 'package:uvip/providers/upload_provider.dart';
 import 'package:uvip/widgets/uploaded_item_tile.dart';
 
-class UploadScreen extends StatelessWidget {
+class UploadScreen extends StatefulWidget {
   const UploadScreen({super.key});
+
+  @override
+  State<UploadScreen> createState() => _UploadScreenState();
+}
+
+class _UploadScreenState extends State<UploadScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Provider.of<UploadProvider>(context, listen: false).fetchStreetPhotos();
+    });
+  }
+
+  Future<void> _pickAndUpload(BuildContext context) async {
+    final picker = ImagePicker();
+    final XFile? image = await picker.pickImage(source: ImageSource.gallery);
+    if (image != null) {
+      if (context.mounted) {
+        final provider = Provider.of<UploadProvider>(context, listen: false);
+        await provider.uploadPhoto(image);
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -25,6 +50,10 @@ class UploadScreen extends StatelessWidget {
       ),
       body: Consumer<UploadProvider>(
         builder: (context, provider, child) {
+          if (provider.isLoading && provider.uploadedPhotos.isEmpty) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
           return SingleChildScrollView(
             padding: const EdgeInsets.symmetric(
               horizontal: 24.0,
@@ -34,101 +63,103 @@ class UploadScreen extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Dotted Dropzone
-                DottedBorder(
-                  options: RoundedRectDottedBorderOptions(
-                    color: AppTheme.primaryColor,
-                    strokeWidth: 2,
-                    dashPattern: const [8, 4],
-                    radius: const Radius.circular(12),
-                  ),
-                  child: Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(vertical: 40.0),
-                    decoration: BoxDecoration(
-                      color: AppTheme.primaryColor.withValues(
-                        alpha: 0.15,
-                      ), // Light teal background
-                      borderRadius: BorderRadius.circular(12),
+                GestureDetector(
+                  onTap: provider.isUploading
+                      ? null
+                      : () => _pickAndUpload(context),
+                  child: DottedBorder(
+                    options: RoundedRectDottedBorderOptions(
+                      color: provider.isUploading
+                          ? Colors.grey
+                          : AppTheme.primaryColor,
+                      strokeWidth: 2,
+                      dashPattern: const [8, 4],
+                      radius: const Radius.circular(12),
                     ),
-                    child: Column(
-                      children: [
-                        const Icon(
-                          Icons.upload_rounded,
-                          size: 64,
-                          color: AppTheme.primaryColor,
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          'Upload your photo here',
-                          style: Theme.of(context).textTheme.bodySmall
-                              ?.copyWith(color: AppTheme.lightGray),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Browse',
-                          style: Theme.of(context).textTheme.titleLarge
-                              ?.copyWith(
-                                color: AppTheme.primaryColor,
-                                fontWeight: FontWeight.bold,
-                                decoration: TextDecoration.underline,
-                                decorationColor: AppTheme.primaryColor,
-                              ),
-                        ),
-                      ],
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(vertical: 40.0),
+                      decoration: BoxDecoration(
+                        color: provider.isUploading
+                            ? Colors.grey.withValues(alpha: 0.1)
+                            : AppTheme.primaryColor.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Column(
+                        children: [
+                          Icon(
+                            Icons.upload_rounded,
+                            size: 64,
+                            color: provider.isUploading
+                                ? Colors.grey
+                                : AppTheme.primaryColor,
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            provider.isUploading
+                                ? 'Uploading...'
+                                : 'Upload your photo here',
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(color: AppTheme.lightGray),
+                          ),
+                          if (!provider.isUploading) ...[
+                            const SizedBox(height: 8),
+                            Text(
+                              'Browse',
+                              style: Theme.of(context).textTheme.titleLarge
+                                  ?.copyWith(
+                                    color: AppTheme.primaryColor,
+                                    fontWeight: FontWeight.bold,
+                                    decoration: TextDecoration.underline,
+                                    decorationColor: AppTheme.primaryColor,
+                                  ),
+                            ),
+                          ],
+                        ],
+                      ),
                     ),
                   ),
                 ),
                 const SizedBox(height: 32),
 
-                // Uploaded Section
-                if (provider.uploadedFiles.isNotEmpty) ...[
-                  Text(
-                    'Uploaded',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
+                // Error Message
+                if (provider.errorMessage != null) ...[
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.redAccent.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.redAccent),
                     ),
-                  ),
-                  const SizedBox(height: 16),
-                  ListView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: provider.uploadedFiles.length,
-                    itemBuilder: (context, index) {
-                      final file = provider.uploadedFiles[index];
-                      return UploadedItemTile(
-                        fileName: file.name,
-                        fileSize: file.size,
-                        onDelete: () => provider.removeUploadedFile(index),
-                      );
-                    },
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            provider.errorMessage!,
+                            style: const TextStyle(color: Colors.redAccent),
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(
+                            Icons.close,
+                            color: Colors.redAccent,
+                          ),
+                          onPressed: () => provider.clearError(),
+                        ),
+                      ],
+                    ),
                   ),
                   const SizedBox(height: 16),
                 ],
 
                 // Uploading Section
-                if (provider.uploadingFiles.isNotEmpty) ...[
+                if (provider.isUploading) ...[
                   Text(
-                    'Uploading ${provider.uploadingFiles.length} images',
+                    'Uploading 1 image',
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
                       fontWeight: FontWeight.bold,
                       fontSize: 16,
                     ),
-                  ),
-                  const SizedBox(height: 16),
-                  // Horizontal list of teal boxes for uploading images
-                  Row(
-                    children: provider.uploadingFiles.map((file) {
-                      return Container(
-                        width: 50,
-                        height: 50,
-                        margin: const EdgeInsets.only(right: 12),
-                        decoration: BoxDecoration(
-                          color: AppTheme.primaryColor,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      );
-                    }).toList(),
                   ),
                   const SizedBox(height: 16),
                   // Progress Bar & Cancel
@@ -158,13 +189,37 @@ class UploadScreen extends StatelessWidget {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 32),
+                ],
+
+                // Uploaded Section
+                if (provider.uploadedPhotos.isNotEmpty) ...[
                   Text(
-                    'Time remaining: ${provider.timeRemaining}',
-                    style: Theme.of(
-                      context,
-                    ).textTheme.bodySmall?.copyWith(fontSize: 12),
+                    'Uploaded',
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
                   ),
+                  const SizedBox(height: 16),
+                  ListView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: provider.uploadedPhotos.length,
+                    itemBuilder: (context, index) {
+                      final photo = provider.uploadedPhotos[index];
+                      return UploadedItemTile(
+                        fileName: photo.originalFilename,
+                        fileSize: '${photo.fileSizeKb} KB',
+                        imageUrl: photo.filePath,
+                        isSelected: provider.selectedPhoto?.id == photo.id,
+                        onSelect: (value) =>
+                            provider.togglePhotoSelection(photo),
+                        onDelete: () => provider.removeUploadedFile(index),
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 16),
                 ],
 
                 const SizedBox(height: 48),
@@ -173,9 +228,11 @@ class UploadScreen extends StatelessWidget {
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
-                    onPressed: () {
-                      // Action for Analisa
-                    },
+                    onPressed: provider.selectedPhoto != null
+                        ? () {
+                            // Action for Analisa
+                          }
+                        : null,
                     style: ElevatedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 16),
                     ),
