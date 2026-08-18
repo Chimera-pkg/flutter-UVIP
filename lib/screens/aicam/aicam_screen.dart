@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 import 'package:uvip/core/theme/app_theme.dart';
 import 'package:uvip/providers/aicam_provider.dart';
@@ -20,6 +21,8 @@ class _AiCamScreenState extends State<AiCamScreen> with WidgetsBindingObserver {
   Timer? _timer;
   int _liveSeconds = 15; // Starting from 15 as in mockup
   bool _isFlashOn = false;
+  bool _permissionDenied = false;
+  bool _permissionChecked = false;
 
   @override
   void initState() {
@@ -34,6 +37,10 @@ class _AiCamScreenState extends State<AiCamScreen> with WidgetsBindingObserver {
     final CameraController? cameraController = _controller;
 
     if (cameraController == null || !cameraController.value.isInitialized) {
+      // Saat kembali dari app settings, cek ulang permission
+      if (state == AppLifecycleState.resumed && _permissionDenied) {
+        _initializeCamera();
+      }
       return;
     }
 
@@ -48,6 +55,24 @@ class _AiCamScreenState extends State<AiCamScreen> with WidgetsBindingObserver {
 
   Future<void> _initializeCamera() async {
     try {
+      // Minta izin kamera secara runtime (wajib untuk Android 6.0+)
+      final status = await Permission.camera.request();
+
+      if (!mounted) return;
+
+      if (!status.isGranted) {
+        setState(() {
+          _permissionDenied = true;
+          _permissionChecked = true;
+        });
+        return;
+      }
+
+      setState(() {
+        _permissionDenied = false;
+        _permissionChecked = true;
+      });
+
       _cameras = await availableCameras();
       if (_cameras != null && _cameras!.isNotEmpty) {
         if (!mounted) return;
@@ -121,11 +146,62 @@ class _AiCamScreenState extends State<AiCamScreen> with WidgetsBindingObserver {
       backgroundColor: Colors.black,
       body: Stack(
         children: [
-          // Background Camera Preview
+          // Background Camera Preview or Permission UI
           SizedBox(
             width: double.infinity,
             height: double.infinity,
-            child: _controller != null && _controller!.value.isInitialized
+            child: _permissionDenied
+                ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(
+                          Icons.camera_alt_outlined,
+                          color: Colors.white54,
+                          size: 64,
+                        ),
+                        const SizedBox(height: 16),
+                        const Text(
+                          'Izin Kamera Diperlukan',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        const Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 32.0),
+                          child: Text(
+                            'Untuk menggunakan AI Cam, izinkan akses kamera di pengaturan aplikasi.',
+                            style: TextStyle(
+                              color: Colors.white70,
+                              fontSize: 14,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        ElevatedButton.icon(
+                          onPressed: () => openAppSettings(),
+                          icon: const Icon(Icons.settings),
+                          label: const Text('Buka Pengaturan'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppTheme.primaryColor,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 24,
+                              vertical: 12,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(24.0),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                : _controller != null && _controller!.value.isInitialized
                 ? CameraPreview(_controller!)
                 : const Center(
                     child: CircularProgressIndicator(
