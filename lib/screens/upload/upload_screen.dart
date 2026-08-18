@@ -4,6 +4,7 @@ import 'package:dotted_border/dotted_border.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:uvip/core/theme/app_theme.dart';
 import 'package:uvip/providers/upload_provider.dart';
+import 'package:uvip/screens/result/result_screen.dart';
 import 'package:uvip/widgets/uploaded_item_tile.dart';
 
 class UploadScreen extends StatefulWidget {
@@ -230,7 +231,12 @@ class _UploadScreenState extends State<UploadScreen> {
                   child: ElevatedButton(
                     onPressed: provider.selectedPhoto != null
                         ? () {
-                            // Action for Analisa
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const ResultScreen(),
+                              ),
+                            );
                           }
                         : null,
                     style: ElevatedButton.styleFrom(

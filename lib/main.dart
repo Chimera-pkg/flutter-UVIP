@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:uvip/core/theme/app_theme.dart';
 
 import 'package:uvip/providers/profile_provider.dart';
+import 'package:uvip/providers/result_provider.dart';
 import 'package:uvip/providers/upload_provider.dart';
 import 'package:uvip/providers/home_provider.dart';
 import 'package:uvip/providers/map_provider.dart';
@@ -26,6 +27,7 @@ void main() async {
         ChangeNotifierProvider(create: (_) => MapProvider()),
         ChangeNotifierProvider(create: (_) => AiCamProvider()),
         ChangeNotifierProvider(create: (_) => AuthProvider()),
+        ChangeNotifierProvider(create: (_) => ResultProvider()),
       ],
       child: MyApp(isLoggedIn: hasToken),
     ),
@@ -34,7 +36,7 @@ void main() async {
 
 class MyApp extends StatelessWidget {
   final bool isLoggedIn;
-  
+
   const MyApp({super.key, required this.isLoggedIn});
 
   @override
