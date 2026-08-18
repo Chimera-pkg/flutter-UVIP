@@ -234,7 +234,9 @@ class _UploadScreenState extends State<UploadScreen> {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (context) => const ResultScreen(),
+                                builder: (context) => ResultScreen(
+                                  photo: provider.selectedPhoto!,
+                                ),
                               ),
                             );
                           }

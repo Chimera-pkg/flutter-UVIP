@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:uvip/models/segmentation_result_model.dart';
+import 'package:uvip/services/result_service.dart';
 
 class ShapFactor {
   final String name;
@@ -7,42 +9,78 @@ class ShapFactor {
   ShapFactor({required this.name, required this.value});
 }
 
-/// [ResultProvider] mengelola state dan data untuk halaman Hasil Segmentasi (ResultScreen).
-/// Mengontrol toggle tab ("Bidang" / "Garis Kontur") dan menyimpan data dummy 
-/// untuk skor prediksi, faktor SHAP, dan info lokasi.
 class ResultProvider with ChangeNotifier {
+  final ResultService _resultService = ResultService();
+
   bool _isBidangActive = true;
   bool get isBidangActive => _isBidangActive;
+
+  bool _isLoading = false;
+  bool get isLoading => _isLoading;
+
+  String? _errorMessage;
+  String? get errorMessage => _errorMessage;
+
+  SegmentationResultModel? _segmentationResult;
+  SegmentationResultModel? get segmentationResult => _segmentationResult;
 
   void toggleTab(bool isBidang) {
     _isBidangActive = isBidang;
     notifyListeners();
   }
 
-  // Mock Data: Skor Prediksi
-  final Map<String, dynamic> predictionScores = {
-    'UVI': 7.82,
-    'Safety': 7.45,
-    'Beauty': 8.12,
-    'Comfort': 7.68,
-    'GVI': '32.4%',
-  };
+  Future<void> fetchSegmentationResult(String photoId) async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
 
-  // Mock Data: Faktor Positif
+    try {
+      final response = await _resultService.getSegmentationResultByPhoto(photoId);
+      if (response.statusCode == 200) {
+        _segmentationResult = SegmentationResultModel.fromJson(response.data);
+      } else {
+        _errorMessage = 'Gagal memuat hasil segmentasi.';
+      }
+    } catch (e) {
+      _errorMessage = 'Terjadi kesalahan: $e';
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  // Fallback / Mock Data where API is lacking
+  Map<String, dynamic> get predictionScores {
+    if (_segmentationResult != null) {
+      return {
+        'UVI': _segmentationResult!.visualClutterIndex.toStringAsFixed(2), // Example mapping
+        'Safety': (_segmentationResult!.walkabilityRatio * 10).toStringAsFixed(2), // Example mapping
+        'Beauty': (_segmentationResult!.greenCoveragePct).toStringAsFixed(2), // Example mapping
+        'Comfort': (_segmentationResult!.skyVisibilityPct).toStringAsFixed(2), // Example mapping
+        'GVI': '${_segmentationResult!.greenCoveragePct.toStringAsFixed(1)}%',
+      };
+    }
+    return {
+      'UVI': 7.82,
+      'Safety': 7.45,
+      'Beauty': 8.12,
+      'Comfort': 7.68,
+      'GVI': '32.4%',
+    };
+  }
+
   final List<ShapFactor> positiveFactors = [
     ShapFactor(name: 'Cakupan Vegetasi', value: 0.42),
     ShapFactor(name: 'Lebar Trotoar', value: 0.31),
     ShapFactor(name: 'Keterbukaan Langit', value: 0.18),
   ];
 
-  // Mock Data: Faktor Negatif
   final List<ShapFactor> negativeFactors = [
     ShapFactor(name: 'Kepadatan Reklame', value: -0.35),
     ShapFactor(name: 'Kepadatan Kendaraan', value: -0.21),
     ShapFactor(name: 'Bangunan Tinggi', value: -0.15),
   ];
 
-  // Mock Data: Informasi Lokasi
   final Map<String, String> locationInfo = {
     'address': 'Jl. Ijen',
     'city': 'Klojen, Malang',

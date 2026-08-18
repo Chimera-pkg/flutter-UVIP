@@ -5,9 +5,28 @@ import 'package:uvip/providers/result_provider.dart';
 import 'package:uvip/widgets/result/score_box.dart';
 import 'package:uvip/widgets/result/shap_card.dart';
 import 'package:uvip/widgets/common/section_header.dart';
+import 'package:uvip/models/street_photo_model.dart';
 
-class ResultScreen extends StatelessWidget {
-  const ResultScreen({super.key});
+class ResultScreen extends StatefulWidget {
+  final StreetPhotoModel photo;
+
+  const ResultScreen({super.key, required this.photo});
+
+  @override
+  State<ResultScreen> createState() => _ResultScreenState();
+}
+
+class _ResultScreenState extends State<ResultScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Provider.of<ResultProvider>(
+        context,
+        listen: false,
+      ).fetchSegmentationResult(widget.photo.id);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -20,9 +39,7 @@ class ResultScreen extends StatelessWidget {
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios, color: Colors.black87),
           onPressed: () {
-            Navigator.pop(
-              context,
-            ); // Optional handling if navigated via Navigator
+            Navigator.pop(context);
           },
         ),
         title: const Text(
@@ -42,6 +59,34 @@ class ResultScreen extends StatelessWidget {
       ),
       body: Consumer<ResultProvider>(
         builder: (context, provider, child) {
+          if (provider.isLoading) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          if (provider.errorMessage != null) {
+            return Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24.0),
+                child: Text(
+                  provider.errorMessage!,
+                  style: const TextStyle(color: Colors.redAccent, fontSize: 16),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            );
+          }
+
+          if (provider.segmentationResult == null) {
+            return const Center(child: Text('Hasil tidak ditemukan.'));
+          }
+
+          String? fullImageUrl = widget.photo.filePath;
+          if (fullImageUrl.isNotEmpty && !fullImageUrl.startsWith('http')) {
+            final baseUrl = 'http://103.92.214.110:8001';
+            fullImageUrl =
+                '$baseUrl/${fullImageUrl.startsWith('/') ? fullImageUrl.substring(1) : fullImageUrl}';
+          }
+
           return SingleChildScrollView(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -59,18 +104,34 @@ class ResultScreen extends StatelessWidget {
                     children: [
                       ClipRRect(
                         borderRadius: BorderRadius.circular(16.0),
-                        child: Image.network(
-                          // Placeholder for the segmentation image
-                          'https://images.unsplash.com/photo-1449824913935-59a10b8d2000?q=80&w=800&auto=format&fit=crop',
-                          height: 220,
-                          width: double.infinity,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) =>
-                              Container(
+                        child: fullImageUrl.isNotEmpty
+                            ? Image.network(
+                                fullImageUrl,
                                 height: 220,
+                                width: double.infinity,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) =>
+                                    Container(
+                                      height: 220,
+                                      width: double.infinity,
+                                      color: Colors.grey.shade300,
+                                      child: const Icon(
+                                        Icons.broken_image,
+                                        size: 64,
+                                        color: Colors.grey,
+                                      ),
+                                    ),
+                              )
+                            : Container(
+                                height: 220,
+                                width: double.infinity,
                                 color: Colors.grey.shade300,
+                                child: const Icon(
+                                  Icons.image,
+                                  size: 64,
+                                  color: Colors.grey,
+                                ),
                               ),
-                        ),
                       ),
                       Positioned(
                         bottom: 12,
