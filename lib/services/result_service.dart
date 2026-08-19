@@ -6,7 +6,9 @@ class ResultService {
 
   Future<Response> getSegmentationResultByPhoto(String photoId) async {
     try {
-      final response = await _dio.get('/segmentation-results/by-photo/$photoId');
+      final response = await _dio.get(
+        '/segmentation-results/by-photo/$photoId',
+      );
       return response;
     } catch (e) {
       rethrow;

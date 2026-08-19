@@ -39,7 +39,7 @@ class AuthProvider with ChangeNotifier {
           _accessToken = data['access_token'];
           final prefs = await SharedPreferences.getInstance();
           await prefs.setString('access_token', _accessToken!);
-          
+
           // Fetch user data after successful login
           await fetchMe();
         }
@@ -88,12 +88,10 @@ class AuthProvider with ChangeNotifier {
       _setLoading(false);
       _errorMessage =
           e.response?.data?['detail'] ?? e.message ?? 'An error occurred';
-      print(e.response);
       return false;
     } catch (e) {
       _setLoading(false);
       _errorMessage = e.toString();
-      print('siniii $_errorMessage');
       return false;
     }
   }

@@ -41,7 +41,6 @@ class AuthService {
   Future<Response> getMe() async {
     try {
       final response = await _dio.get('/auth/me');
-      print(response);
       return response;
     } catch (e) {
       rethrow;

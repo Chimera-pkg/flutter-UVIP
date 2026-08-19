@@ -5,10 +5,7 @@ class DioClient {
   static final Dio _dio =
       Dio(
           BaseOptions(
-            baseUrl:
-                'http://103.92.214.110:8001', // Note: use 10.0.2.2 for Android Emulator if 127.0.0.1 fails
-            // baseUrl:
-            //     'http://10.0.2.2:8000', // Note: use 10.0.2.2 for Android Emulator if 127.0.0.1 fails
+            baseUrl: 'http://103.92.214.110:8001',
             connectTimeout: const Duration(seconds: 10),
             receiveTimeout: const Duration(seconds: 10),
             headers: {

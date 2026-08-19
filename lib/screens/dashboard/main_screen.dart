@@ -29,18 +29,6 @@ class _MainScreenState extends State<MainScreen> {
     });
   }
 
-  // We use PageStorageBucket to keep state of all pages
-  final PageStorageBucket _bucket = PageStorageBucket();
-
-  // List of screens for the bottom navigation
-  final List<Widget> _screens = [
-    const HomeScreen(key: PageStorageKey('HomeScreen')),
-    const MapAnalysisScreen(key: PageStorageKey('MapAnalysisScreen')),
-    const AiCamScreen(key: PageStorageKey('AiCamScreen')),
-    const UploadScreen(key: PageStorageKey('UploadScreen')),
-    const ProfileScreen(key: PageStorageKey('ProfileScreen')),
-  ];
-
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
@@ -54,7 +42,22 @@ class _MainScreenState extends State<MainScreen> {
     return Stack(
       children: [
         Scaffold(
-          body: PageStorage(bucket: _bucket, child: _screens[_selectedIndex]),
+          // IndexedStack menjaga semua screen tetap hidup (tidak di-dispose),
+          // sehingga CameraController di AiCamScreen tidak di-create/dispose
+          // berulang kali saat user berpindah tab — menghindari race condition & crash.
+          body: IndexedStack(
+            index: _selectedIndex,
+            children: [
+              const HomeScreen(key: PageStorageKey('HomeScreen')),
+              const MapAnalysisScreen(key: PageStorageKey('MapAnalysisScreen')),
+              AiCamScreen(
+                key: const PageStorageKey('AiCamScreen'),
+                isActive: _selectedIndex == 2,
+              ),
+              const UploadScreen(key: PageStorageKey('UploadScreen')),
+              const ProfileScreen(key: PageStorageKey('ProfileScreen')),
+            ],
+          ),
       floatingActionButton: Container(
         height: 72.0, // Make the FAB a bit larger
         width: 72.0,

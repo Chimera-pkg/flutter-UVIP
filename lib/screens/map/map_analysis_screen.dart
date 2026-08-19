@@ -15,7 +15,7 @@ class MapAnalysisScreen extends StatefulWidget {
 }
 
 class _MapAnalysisScreenState extends State<MapAnalysisScreen> {
-  late GoogleMapController mapController;
+  GoogleMapController? mapController;
 
   void _onMapCreated(GoogleMapController controller) {
     mapController = controller;

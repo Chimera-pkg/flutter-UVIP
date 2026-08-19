@@ -5,10 +5,13 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 import 'package:uvip/core/theme/app_theme.dart';
 import 'package:uvip/providers/aicam_provider.dart';
-import 'package:uvip/widgets/object_detector_box.dart';
 
 class AiCamScreen extends StatefulWidget {
-  const AiCamScreen({super.key});
+  /// Apakah tab AiCam sedang aktif/terlihat oleh user.
+  /// Kamera hanya dinyalakan saat isActive == true.
+  final bool isActive;
+
+  const AiCamScreen({super.key, this.isActive = false});
 
   @override
   State<AiCamScreen> createState() => _AiCamScreenState();
@@ -22,18 +25,39 @@ class _AiCamScreenState extends State<AiCamScreen> with WidgetsBindingObserver {
   int _liveSeconds = 15; // Starting from 15 as in mockup
   bool _isFlashOn = false;
   bool _permissionDenied = false;
-  bool _permissionChecked = false;
+  bool _isInitializing = false; // Guard agar tidak ada inisialisasi paralel
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _initializeCamera();
-    _startTimer();
+    // Hanya init kamera jika tab ini langsung aktif saat pertama kali dibuat
+    if (widget.isActive) {
+      _initializeCamera();
+      _startTimer();
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant AiCamScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Respond saat tab visibility berubah
+    if (widget.isActive && !oldWidget.isActive) {
+      // Tab baru saja jadi aktif → nyalakan kamera & timer
+      _initializeCamera();
+      _startTimer();
+    } else if (!widget.isActive && oldWidget.isActive) {
+      // Tab baru saja jadi tidak aktif → matikan kamera & timer
+      _disposeCamera();
+      _stopTimer();
+    }
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
+    // Hanya handle lifecycle jika tab sedang aktif
+    if (!widget.isActive) return;
+
     final CameraController? cameraController = _controller;
 
     if (cameraController == null || !cameraController.value.isInitialized) {
@@ -45,15 +69,33 @@ class _AiCamScreenState extends State<AiCamScreen> with WidgetsBindingObserver {
     }
 
     if (state == AppLifecycleState.inactive) {
-      cameraController.dispose();
-      _controller = null; // Tambahkan ini agar CameraPreview berhenti merender
-      if (mounted) setState(() {}); // Segarkan UI
+      _disposeCamera();
     } else if (state == AppLifecycleState.resumed) {
       _initializeCamera();
     }
   }
 
+  /// Dispose kamera dengan aman, menghindari double-dispose.
+  Future<void> _disposeCamera() async {
+    final controllerToDispose = _controller;
+    _controller = null;
+    if (controllerToDispose != null) {
+      try {
+        await controllerToDispose.dispose();
+      } catch (e) {
+        debugPrint("Error disposing camera: $e");
+      }
+    }
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
   Future<void> _initializeCamera() async {
+    // Cegah inisialisasi paralel (race condition saat pindah tab cepat)
+    if (_isInitializing) return;
+    _isInitializing = true;
+
     try {
       // Minta izin kamera secara runtime (wajib untuk Android 6.0+)
       final status = await Permission.camera.request();
@@ -63,19 +105,23 @@ class _AiCamScreenState extends State<AiCamScreen> with WidgetsBindingObserver {
       if (!status.isGranted) {
         setState(() {
           _permissionDenied = true;
-          _permissionChecked = true;
         });
         return;
       }
 
       setState(() {
         _permissionDenied = false;
-        _permissionChecked = true;
       });
 
+      // Dispose controller lama jika ada sebelum buat yang baru
+      await _disposeCamera();
+
+      if (!mounted || !widget.isActive) return;
+
       _cameras = await availableCameras();
+      if (!mounted || !widget.isActive) return;
+
       if (_cameras != null && _cameras!.isNotEmpty) {
-        if (!mounted) return;
         // Gunakan Medium resolution dan matikan audio (enableAudio: false)
         // Jika enableAudio true (default), aplikasi akan force close karena tidak ada izin RECORD_AUDIO
         final controller = CameraController(
@@ -83,29 +129,47 @@ class _AiCamScreenState extends State<AiCamScreen> with WidgetsBindingObserver {
           ResolutionPreset.medium,
           enableAudio: false,
         );
-        _controller = controller;
-        await controller.initialize();
 
-        // Jika widget sudah di-dispose saat proses inisialisasi tertunda
-        if (!mounted) {
+        // Cek lagi sebelum initialize — user mungkin sudah pindah tab
+        if (!mounted || !widget.isActive) {
           controller.dispose();
           return;
         }
+
+        _controller = controller;
+
+        await controller.initialize();
+
+        // Jika widget sudah tidak aktif saat proses inisialisasi tertunda
+        if (!mounted || !widget.isActive) {
+          controller.dispose();
+          _controller = null;
+          return;
+        }
+
         setState(() {});
       }
     } catch (e) {
       debugPrint("Error initializing camera: $e");
+    } finally {
+      _isInitializing = false;
     }
   }
 
   void _startTimer() {
+    _timer?.cancel(); // Cancel timer lama jika ada
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (mounted) {
+      if (mounted && widget.isActive) {
         setState(() {
           _liveSeconds++;
         });
       }
     });
+  }
+
+  void _stopTimer() {
+    _timer?.cancel();
+    _timer = null;
   }
 
   void _toggleFlash() async {
@@ -120,9 +184,11 @@ class _AiCamScreenState extends State<AiCamScreen> with WidgetsBindingObserver {
     } catch (e) {
       debugPrint("Error toggling flash: $e");
       // Revert state if it fails
-      setState(() {
-        _isFlashOn = !_isFlashOn;
-      });
+      if (mounted) {
+        setState(() {
+          _isFlashOn = !_isFlashOn;
+        });
+      }
     }
   }
 
@@ -137,6 +203,7 @@ class _AiCamScreenState extends State<AiCamScreen> with WidgetsBindingObserver {
     WidgetsBinding.instance.removeObserver(this);
     _timer?.cancel();
     _controller?.dispose();
+    _controller = null;
     super.dispose();
   }
 
@@ -202,28 +269,12 @@ class _AiCamScreenState extends State<AiCamScreen> with WidgetsBindingObserver {
                     ),
                   )
                 : _controller != null && _controller!.value.isInitialized
-                ? CameraPreview(_controller!)
-                : const Center(
-                    child: CircularProgressIndicator(
-                      color: AppTheme.primaryColor,
-                    ),
-                  ),
-          ),
-
-          // Bounding Boxes Layer
-          Consumer<AiCamProvider>(
-            builder: (context, provider, child) {
-              return Stack(
-                children: provider.detectedObjects.map((obj) {
-                  return ObjectDetectorBox(
-                    rect: obj.rect,
-                    label: obj.label,
-                    score: obj.score,
-                    color: obj.color,
-                  );
-                }).toList(),
-              );
-            },
+                    ? CameraPreview(_controller!)
+                    : const Center(
+                        child: CircularProgressIndicator(
+                          color: AppTheme.primaryColor,
+                        ),
+                      ),
           ),
 
           // Safe Area for UI Overlays
