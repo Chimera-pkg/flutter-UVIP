@@ -17,6 +17,8 @@ class MainScreen extends StatefulWidget {
 
 class _MainScreenState extends State<MainScreen> {
   int _selectedIndex = 0;
+  // Track tab yang pernah dikunjungi — screen berat hanya dibuild saat pernah dipilih
+  final Set<int> _visitedTabs = {0}; // Tab 0 (Home) langsung aktif
 
   @override
   void initState() {
@@ -31,8 +33,19 @@ class _MainScreenState extends State<MainScreen> {
 
   void _onItemTapped(int index) {
     setState(() {
+      _visitedTabs.add(index);
       _selectedIndex = index;
     });
+  }
+
+  /// Membungkus child dalam IndexedStack: hanya build jika tab pernah dikunjungi.
+  /// Ini mencegah screen berat (GoogleMap, Camera) langsung di-mount saat MainScreen dibuka.
+  Widget _buildTabChild(int tabIndex, Widget child) {
+    if (_visitedTabs.contains(tabIndex)) {
+      return child;
+    }
+    // Placeholder ringan sebelum tab dikunjungi
+    return const SizedBox.shrink();
   }
 
   @override
@@ -43,19 +56,19 @@ class _MainScreenState extends State<MainScreen> {
       children: [
         Scaffold(
           // IndexedStack menjaga semua screen tetap hidup (tidak di-dispose),
-          // sehingga CameraController di AiCamScreen tidak di-create/dispose
-          // berulang kali saat user berpindah tab — menghindari race condition & crash.
+          // tapi screen berat hanya di-build setelah tab pernah dikunjungi
+          // untuk menghindari crash saat pertama kali masuk MainScreen.
           body: IndexedStack(
             index: _selectedIndex,
             children: [
-              const HomeScreen(key: PageStorageKey('HomeScreen')),
-              const MapAnalysisScreen(key: PageStorageKey('MapAnalysisScreen')),
-              AiCamScreen(
+              _buildTabChild(0, const HomeScreen(key: PageStorageKey('HomeScreen'))),
+              _buildTabChild(1, const MapAnalysisScreen(key: PageStorageKey('MapAnalysisScreen'))),
+              _buildTabChild(2, AiCamScreen(
                 key: const PageStorageKey('AiCamScreen'),
                 isActive: _selectedIndex == 2,
-              ),
-              const UploadScreen(key: PageStorageKey('UploadScreen')),
-              const ProfileScreen(key: PageStorageKey('ProfileScreen')),
+              )),
+              _buildTabChild(3, const UploadScreen(key: PageStorageKey('UploadScreen'))),
+              _buildTabChild(4, const ProfileScreen(key: PageStorageKey('ProfileScreen'))),
             ],
           ),
       floatingActionButton: Container(

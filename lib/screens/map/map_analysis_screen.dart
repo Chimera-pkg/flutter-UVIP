@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:provider/provider.dart';
 import 'package:uvip/core/theme/app_theme.dart';
@@ -7,6 +8,7 @@ import 'package:uvip/providers/map_provider.dart';
 import 'package:uvip/widgets/data_summary_card.dart';
 import 'package:uvip/widgets/common/section_header.dart';
 import 'package:uvip/widgets/common/time_filter_dropdown.dart';
+
 class MapAnalysisScreen extends StatefulWidget {
   const MapAnalysisScreen({super.key});
 
@@ -15,11 +17,7 @@ class MapAnalysisScreen extends StatefulWidget {
 }
 
 class _MapAnalysisScreenState extends State<MapAnalysisScreen> {
-  GoogleMapController? mapController;
-
-  void _onMapCreated(GoogleMapController controller) {
-    mapController = controller;
-  }
+  final MapController _mapController = MapController();
 
   @override
   Widget build(BuildContext context) {
@@ -96,14 +94,21 @@ class _MapAnalysisScreenState extends State<MapAnalysisScreen> {
                       height: 350,
                       child: Stack(
                         children: [
-                          GoogleMap(
-                            onMapCreated: _onMapCreated,
-                            initialCameraPosition: CameraPosition(
-                              target: LatLng(provider.latitude, provider.longitude),
-                              zoom: 13.0,
+                          FlutterMap(
+                            mapController: _mapController,
+                            options: MapOptions(
+                              initialCenter: LatLng(provider.latitude, provider.longitude),
+                              initialZoom: 13.0,
+                              interactionOptions: const InteractionOptions(
+                                flags: InteractiveFlag.all & ~InteractiveFlag.rotate,
+                              ),
                             ),
-                            zoomControlsEnabled: false,
-                            myLocationButtonEnabled: false,
+                            children: [
+                              TileLayer(
+                                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                                userAgentPackageName: 'com.example.uvip',
+                              ),
+                            ],
                           ),
                           // Overlay Buttons (Top Right)
                           Positioned(
@@ -113,7 +118,15 @@ class _MapAnalysisScreenState extends State<MapAnalysisScreen> {
                               children: [
                                 _buildFloatingMapButton(Icons.layers_outlined),
                                 const SizedBox(height: 8),
-                                _buildFloatingMapButton(Icons.my_location),
+                                GestureDetector(
+                                  onTap: () {
+                                    _mapController.move(
+                                      LatLng(provider.latitude, provider.longitude),
+                                      13.0,
+                                    );
+                                  },
+                                  child: _buildFloatingMapButton(Icons.my_location),
+                                ),
                               ],
                             ),
                           ),
