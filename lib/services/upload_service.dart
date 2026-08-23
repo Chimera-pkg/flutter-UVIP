@@ -13,20 +13,19 @@ class UploadService {
     }
   }
 
-  Future<Response> uploadStreetPhoto(MultipartFile file, {void Function(int, int)? onSendProgress}) async {
+  Future<Response> uploadStreetPhoto(
+    MultipartFile file, {
+    void Function(int, int)? onSendProgress,
+  }) async {
     try {
       final formData = FormData.fromMap({
         'file': file,
         'source': 'mobile_upload',
-        'latitude': 0,
-        'longitude': 0,
+        'latitude': 0.0,
+        'longitude': 0.0,
         'captured_at': DateTime.now().toUtc().toIso8601String(),
-        'mission_id': '',
-        'gps_accuracy_m': '',
-        'compass_azimuth': '',
-        'exif_timestamp': '',
-        'is_manual_capture': false,
-        'is_offline_sync': true,
+        'is_manual_capture': true,
+        'is_offline_sync': false,
       });
 
       final response = await _dio.post(
@@ -34,6 +33,15 @@ class UploadService {
         data: formData,
         onSendProgress: onSendProgress,
       );
+      return response;
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<Response> deleteStreetPhoto(String photoId) async {
+    try {
+      final response = await _dio.delete('/street-photos/$photoId');
       return response;
     } catch (e) {
       rethrow;

@@ -1,17 +1,26 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
+import 'package:gal/gal.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 import 'package:uvip/core/theme/app_theme.dart';
 import 'package:uvip/providers/aicam_provider.dart';
+import 'package:uvip/providers/upload_provider.dart';
+import 'package:uvip/screens/upload/upload_screen.dart';
 
 class AiCamScreen extends StatefulWidget {
   /// Apakah tab AiCam sedang aktif/terlihat oleh user.
   /// Kamera hanya dinyalakan saat isActive == true.
   final bool isActive;
+  final VoidCallback? onSwitchToUpload;
 
-  const AiCamScreen({super.key, this.isActive = false});
+  const AiCamScreen({
+    super.key,
+    this.isActive = false,
+    this.onSwitchToUpload,
+  });
 
   @override
   State<AiCamScreen> createState() => _AiCamScreenState();
@@ -26,6 +35,7 @@ class _AiCamScreenState extends State<AiCamScreen> with WidgetsBindingObserver {
   bool _isFlashOn = false;
   bool _permissionDenied = false;
   bool _isInitializing = false; // Guard agar tidak ada inisialisasi paralel
+  bool _isCapturing = false; // Guard saat proses pengambilan foto & simpan
 
   @override
   void initState() {
@@ -196,6 +206,135 @@ class _AiCamScreenState extends State<AiCamScreen> with WidgetsBindingObserver {
     int m = _liveSeconds ~/ 60;
     int s = _liveSeconds % 60;
     return '${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
+  }
+
+  /// Mengambil foto, menyimpan ke galeri, dan mengunggahnya ke UploadScreen.
+  Future<void> _takePictureAndUpload() async {
+    if (_isCapturing) return;
+
+    if (_controller == null || !_controller!.value.isInitialized) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Kamera belum siap atau tidak tersedia'),
+          backgroundColor: Colors.redAccent,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      _isCapturing = true;
+    });
+
+    try {
+      // 1. Ambil foto menggunakan controller kamera
+      final XFile photo = await _controller!.takePicture();
+
+      // 2. Simpan foto ke folder Downloads (Web / Chrome) atau Galeri (Mobile)
+      try {
+        if (kIsWeb) {
+          final timestamp = DateTime.now().millisecondsSinceEpoch;
+          final fileName = 'uvip_capture_$timestamp.jpg';
+          await photo.saveTo(fileName);
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Row(
+                  children: [
+                    Icon(Icons.check_circle, color: Colors.white, size: 20),
+                    SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Foto diunduh ke folder Downloads & dialihkan ke Upload',
+                      ),
+                    ),
+                  ],
+                ),
+                backgroundColor: Colors.green,
+                duration: Duration(seconds: 2),
+                behavior: SnackBarBehavior.floating,
+              ),
+            );
+          }
+        } else {
+          final hasAccess = await Gal.hasAccess(toAlbum: false);
+          if (!hasAccess) {
+            await Gal.requestAccess(toAlbum: false);
+          }
+          await Gal.putImage(photo.path);
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Row(
+                  children: [
+                    Icon(Icons.check_circle, color: Colors.white, size: 20),
+                    SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Foto tersimpan di galeri & dialihkan ke Upload',
+                      ),
+                    ),
+                  ],
+                ),
+                backgroundColor: Colors.green,
+                duration: Duration(seconds: 2),
+                behavior: SnackBarBehavior.floating,
+              ),
+            );
+          }
+        }
+      } catch (saveError) {
+        debugPrint("Error saving photo: $saveError");
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                kIsWeb
+                    ? 'Gagal mengunduh ke folder Downloads: $saveError'
+                    : 'Gagal menyimpan ke galeri: $saveError',
+              ),
+              backgroundColor: Colors.orange,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+      }
+
+      // 3. Trigger upload di UploadProvider dan beralih ke UploadScreen
+      if (mounted) {
+        final uploadProvider = Provider.of<UploadProvider>(context, listen: false);
+        // Mulai proses upload di background provider
+        uploadProvider.uploadPhoto(photo);
+
+        // Beralih ke halaman UploadScreen
+        if (widget.onSwitchToUpload != null) {
+          widget.onSwitchToUpload!();
+        } else {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const UploadScreen()),
+          );
+        }
+      }
+    } catch (e) {
+      debugPrint("Error taking picture: $e");
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Gagal mengambil gambar: $e'),
+            backgroundColor: Colors.redAccent,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isCapturing = false;
+        });
+      }
+    }
   }
 
   @override
@@ -438,31 +577,91 @@ class _AiCamScreenState extends State<AiCamScreen> with WidgetsBindingObserver {
 
                   const Spacer(),
 
-                  // Bottom Auto Capture Button
+                  // Bottom Controls (Auto Capture + Shutter Capture Button)
                   Center(
                     child: Padding(
                       padding: const EdgeInsets.only(
-                        bottom: 90.0,
+                        bottom: 80.0,
                       ), // Above bottom nav
-                      child: ElevatedButton.icon(
-                        onPressed: () {},
-                        icon: const Icon(Icons.timer_outlined, size: 20),
-                        label: const Text(
-                          'Auto Capture',
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.white,
-                          foregroundColor: Colors.black87,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 24,
-                            vertical: 12,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          // Auto Capture Button
+                          ElevatedButton.icon(
+                            onPressed: () {},
+                            icon: const Icon(Icons.timer_outlined, size: 18),
+                            label: const Text(
+                              'Auto Capture',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 13,
+                              ),
+                            ),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.white.withValues(alpha: 0.9),
+                              foregroundColor: Colors.black87,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 20,
+                                vertical: 8,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(20.0),
+                              ),
+                              elevation: 2,
+                            ),
                           ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(24.0),
+                          const SizedBox(height: 16),
+                          // Camera Shutter Button
+                          GestureDetector(
+                            onTap: _isCapturing ? null : _takePictureAndUpload,
+                            child: Container(
+                              width: 76,
+                              height: 76,
+                              padding: const EdgeInsets.all(4),
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: Colors.white,
+                                  width: 4,
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withValues(alpha: 0.4),
+                                    blurRadius: 12,
+                                    spreadRadius: 2,
+                                  ),
+                                ],
+                              ),
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: _isCapturing
+                                      ? Colors.white.withValues(alpha: 0.7)
+                                      : Colors.white,
+                                ),
+                                child: Center(
+                                  child: _isCapturing
+                                      ? const SizedBox(
+                                          width: 28,
+                                          height: 28,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 3,
+                                            valueColor:
+                                                AlwaysStoppedAnimation<Color>(
+                                              AppTheme.primaryColor,
+                                            ),
+                                          ),
+                                        )
+                                      : const Icon(
+                                          Icons.camera_alt,
+                                          color: AppTheme.primaryColor,
+                                          size: 32,
+                                        ),
+                                ),
+                              ),
+                            ),
                           ),
-                          elevation: 4,
-                        ),
+                        ],
                       ),
                     ),
                   ),

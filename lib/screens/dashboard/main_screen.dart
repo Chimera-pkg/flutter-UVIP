@@ -66,6 +66,7 @@ class _MainScreenState extends State<MainScreen> {
               _buildTabChild(2, AiCamScreen(
                 key: const PageStorageKey('AiCamScreen'),
                 isActive: _selectedIndex == 2,
+                onSwitchToUpload: () => _onItemTapped(3),
               )),
               _buildTabChild(3, const UploadScreen(key: PageStorageKey('UploadScreen'))),
               _buildTabChild(4, const ProfileScreen(key: PageStorageKey('ProfileScreen'))),

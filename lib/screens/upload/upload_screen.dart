@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:dotted_border/dotted_border.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:uvip/core/theme/app_theme.dart';
+import 'package:uvip/models/street_photo_model.dart';
 import 'package:uvip/providers/upload_provider.dart';
 import 'package:uvip/screens/result/result_screen.dart';
 import 'package:uvip/widgets/uploaded_item_tile.dart';
@@ -30,6 +31,95 @@ class _UploadScreenState extends State<UploadScreen> {
       if (context.mounted) {
         final provider = Provider.of<UploadProvider>(context, listen: false);
         await provider.uploadPhoto(image);
+      }
+    }
+  }
+
+  Future<void> _confirmAndDelete(
+    BuildContext context,
+    StreetPhotoModel photo,
+  ) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        title: const Row(
+          children: [
+            Icon(
+              Icons.warning_amber_rounded,
+              color: Colors.redAccent,
+              size: 28,
+            ),
+            SizedBox(width: 8),
+            Text(
+              'Hapus Foto?',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+            ),
+          ],
+        ),
+        content: Text(
+          'Apakah Anda yakin ingin menghapus "${photo.originalFilename.isNotEmpty ? photo.originalFilename : 'foto ini'}"? Tindakan ini tidak dapat dibatalkan.',
+          style: const TextStyle(fontSize: 14),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text(
+              'Batal',
+              style: TextStyle(
+                color: Colors.grey,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.redAccent,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            child: const Text(
+              'Hapus',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && context.mounted) {
+      final provider = Provider.of<UploadProvider>(context, listen: false);
+      final success = await provider.deletePhoto(photo.id);
+      if (context.mounted) {
+        if (success) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Row(
+                children: [
+                  Icon(Icons.check_circle, color: Colors.white, size: 20),
+                  SizedBox(width: 8),
+                  Text('Foto berhasil dihapus'),
+                ],
+              ),
+              backgroundColor: Colors.green,
+              behavior: SnackBarBehavior.floating,
+              duration: Duration(seconds: 2),
+            ),
+          );
+        } else if (provider.errorMessage != null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(provider.errorMessage!),
+              backgroundColor: Colors.redAccent,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
       }
     }
   }
@@ -216,7 +306,7 @@ class _UploadScreenState extends State<UploadScreen> {
                         isSelected: provider.selectedPhoto?.id == photo.id,
                         onSelect: (value) =>
                             provider.togglePhotoSelection(photo),
-                        onDelete: () => provider.removeUploadedFile(index),
+                        onDelete: () => _confirmAndDelete(context, photo),
                       );
                     },
                   ),

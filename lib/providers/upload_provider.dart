@@ -31,7 +31,9 @@ class UploadProvider with ChangeNotifier {
       final response = await _uploadService.getStreetPhotos();
       if (response.statusCode == 200) {
         final List<dynamic> data = response.data;
-        _uploadedPhotos = data.map((json) => StreetPhotoModel.fromJson(json)).toList();
+        _uploadedPhotos = data
+            .map((json) => StreetPhotoModel.fromJson(json))
+            .toList();
       }
     } catch (e) {
       _errorMessage = 'Failed to load photos: $e';
@@ -49,19 +51,24 @@ class UploadProvider with ChangeNotifier {
 
     try {
       final bytes = await file.readAsBytes();
-      final multipartFile = MultipartFile.fromBytes(
-        bytes,
-        filename: file.name,
-      );
+      String filename = file.name.isNotEmpty
+          ? file.name
+          : 'uvip_${DateTime.now().millisecondsSinceEpoch}.jpg';
+      if (!filename.contains('.')) {
+        filename = '$filename.jpg';
+      }
+
+      final multipartFile = MultipartFile.fromBytes(bytes, filename: filename);
 
       final response = await _uploadService.uploadStreetPhoto(
         multipartFile,
         onSendProgress: (sent, total) {
-          _uploadProgress = sent / total;
-          notifyListeners();
+          if (total > 0) {
+            _uploadProgress = sent / total;
+            notifyListeners();
+          }
         },
       );
-
       if (response.statusCode == 200 || response.statusCode == 201) {
         await fetchStreetPhotos(); // Refresh list after success
         return true;
@@ -70,7 +77,20 @@ class UploadProvider with ChangeNotifier {
         return false;
       }
     } catch (e) {
-      _errorMessage = 'Upload error: $e';
+      if (e is DioException) {
+        final data = e.response?.data;
+        if (data is Map && data.containsKey('detail')) {
+          _errorMessage = 'Upload error: ${data['detail']}';
+        } else if (data is Map && data.containsKey('message')) {
+          _errorMessage = 'Upload error: ${data['message']}';
+        } else if (data != null) {
+          _errorMessage = 'Upload error (${e.response?.statusCode}): $data';
+        } else {
+          _errorMessage = 'Upload error: ${e.message}';
+        }
+      } else {
+        _errorMessage = 'Upload error: $e';
+      }
       return false;
     } finally {
       _isUploading = false;
@@ -79,8 +99,47 @@ class UploadProvider with ChangeNotifier {
     }
   }
 
+  Future<bool> deletePhoto(String photoId) async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      final response = await _uploadService.deleteStreetPhoto(photoId);
+      if (response.statusCode == 200 || response.statusCode == 204) {
+        if (_selectedPhoto?.id == photoId) {
+          _selectedPhoto = null;
+        }
+        await fetchStreetPhotos();
+        return true;
+      } else {
+        _errorMessage = 'Gagal menghapus foto: ${response.statusCode}';
+        return false;
+      }
+    } catch (e) {
+      if (e is DioException) {
+        final data = e.response?.data;
+        if (data is Map && data.containsKey('detail')) {
+          _errorMessage = 'Gagal menghapus foto: ${data['detail']}';
+        } else if (data is Map && data.containsKey('message')) {
+          _errorMessage = 'Gagal menghapus foto: ${data['message']}';
+        } else if (data != null) {
+          _errorMessage =
+              'Gagal menghapus foto (${e.response?.statusCode}): $data';
+        } else {
+          _errorMessage = 'Gagal menghapus foto: ${e.message}';
+        }
+      } else {
+        _errorMessage = 'Gagal menghapus foto: $e';
+      }
+      return false;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
   void removeUploadedFile(int index) {
-    // Optional: Add API call to delete if backend supports it
     _uploadedPhotos.removeAt(index);
     notifyListeners();
   }
@@ -108,4 +167,3 @@ class UploadProvider with ChangeNotifier {
     notifyListeners();
   }
 }
-
