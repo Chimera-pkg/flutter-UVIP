@@ -16,11 +16,7 @@ class AiCamScreen extends StatefulWidget {
   final bool isActive;
   final VoidCallback? onSwitchToUpload;
 
-  const AiCamScreen({
-    super.key,
-    this.isActive = false,
-    this.onSwitchToUpload,
-  });
+  const AiCamScreen({super.key, this.isActive = false, this.onSwitchToUpload});
 
   @override
   State<AiCamScreen> createState() => _AiCamScreenState();
@@ -303,7 +299,10 @@ class _AiCamScreenState extends State<AiCamScreen> with WidgetsBindingObserver {
 
       // 3. Trigger upload di UploadProvider dan beralih ke UploadScreen
       if (mounted) {
-        final uploadProvider = Provider.of<UploadProvider>(context, listen: false);
+        final uploadProvider = Provider.of<UploadProvider>(
+          context,
+          listen: false,
+        );
         // Mulai proses upload di background provider
         uploadProvider.uploadPhoto(photo);
 
@@ -408,12 +407,12 @@ class _AiCamScreenState extends State<AiCamScreen> with WidgetsBindingObserver {
                     ),
                   )
                 : _controller != null && _controller!.value.isInitialized
-                    ? CameraPreview(_controller!)
-                    : const Center(
-                        child: CircularProgressIndicator(
-                          color: AppTheme.primaryColor,
-                        ),
-                      ),
+                ? CameraPreview(_controller!)
+                : const Center(
+                    child: CircularProgressIndicator(
+                      color: AppTheme.primaryColor,
+                    ),
+                  ),
           ),
 
           // Safe Area for UI Overlays
@@ -598,7 +597,9 @@ class _AiCamScreenState extends State<AiCamScreen> with WidgetsBindingObserver {
                               ),
                             ),
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.white.withValues(alpha: 0.9),
+                              backgroundColor: Colors.white.withValues(
+                                alpha: 0.9,
+                              ),
                               foregroundColor: Colors.black87,
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 20,
@@ -611,7 +612,7 @@ class _AiCamScreenState extends State<AiCamScreen> with WidgetsBindingObserver {
                             ),
                           ),
                           const SizedBox(height: 16),
-                          // Camera Shutter Button
+                          // Camera Button
                           GestureDetector(
                             onTap: _isCapturing ? null : _takePictureAndUpload,
                             child: Container(
@@ -648,8 +649,8 @@ class _AiCamScreenState extends State<AiCamScreen> with WidgetsBindingObserver {
                                             strokeWidth: 3,
                                             valueColor:
                                                 AlwaysStoppedAnimation<Color>(
-                                              AppTheme.primaryColor,
-                                            ),
+                                                  AppTheme.primaryColor,
+                                                ),
                                           ),
                                         )
                                       : const Icon(
