@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:uvip/models/street_photo_model.dart';
+import 'package:uvip/models/street_video_model.dart';
 import 'package:uvip/services/upload_service.dart';
 
 class UploadProvider with ChangeNotifier {
@@ -9,6 +10,9 @@ class UploadProvider with ChangeNotifier {
 
   List<StreetPhotoModel> _uploadedPhotos = [];
   List<StreetPhotoModel> get uploadedPhotos => _uploadedPhotos;
+
+  List<StreetVideoModel> _uploadedVideos = [];
+  List<StreetVideoModel> get uploadedVideos => _uploadedVideos;
 
   bool _isLoading = false;
   bool get isLoading => _isLoading;
@@ -21,6 +25,8 @@ class UploadProvider with ChangeNotifier {
 
   String? _errorMessage;
   String? get errorMessage => _errorMessage;
+
+  // ===================== PHOTOS =====================
 
   Future<void> fetchStreetPhotos() async {
     _isLoading = true;
@@ -139,17 +145,6 @@ class UploadProvider with ChangeNotifier {
     }
   }
 
-  void removeUploadedFile(int index) {
-    _uploadedPhotos.removeAt(index);
-    notifyListeners();
-  }
-
-  void cancelUpload() {
-    _isUploading = false;
-    _uploadProgress = 0.0;
-    notifyListeners();
-  }
-
   StreetPhotoModel? _selectedPhoto;
   StreetPhotoModel? get selectedPhoto => _selectedPhoto;
 
@@ -159,6 +154,150 @@ class UploadProvider with ChangeNotifier {
     } else {
       _selectedPhoto = photo;
     }
+    notifyListeners();
+  }
+
+  // ===================== VIDEOS =====================
+
+  Future<void> fetchStreetVideos() async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      final response = await _uploadService.getStreetVideos();
+      if (response.statusCode == 200) {
+        final List<dynamic> data = response.data;
+        _uploadedVideos = data
+            .map((json) => StreetVideoModel.fromJson(json))
+            .toList();
+      }
+    } catch (e) {
+      _errorMessage = 'Failed to load videos: $e';
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<bool> uploadVideo(XFile file) async {
+    _isUploading = true;
+    _uploadProgress = 0.0;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      final bytes = await file.readAsBytes();
+      String filename = file.name.isNotEmpty
+          ? file.name
+          : 'uvip_video_${DateTime.now().millisecondsSinceEpoch}.mp4';
+      if (!filename.contains('.')) {
+        filename = '$filename.mp4';
+      }
+
+      final multipartFile = MultipartFile.fromBytes(bytes, filename: filename);
+
+      final response = await _uploadService.uploadStreetVideo(
+        multipartFile,
+        onSendProgress: (sent, total) {
+          if (total > 0) {
+            _uploadProgress = sent / total;
+            notifyListeners();
+          }
+        },
+      );
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        await fetchStreetVideos(); // Refresh video list after success
+        return true;
+      } else {
+        _errorMessage = 'Upload video failed: ${response.statusCode}';
+        return false;
+      }
+    } catch (e) {
+      if (e is DioException) {
+        final data = e.response?.data;
+        if (data is Map && data.containsKey('detail')) {
+          _errorMessage = 'Upload video error: ${data['detail']}';
+        } else if (data is Map && data.containsKey('message')) {
+          _errorMessage = 'Upload video error: ${data['message']}';
+        } else if (data != null) {
+          _errorMessage = 'Upload video error (${e.response?.statusCode}): $data';
+        } else {
+          _errorMessage = 'Upload video error: ${e.message}';
+        }
+      } else {
+        _errorMessage = 'Upload video error: $e';
+      }
+      return false;
+    } finally {
+      _isUploading = false;
+      _uploadProgress = 0.0;
+      notifyListeners();
+    }
+  }
+
+  Future<bool> deleteVideo(String videoId) async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      final response = await _uploadService.deleteStreetVideo(videoId);
+      if (response.statusCode == 200 || response.statusCode == 204) {
+        if (_selectedVideo?.id == videoId) {
+          _selectedVideo = null;
+        }
+        await fetchStreetVideos();
+        return true;
+      } else {
+        _errorMessage = 'Gagal menghapus video: ${response.statusCode}';
+        return false;
+      }
+    } catch (e) {
+      if (e is DioException) {
+        final data = e.response?.data;
+        if (data is Map && data.containsKey('detail')) {
+          _errorMessage = 'Gagal menghapus video: ${data['detail']}';
+        } else if (data is Map && data.containsKey('message')) {
+          _errorMessage = 'Gagal menghapus video: ${data['message']}';
+        } else if (data != null) {
+          _errorMessage =
+              'Gagal menghapus video (${e.response?.statusCode}): $data';
+        } else {
+          _errorMessage = 'Gagal menghapus video: ${e.message}';
+        }
+      } else {
+        _errorMessage = 'Gagal menghapus video: $e';
+      }
+      return false;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  StreetVideoModel? _selectedVideo;
+  StreetVideoModel? get selectedVideo => _selectedVideo;
+
+  void toggleVideoSelection(StreetVideoModel video) {
+    if (_selectedVideo?.id == video.id) {
+      _selectedVideo = null;
+    } else {
+      _selectedVideo = video;
+    }
+    notifyListeners();
+  }
+
+  // ===================== GENERAL =====================
+
+  void removeUploadedFile(int index) {
+    _uploadedPhotos.removeAt(index);
+    notifyListeners();
+  }
+
+  void cancelUpload() {
+    _isUploading = false;
+    _uploadProgress = 0.0;
     notifyListeners();
   }
 

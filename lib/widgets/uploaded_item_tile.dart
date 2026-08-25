@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:uvip/core/theme/app_theme.dart';
+import 'package:uvip/widgets/video_preview_dialog.dart';
 
 class UploadedItemTile extends StatelessWidget {
   final String fileName;
@@ -8,6 +9,7 @@ class UploadedItemTile extends StatelessWidget {
   final VoidCallback? onDelete;
   final bool isSelected;
   final ValueChanged<bool?>? onSelect;
+  final bool isVideo;
 
   const UploadedItemTile({
     super.key,
@@ -17,6 +19,7 @@ class UploadedItemTile extends StatelessWidget {
     this.onDelete,
     this.isSelected = false,
     this.onSelect,
+    this.isVideo = false,
   });
 
   void _showImagePreview(BuildContext context, String url) {
@@ -55,6 +58,18 @@ class UploadedItemTile extends StatelessWidget {
     );
   }
 
+  void _showVideoPreview(BuildContext context, String url) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return VideoPreviewDialog(
+          videoUrl: url,
+          title: fileName,
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     // Handle relative paths
@@ -70,7 +85,13 @@ class UploadedItemTile extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: 16.0),
       child: InkWell(
         onTap: fullImageUrl != null
-            ? () => _showImagePreview(context, fullImageUrl!)
+            ? () {
+                if (isVideo) {
+                  _showVideoPreview(context, fullImageUrl!);
+                } else {
+                  _showImagePreview(context, fullImageUrl!);
+                }
+              }
             : null,
         borderRadius: BorderRadius.circular(8),
         child: Row(
@@ -87,18 +108,20 @@ class UploadedItemTile extends StatelessWidget {
               width: 50,
               height: 50,
               decoration: BoxDecoration(
-                color: AppTheme.primaryColor,
+                color: isVideo ? AppTheme.secondaryColor : AppTheme.primaryColor,
                 borderRadius: BorderRadius.circular(8),
-                image: fullImageUrl != null
+                image: (fullImageUrl != null && !isVideo)
                     ? DecorationImage(
                         image: NetworkImage(fullImageUrl),
                         fit: BoxFit.cover,
                       )
                     : null,
               ),
-              child: fullImageUrl == null
-                  ? const Icon(Icons.image, color: Colors.white)
-                  : null,
+              child: isVideo
+                  ? const Icon(Icons.videocam_rounded, color: Colors.white, size: 28)
+                  : (fullImageUrl == null
+                      ? const Icon(Icons.image, color: Colors.white)
+                      : null),
             ),
             const SizedBox(width: 16),
             // File Details

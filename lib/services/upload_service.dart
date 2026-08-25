@@ -47,4 +47,48 @@ class UploadService {
       rethrow;
     }
   }
+
+  Future<Response> getStreetVideos() async {
+    try {
+      final response = await _dio.get('/street-videos/');
+      return response;
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<Response> uploadStreetVideo(
+    MultipartFile file, {
+    void Function(int, int)? onSendProgress,
+  }) async {
+    try {
+      final formData = FormData.fromMap({
+        'file': file,
+        'source': 'mobile_upload',
+        'latitude': 0.0,
+        'longitude': 0.0,
+        'captured_at': DateTime.now().toUtc().toIso8601String(),
+        'is_manual_capture': true,
+        'is_offline_sync': false,
+      });
+
+      final response = await _dio.post(
+        '/street-videos/',
+        data: formData,
+        onSendProgress: onSendProgress,
+      );
+      return response;
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<Response> deleteStreetVideo(String videoId) async {
+    try {
+      final response = await _dio.delete('/street-videos/$videoId');
+      return response;
+    } catch (e) {
+      rethrow;
+    }
+  }
 }
