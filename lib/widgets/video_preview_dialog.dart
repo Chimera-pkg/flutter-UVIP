@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:video_player/video_player.dart';
 import 'package:uvip/core/theme/app_theme.dart';
 
@@ -27,8 +28,19 @@ class _VideoPreviewDialogState extends State<VideoPreviewDialog> {
 
   Future<void> _initializePlayer() async {
     try {
+      String cleanUrl = widget.videoUrl.replaceAll('\\', '/');
+      final uri = Uri.parse(Uri.encodeFull(cleanUrl));
+
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('access_token');
+      final Map<String, String> headers = {};
+      if (token != null && token.isNotEmpty) {
+        headers['Authorization'] = 'Bearer $token';
+      }
+
       final controller = VideoPlayerController.networkUrl(
-        Uri.parse(widget.videoUrl),
+        uri,
+        httpHeaders: headers,
       );
       _controller = controller;
 

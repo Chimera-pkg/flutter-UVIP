@@ -72,11 +72,11 @@ class UploadedItemTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Handle relative paths
-    String? fullImageUrl = imageUrl;
+    // Handle relative paths and backslashes
+    String? fullImageUrl = imageUrl?.replaceAll('\\', '/');
     if (fullImageUrl != null && !fullImageUrl.startsWith('http')) {
       // Assuming base URL is http://103.92.214.110:8001
-      final baseUrl = 'http://103.92.214.110:8001';
+      const baseUrl = 'http://103.92.214.110:8001';
       fullImageUrl =
           '$baseUrl/${fullImageUrl.startsWith('/') ? fullImageUrl.substring(1) : fullImageUrl}';
     }
