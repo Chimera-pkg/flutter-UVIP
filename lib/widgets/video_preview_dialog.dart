@@ -38,13 +38,20 @@ class _VideoPreviewDialogState extends State<VideoPreviewDialog> {
         headers['Authorization'] = 'Bearer $token';
       }
 
-      final controller = VideoPlayerController.networkUrl(
-        uri,
-        httpHeaders: headers,
-      );
-      _controller = controller;
+      VideoPlayerController controller;
+      try {
+        controller = VideoPlayerController.networkUrl(
+          uri,
+          httpHeaders: headers.isNotEmpty ? headers : const {},
+        );
+        await controller.initialize();
+      } catch (firstError) {
+        debugPrint("Initial load with headers failed ($firstError), retrying without headers...");
+        controller = VideoPlayerController.networkUrl(uri);
+        await controller.initialize();
+      }
 
-      await controller.initialize();
+      _controller = controller;
       await controller.setLooping(true);
       await controller.play();
 
