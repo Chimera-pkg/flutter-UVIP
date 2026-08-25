@@ -10,21 +10,37 @@ import 'package:uvip/screens/result/result_screen.dart';
 import 'package:uvip/widgets/uploaded_item_tile.dart';
 
 class UploadScreen extends StatefulWidget {
-  const UploadScreen({super.key});
+  final int initialTab;
+
+  const UploadScreen({super.key, this.initialTab = 0});
 
   @override
   State<UploadScreen> createState() => _UploadScreenState();
 }
 
 class _UploadScreenState extends State<UploadScreen> {
-  int _currentTab = 0; // 0 = Foto, 1 = Video
+  late int _currentTab;
 
   @override
   void initState() {
     super.initState();
+    _currentTab = widget.initialTab;
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<UploadProvider>(context, listen: false).fetchStreetPhotos();
+      final provider = Provider.of<UploadProvider>(context, listen: false);
+      if (_currentTab == 0) {
+        provider.fetchStreetPhotos();
+      } else {
+        provider.fetchStreetVideos();
+      }
     });
+  }
+
+  @override
+  void didUpdateWidget(covariant UploadScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.initialTab != oldWidget.initialTab) {
+      _onTabChanged(widget.initialTab);
+    }
   }
 
   void _onTabChanged(int index) {
@@ -645,7 +661,8 @@ class _UploadScreenState extends State<UploadScreen> {
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
-                      onPressed: (_currentTab == 0 && provider.selectedPhoto != null)
+                      onPressed: (_currentTab == 0 &&
+                              provider.selectedPhoto != null)
                           ? () {
                               Navigator.push(
                                 context,
@@ -690,4 +707,3 @@ class _UploadScreenState extends State<UploadScreen> {
     );
   }
 }
-

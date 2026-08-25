@@ -9,14 +9,21 @@ import 'package:uvip/core/theme/app_theme.dart';
 import 'package:uvip/providers/aicam_provider.dart';
 import 'package:uvip/providers/upload_provider.dart';
 import 'package:uvip/screens/upload/upload_screen.dart';
+import 'package:uvip/widgets/recorded_video_preview_dialog.dart';
+
+enum CameraMode { photo, video }
 
 class AiCamScreen extends StatefulWidget {
   /// Apakah tab AiCam sedang aktif/terlihat oleh user.
   /// Kamera hanya dinyalakan saat isActive == true.
   final bool isActive;
-  final VoidCallback? onSwitchToUpload;
+  final void Function(int tabIndex)? onSwitchToUpload;
 
-  const AiCamScreen({super.key, this.isActive = false, this.onSwitchToUpload});
+  const AiCamScreen({
+    super.key,
+    this.isActive = false,
+    this.onSwitchToUpload,
+  });
 
   @override
   State<AiCamScreen> createState() => _AiCamScreenState();
@@ -32,6 +39,12 @@ class _AiCamScreenState extends State<AiCamScreen> with WidgetsBindingObserver {
   bool _permissionDenied = false;
   bool _isInitializing = false; // Guard agar tidak ada inisialisasi paralel
   bool _isCapturing = false; // Guard saat proses pengambilan foto & simpan
+
+  // Video recording state
+  CameraMode _mode = CameraMode.photo;
+  bool _isRecording = false;
+  int _recordingSeconds = 0;
+  Timer? _recordingTimer;
 
   @override
   void initState() {
@@ -56,6 +69,7 @@ class _AiCamScreenState extends State<AiCamScreen> with WidgetsBindingObserver {
       // Tab baru saja jadi tidak aktif → matikan kamera & timer
       _disposeCamera();
       _stopTimer();
+      _stopRecordingTimer();
     }
   }
 
@@ -83,6 +97,10 @@ class _AiCamScreenState extends State<AiCamScreen> with WidgetsBindingObserver {
 
   /// Dispose kamera dengan aman, menghindari double-dispose.
   Future<void> _disposeCamera() async {
+    if (_isRecording) {
+      _stopRecordingTimer();
+      _isRecording = false;
+    }
     final controllerToDispose = _controller;
     _controller = null;
     if (controllerToDispose != null) {
@@ -178,6 +196,23 @@ class _AiCamScreenState extends State<AiCamScreen> with WidgetsBindingObserver {
     _timer = null;
   }
 
+  void _startRecordingTimer() {
+    _recordingSeconds = 0;
+    _recordingTimer?.cancel();
+    _recordingTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (mounted) {
+        setState(() {
+          _recordingSeconds++;
+        });
+      }
+    });
+  }
+
+  void _stopRecordingTimer() {
+    _recordingTimer?.cancel();
+    _recordingTimer = null;
+  }
+
   void _toggleFlash() async {
     if (_controller == null || !_controller!.value.isInitialized) return;
     try {
@@ -201,6 +236,12 @@ class _AiCamScreenState extends State<AiCamScreen> with WidgetsBindingObserver {
   String get _formattedTime {
     int m = _liveSeconds ~/ 60;
     int s = _liveSeconds % 60;
+    return '${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
+  }
+
+  String get _formattedRecordingTime {
+    int m = _recordingSeconds ~/ 60;
+    int s = _recordingSeconds % 60;
     return '${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
   }
 
@@ -306,13 +347,15 @@ class _AiCamScreenState extends State<AiCamScreen> with WidgetsBindingObserver {
         // Mulai proses upload di background provider
         uploadProvider.uploadPhoto(photo);
 
-        // Beralih ke halaman UploadScreen
+        // Beralih ke halaman UploadScreen (Tab 0: Foto)
         if (widget.onSwitchToUpload != null) {
-          widget.onSwitchToUpload!();
+          widget.onSwitchToUpload!(0);
         } else {
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => const UploadScreen()),
+            MaterialPageRoute(
+              builder: (context) => const UploadScreen(initialTab: 0),
+            ),
           );
         }
       }
@@ -336,10 +379,160 @@ class _AiCamScreenState extends State<AiCamScreen> with WidgetsBindingObserver {
     }
   }
 
+  /// Memulai perekaman video kamera
+  Future<void> _startVideoRecording() async {
+    if (_controller == null || !_controller!.value.isInitialized) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Kamera belum siap'),
+          backgroundColor: Colors.redAccent,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    if (_isRecording) return;
+
+    try {
+      await _controller!.startVideoRecording();
+      setState(() {
+        _isRecording = true;
+      });
+      _startRecordingTimer();
+    } catch (e) {
+      debugPrint("Error starting video recording: $e");
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Gagal memulai perekaman video: $e'),
+            backgroundColor: Colors.redAccent,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
+  }
+
+  /// Menghentikan perekaman video dan menampilkan modal preview sebelum upload
+  Future<void> _stopVideoRecording() async {
+    if (_controller == null || !_controller!.value.isRecordingVideo) {
+      return;
+    }
+
+    try {
+      _stopRecordingTimer();
+      final XFile videoFile = await _controller!.stopVideoRecording();
+      setState(() {
+        _isRecording = false;
+      });
+
+      if (!mounted) return;
+
+      // Buka modal preview video rekaman
+      _showRecordedVideoPreview(videoFile);
+    } catch (e) {
+      debugPrint("Error stopping video recording: $e");
+      if (mounted) {
+        setState(() {
+          _isRecording = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Gagal menyelesaikan rekaman video: $e'),
+            backgroundColor: Colors.redAccent,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
+  }
+
+  /// Menampilkan dialog preview video yang baru direkam
+  void _showRecordedVideoPreview(XFile videoFile) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => RecordedVideoPreviewDialog(
+        videoFile: videoFile,
+        onConfirmUpload: () async {
+          // 1. Simpan video ke Galeri (Mobile) atau Downloads (Web)
+          try {
+            if (kIsWeb) {
+              final timestamp = DateTime.now().millisecondsSinceEpoch;
+              final fileName = 'uvip_video_$timestamp.mp4';
+              await videoFile.saveTo(fileName);
+            } else {
+              final hasAccess = await Gal.hasAccess(toAlbum: false);
+              if (!hasAccess) {
+                await Gal.requestAccess(toAlbum: false);
+              }
+              await Gal.putVideo(videoFile.path);
+            }
+          } catch (saveErr) {
+            debugPrint("Error saving video: $saveErr");
+          }
+
+          // 2. Upload video via UploadProvider
+          if (mounted) {
+            final uploadProvider = Provider.of<UploadProvider>(
+              context,
+              listen: false,
+            );
+            uploadProvider.uploadVideo(videoFile);
+
+            // 3. Switch ke tab Upload (Tab 1: Video)
+            if (widget.onSwitchToUpload != null) {
+              widget.onSwitchToUpload!(1);
+            } else {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const UploadScreen(initialTab: 1),
+                ),
+              );
+            }
+
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Row(
+                  children: [
+                    Icon(Icons.check_circle, color: Colors.white, size: 20),
+                    SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Video berhasil disimpan & dialihkan ke Upload',
+                      ),
+                    ),
+                  ],
+                ),
+                backgroundColor: Colors.green,
+                behavior: SnackBarBehavior.floating,
+                duration: Duration(seconds: 2),
+              ),
+            );
+          }
+        },
+        onCancel: () {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Perekaman video dibatalkan'),
+                duration: Duration(seconds: 1),
+                behavior: SnackBarBehavior.floating,
+              ),
+            );
+          }
+        },
+      ),
+    );
+  }
+
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _timer?.cancel();
+    _stopRecordingTimer();
     _controller?.dispose();
     _controller = null;
     super.dispose();
@@ -407,12 +600,12 @@ class _AiCamScreenState extends State<AiCamScreen> with WidgetsBindingObserver {
                     ),
                   )
                 : _controller != null && _controller!.value.isInitialized
-                ? CameraPreview(_controller!)
-                : const Center(
-                    child: CircularProgressIndicator(
-                      color: AppTheme.primaryColor,
-                    ),
-                  ),
+                    ? CameraPreview(_controller!)
+                    : const Center(
+                        child: CircularProgressIndicator(
+                          color: AppTheme.primaryColor,
+                        ),
+                      ),
           ),
 
           // Safe Area for UI Overlays
@@ -459,41 +652,75 @@ class _AiCamScreenState extends State<AiCamScreen> with WidgetsBindingObserver {
                   ),
                   const SizedBox(height: 8),
 
-                  // Sub-top Row (Live timer & Location)
+                  // Sub-top Row (Live timer & Location / Recording Badge)
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      // Live Badge
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12.0,
-                          vertical: 6.0,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.black45,
-                          borderRadius: BorderRadius.circular(16.0),
-                        ),
-                        child: Row(
-                          children: [
-                            Container(
-                              width: 8,
-                              height: 8,
-                              decoration: const BoxDecoration(
-                                color: Colors.redAccent,
-                                shape: BoxShape.circle,
+                      // Recording Badge or Live Badge
+                      if (_isRecording)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 14.0,
+                            vertical: 6.0,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.redAccent.withValues(alpha: 0.9),
+                            borderRadius: BorderRadius.circular(16.0),
+                          ),
+                          child: Row(
+                            children: [
+                              Container(
+                                width: 10,
+                                height: 10,
+                                decoration: const BoxDecoration(
+                                  color: Colors.white,
+                                  shape: BoxShape.circle,
+                                ),
                               ),
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              'Live $_formattedTime',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
+                              const SizedBox(width: 8),
+                              Text(
+                                'REC $_formattedRecordingTime',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 13,
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
+                        )
+                      else
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12.0,
+                            vertical: 6.0,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.black45,
+                            borderRadius: BorderRadius.circular(16.0),
+                          ),
+                          child: Row(
+                            children: [
+                              Container(
+                                width: 8,
+                                height: 8,
+                                decoration: const BoxDecoration(
+                                  color: Colors.redAccent,
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                'Live $_formattedTime',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
+
                       // Location Chip
                       Container(
                         padding: const EdgeInsets.symmetric(
@@ -504,15 +731,15 @@ class _AiCamScreenState extends State<AiCamScreen> with WidgetsBindingObserver {
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(16.0),
                         ),
-                        child: Row(
+                        child: const Row(
                           children: [
-                            const Icon(
+                            Icon(
                               Icons.location_on,
                               color: AppTheme.primaryColor,
                               size: 16,
                             ),
-                            const SizedBox(width: 4),
-                            const Text(
+                            SizedBox(width: 4),
+                            Text(
                               'Jl. Ijen',
                               style: TextStyle(
                                 color: AppTheme.primaryColor,
@@ -576,7 +803,7 @@ class _AiCamScreenState extends State<AiCamScreen> with WidgetsBindingObserver {
 
                   const Spacer(),
 
-                  // Bottom Controls (Auto Capture + Shutter Capture Button)
+                  // Bottom Controls (Mode Switcher & Shutter Capture Button)
                   Center(
                     child: Padding(
                       padding: const EdgeInsets.only(
@@ -585,36 +812,102 @@ class _AiCamScreenState extends State<AiCamScreen> with WidgetsBindingObserver {
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          // Auto Capture Button
-                          ElevatedButton.icon(
-                            onPressed: () {},
-                            icon: const Icon(Icons.timer_outlined, size: 18),
-                            label: const Text(
-                              'Auto Capture',
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 13,
+                          // Mode Switcher (Foto vs Video)
+                          if (!_isRecording) ...[
+                            Container(
+                              padding: const EdgeInsets.all(4),
+                              decoration: BoxDecoration(
+                                color: Colors.black54,
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  GestureDetector(
+                                    onTap: () {
+                                      setState(() {
+                                        _mode = CameraMode.photo;
+                                      });
+                                    },
+                                    child: AnimatedContainer(
+                                      duration:
+                                          const Duration(milliseconds: 200),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 16,
+                                        vertical: 6,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: _mode == CameraMode.photo
+                                            ? Colors.white
+                                            : Colors.transparent,
+                                        borderRadius:
+                                            BorderRadius.circular(16),
+                                      ),
+                                      child: Text(
+                                        'FOTO',
+                                        style: TextStyle(
+                                          color: _mode == CameraMode.photo
+                                              ? Colors.black87
+                                              : Colors.white70,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  GestureDetector(
+                                    onTap: () {
+                                      setState(() {
+                                        _mode = CameraMode.video;
+                                      });
+                                    },
+                                    child: AnimatedContainer(
+                                      duration:
+                                          const Duration(milliseconds: 200),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 16,
+                                        vertical: 6,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: _mode == CameraMode.video
+                                            ? Colors.white
+                                            : Colors.transparent,
+                                        borderRadius:
+                                            BorderRadius.circular(16),
+                                      ),
+                                      child: Text(
+                                        'VIDEO',
+                                        style: TextStyle(
+                                          color: _mode == CameraMode.video
+                                              ? Colors.black87
+                                              : Colors.white70,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.white.withValues(
-                                alpha: 0.9,
-                              ),
-                              foregroundColor: Colors.black87,
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 20,
-                                vertical: 8,
-                              ),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(20.0),
-                              ),
-                              elevation: 2,
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          // Camera Button
+                            const SizedBox(height: 16),
+                          ],
+
+                          // Shutter / Record Button
                           GestureDetector(
-                            onTap: _isCapturing ? null : _takePictureAndUpload,
+                            onTap: _isCapturing
+                                ? null
+                                : () {
+                                    if (_mode == CameraMode.photo) {
+                                      _takePictureAndUpload();
+                                    } else {
+                                      if (_isRecording) {
+                                        _stopVideoRecording();
+                                      } else {
+                                        _startVideoRecording();
+                                      }
+                                    }
+                                  },
                             child: Container(
                               width: 76,
                               height: 76,
@@ -622,7 +915,9 @@ class _AiCamScreenState extends State<AiCamScreen> with WidgetsBindingObserver {
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
                                 border: Border.all(
-                                  color: Colors.white,
+                                  color: _isRecording
+                                      ? Colors.redAccent
+                                      : Colors.white,
                                   width: 4,
                                 ),
                                 boxShadow: [
@@ -636,9 +931,13 @@ class _AiCamScreenState extends State<AiCamScreen> with WidgetsBindingObserver {
                               child: Container(
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
-                                  color: _isCapturing
-                                      ? Colors.white.withValues(alpha: 0.7)
-                                      : Colors.white,
+                                  color: _isRecording
+                                      ? Colors.redAccent.withValues(alpha: 0.2)
+                                      : (_isCapturing
+                                          ? Colors.white.withValues(alpha: 0.7)
+                                          : (_mode == CameraMode.photo
+                                              ? Colors.white
+                                              : Colors.redAccent)),
                                 ),
                                 child: Center(
                                   child: _isCapturing
@@ -649,15 +948,33 @@ class _AiCamScreenState extends State<AiCamScreen> with WidgetsBindingObserver {
                                             strokeWidth: 3,
                                             valueColor:
                                                 AlwaysStoppedAnimation<Color>(
-                                                  AppTheme.primaryColor,
-                                                ),
+                                              AppTheme.primaryColor,
+                                            ),
                                           ),
                                         )
-                                      : const Icon(
-                                          Icons.camera_alt,
-                                          color: AppTheme.primaryColor,
-                                          size: 32,
-                                        ),
+                                      : (_mode == CameraMode.photo
+                                          ? const Icon(
+                                              Icons.camera_alt,
+                                              color: AppTheme.primaryColor,
+                                              size: 32,
+                                            )
+                                          : (_isRecording
+                                              ? Container(
+                                                  width: 28,
+                                                  height: 28,
+                                                  decoration: BoxDecoration(
+                                                    color: Colors.redAccent,
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                      6,
+                                                    ),
+                                                  ),
+                                                )
+                                              : const Icon(
+                                                  Icons.videocam_rounded,
+                                                  color: Colors.white,
+                                                  size: 32,
+                                                ))),
                                 ),
                               ),
                             ),
