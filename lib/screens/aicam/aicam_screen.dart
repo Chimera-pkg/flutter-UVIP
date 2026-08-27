@@ -9,6 +9,7 @@ import 'package:uvip/core/theme/app_theme.dart';
 import 'package:uvip/providers/aicam_provider.dart';
 import 'package:uvip/providers/upload_provider.dart';
 import 'package:uvip/screens/upload/upload_screen.dart';
+import 'package:uvip/widgets/object_detector_box.dart';
 import 'package:uvip/widgets/recorded_video_preview_dialog.dart';
 
 enum CameraMode { photo, video }
@@ -19,11 +20,7 @@ class AiCamScreen extends StatefulWidget {
   final bool isActive;
   final void Function(int tabIndex)? onSwitchToUpload;
 
-  const AiCamScreen({
-    super.key,
-    this.isActive = false,
-    this.onSwitchToUpload,
-  });
+  const AiCamScreen({super.key, this.isActive = false, this.onSwitchToUpload});
 
   @override
   State<AiCamScreen> createState() => _AiCamScreenState();
@@ -45,6 +42,7 @@ class _AiCamScreenState extends State<AiCamScreen> with WidgetsBindingObserver {
   bool _isRecording = false;
   int _recordingSeconds = 0;
   Timer? _recordingTimer;
+  bool _isStreaming = false; // Guard untuk image stream ML Kit
 
   @override
   void initState() {
@@ -67,6 +65,7 @@ class _AiCamScreenState extends State<AiCamScreen> with WidgetsBindingObserver {
       _startTimer();
     } else if (!widget.isActive && oldWidget.isActive) {
       // Tab baru saja jadi tidak aktif → matikan kamera & timer
+      _stopImageStream();
       _disposeCamera();
       _stopTimer();
       _stopRecordingTimer();
@@ -100,6 +99,11 @@ class _AiCamScreenState extends State<AiCamScreen> with WidgetsBindingObserver {
     if (_isRecording) {
       _stopRecordingTimer();
       _isRecording = false;
+    }
+    _stopImageStream();
+    // Bersihkan deteksi saat kamera mati
+    if (mounted) {
+      Provider.of<AiCamProvider>(context, listen: false).clearDetections();
     }
     final controllerToDispose = _controller;
     _controller = null;
@@ -148,10 +152,14 @@ class _AiCamScreenState extends State<AiCamScreen> with WidgetsBindingObserver {
       if (_cameras != null && _cameras!.isNotEmpty) {
         // Gunakan Medium resolution dan matikan audio (enableAudio: false)
         // Jika enableAudio true (default), aplikasi akan force close karena tidak ada izin RECORD_AUDIO
+        // imageFormatGroup: nv21 WAJIB untuk ML Kit Object Detection di Android
         final controller = CameraController(
           _cameras![0],
           ResolutionPreset.medium,
           enableAudio: false,
+          imageFormatGroup: defaultTargetPlatform == TargetPlatform.android
+              ? ImageFormatGroup.nv21
+              : ImageFormatGroup.bgra8888,
         );
 
         // Cek lagi sebelum initialize — user mungkin sudah pindah tab
@@ -170,6 +178,11 @@ class _AiCamScreenState extends State<AiCamScreen> with WidgetsBindingObserver {
           _controller = null;
           return;
         }
+
+        // Init ML Kit ObjectDetector & start image stream
+        final provider = Provider.of<AiCamProvider>(context, listen: false);
+        provider.initDetector();
+        _startImageStream();
 
         setState(() {});
       }
@@ -265,6 +278,9 @@ class _AiCamScreenState extends State<AiCamScreen> with WidgetsBindingObserver {
     });
 
     try {
+      // WAJIB: stop image stream sebelum takePicture (tidak bisa berjalan bersamaan)
+      _stopImageStream();
+
       // 1. Ambil foto menggunakan controller kamera
       final XFile photo = await _controller!.takePicture();
 
@@ -375,6 +391,8 @@ class _AiCamScreenState extends State<AiCamScreen> with WidgetsBindingObserver {
         setState(() {
           _isCapturing = false;
         });
+        // Restart image stream setelah capture selesai
+        _startImageStream();
       }
     }
   }
@@ -395,6 +413,9 @@ class _AiCamScreenState extends State<AiCamScreen> with WidgetsBindingObserver {
     if (_isRecording) return;
 
     try {
+      // WAJIB: stop image stream sebelum startVideoRecording
+      _stopImageStream();
+
       await _controller!.startVideoRecording();
       setState(() {
         _isRecording = true;
@@ -426,6 +447,9 @@ class _AiCamScreenState extends State<AiCamScreen> with WidgetsBindingObserver {
       setState(() {
         _isRecording = false;
       });
+
+      // Restart image stream setelah recording selesai
+      _startImageStream();
 
       if (!mounted) return;
 
@@ -528,11 +552,41 @@ class _AiCamScreenState extends State<AiCamScreen> with WidgetsBindingObserver {
     );
   }
 
+  /// Start streaming frame kamera ke ML Kit untuk object detection.
+  void _startImageStream() {
+    if (_isStreaming) return;
+    final controller = _controller;
+    if (controller == null || !controller.value.isInitialized) return;
+
+    final camera = _cameras![0];
+    final provider = Provider.of<AiCamProvider>(context, listen: false);
+
+    controller.startImageStream((CameraImage image) {
+      // Gunakan ukuran layar saat ini sebagai target mapping
+      if (!mounted || !widget.isActive) return;
+      final screenSize = MediaQuery.of(context).size;
+      provider.processFrame(image, camera, screenSize);
+    });
+    _isStreaming = true;
+  }
+
+  /// Stop image stream.
+  void _stopImageStream() {
+    if (!_isStreaming) return;
+    try {
+      _controller?.stopImageStream();
+    } catch (e) {
+      debugPrint('Error stopping image stream: $e');
+    }
+    _isStreaming = false;
+  }
+
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _timer?.cancel();
     _stopRecordingTimer();
+    _stopImageStream();
     _controller?.dispose();
     _controller = null;
     super.dispose();
@@ -600,13 +654,31 @@ class _AiCamScreenState extends State<AiCamScreen> with WidgetsBindingObserver {
                     ),
                   )
                 : _controller != null && _controller!.value.isInitialized
-                    ? CameraPreview(_controller!)
-                    : const Center(
-                        child: CircularProgressIndicator(
-                          color: AppTheme.primaryColor,
-                        ),
-                      ),
+                ? CameraPreview(_controller!)
+                : const Center(
+                    child: CircularProgressIndicator(
+                      color: AppTheme.primaryColor,
+                    ),
+                  ),
           ),
+
+          // ─── Bounding Box Overlay (ML Kit Object Detection) ───
+          if (_controller != null && _controller!.value.isInitialized)
+            Consumer<AiCamProvider>(
+              builder: (context, provider, child) {
+                print(provider.detectedObjects);
+                return Stack(
+                  children: provider.detectedObjects.map((obj) {
+                    return ObjectDetectorBox(
+                      rect: obj.rect,
+                      label: obj.label,
+                      score: obj.score,
+                      color: obj.color,
+                    );
+                  }).toList(),
+                );
+              },
+            ),
 
           // Safe Area for UI Overlays
           SafeArea(
@@ -830,8 +902,9 @@ class _AiCamScreenState extends State<AiCamScreen> with WidgetsBindingObserver {
                                       });
                                     },
                                     child: AnimatedContainer(
-                                      duration:
-                                          const Duration(milliseconds: 200),
+                                      duration: const Duration(
+                                        milliseconds: 200,
+                                      ),
                                       padding: const EdgeInsets.symmetric(
                                         horizontal: 16,
                                         vertical: 6,
@@ -840,8 +913,7 @@ class _AiCamScreenState extends State<AiCamScreen> with WidgetsBindingObserver {
                                         color: _mode == CameraMode.photo
                                             ? Colors.white
                                             : Colors.transparent,
-                                        borderRadius:
-                                            BorderRadius.circular(16),
+                                        borderRadius: BorderRadius.circular(16),
                                       ),
                                       child: Text(
                                         'FOTO',
@@ -862,8 +934,9 @@ class _AiCamScreenState extends State<AiCamScreen> with WidgetsBindingObserver {
                                       });
                                     },
                                     child: AnimatedContainer(
-                                      duration:
-                                          const Duration(milliseconds: 200),
+                                      duration: const Duration(
+                                        milliseconds: 200,
+                                      ),
                                       padding: const EdgeInsets.symmetric(
                                         horizontal: 16,
                                         vertical: 6,
@@ -872,8 +945,7 @@ class _AiCamScreenState extends State<AiCamScreen> with WidgetsBindingObserver {
                                         color: _mode == CameraMode.video
                                             ? Colors.white
                                             : Colors.transparent,
-                                        borderRadius:
-                                            BorderRadius.circular(16),
+                                        borderRadius: BorderRadius.circular(16),
                                       ),
                                       child: Text(
                                         'VIDEO',
@@ -934,10 +1006,12 @@ class _AiCamScreenState extends State<AiCamScreen> with WidgetsBindingObserver {
                                   color: _isRecording
                                       ? Colors.redAccent.withValues(alpha: 0.2)
                                       : (_isCapturing
-                                          ? Colors.white.withValues(alpha: 0.7)
-                                          : (_mode == CameraMode.photo
-                                              ? Colors.white
-                                              : Colors.redAccent)),
+                                            ? Colors.white.withValues(
+                                                alpha: 0.7,
+                                              )
+                                            : (_mode == CameraMode.photo
+                                                  ? Colors.white
+                                                  : Colors.redAccent)),
                                 ),
                                 child: Center(
                                   child: _isCapturing
@@ -948,33 +1022,33 @@ class _AiCamScreenState extends State<AiCamScreen> with WidgetsBindingObserver {
                                             strokeWidth: 3,
                                             valueColor:
                                                 AlwaysStoppedAnimation<Color>(
-                                              AppTheme.primaryColor,
-                                            ),
+                                                  AppTheme.primaryColor,
+                                                ),
                                           ),
                                         )
                                       : (_mode == CameraMode.photo
-                                          ? const Icon(
-                                              Icons.camera_alt,
-                                              color: AppTheme.primaryColor,
-                                              size: 32,
-                                            )
-                                          : (_isRecording
-                                              ? Container(
-                                                  width: 28,
-                                                  height: 28,
-                                                  decoration: BoxDecoration(
-                                                    color: Colors.redAccent,
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                      6,
-                                                    ),
-                                                  ),
-                                                )
-                                              : const Icon(
-                                                  Icons.videocam_rounded,
-                                                  color: Colors.white,
-                                                  size: 32,
-                                                ))),
+                                            ? const Icon(
+                                                Icons.camera_alt,
+                                                color: AppTheme.primaryColor,
+                                                size: 32,
+                                              )
+                                            : (_isRecording
+                                                  ? Container(
+                                                      width: 28,
+                                                      height: 28,
+                                                      decoration: BoxDecoration(
+                                                        color: Colors.redAccent,
+                                                        borderRadius:
+                                                            BorderRadius.circular(
+                                                              6,
+                                                            ),
+                                                      ),
+                                                    )
+                                                  : const Icon(
+                                                      Icons.videocam_rounded,
+                                                      color: Colors.white,
+                                                      size: 32,
+                                                    ))),
                                 ),
                               ),
                             ),
