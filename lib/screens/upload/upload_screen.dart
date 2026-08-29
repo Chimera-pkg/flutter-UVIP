@@ -20,11 +20,13 @@ class UploadScreen extends StatefulWidget {
 
 class _UploadScreenState extends State<UploadScreen> {
   late int _currentTab;
+  final ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
     super.initState();
     _currentTab = widget.initialTab;
+    _scrollController.addListener(_onScroll);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final provider = Provider.of<UploadProvider>(context, listen: false);
       if (_currentTab == 0) {
@@ -40,6 +42,28 @@ class _UploadScreenState extends State<UploadScreen> {
     super.didUpdateWidget(oldWidget);
     if (widget.initialTab != oldWidget.initialTab) {
       _onTabChanged(widget.initialTab);
+    }
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - 200) {
+      final provider = Provider.of<UploadProvider>(context, listen: false);
+      if (_currentTab == 0) {
+        if (!provider.isFetchingMorePhotos) {
+          provider.fetchStreetPhotos(isLoadMore: true);
+        }
+      } else {
+        if (!provider.isFetchingMoreVideos) {
+          provider.fetchStreetVideos(isLoadMore: true);
+        }
+      }
     }
   }
 
@@ -289,6 +313,7 @@ class _UploadScreenState extends State<UploadScreen> {
               }
             },
             child: SingleChildScrollView(
+              controller: _scrollController,
               physics: const AlwaysScrollableScrollPhysics(),
               padding: const EdgeInsets.symmetric(
                 horizontal: 24.0,
@@ -573,6 +598,11 @@ class _UploadScreenState extends State<UploadScreen> {
                           );
                         },
                       ),
+                      if (provider.isFetchingMorePhotos)
+                        const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 16.0),
+                          child: Center(child: CircularProgressIndicator()),
+                        ),
                     ] else if (!provider.isUploading) ...[
                       Center(
                         child: Padding(
@@ -629,6 +659,11 @@ class _UploadScreenState extends State<UploadScreen> {
                           );
                         },
                       ),
+                      if (provider.isFetchingMoreVideos)
+                        const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 16.0),
+                          child: Center(child: CircularProgressIndicator()),
+                        ),
                     ] else if (!provider.isUploading) ...[
                       Center(
                         child: Padding(

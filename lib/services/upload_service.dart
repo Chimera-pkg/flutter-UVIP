@@ -4,9 +4,9 @@ import 'package:uvip/core/network/dio_client.dart';
 class UploadService {
   final Dio _dio = DioClient.instance;
 
-  Future<Response> getStreetPhotos() async {
+  Future<Response> getStreetPhotos({int page = 1, int size = 10}) async {
     try {
-      final response = await _dio.get('/street-photos/');
+      final response = await _dio.get('/street-photos/', queryParameters: {'page': page, 'size': size});
       return response;
     } catch (e) {
       rethrow;
@@ -48,9 +48,9 @@ class UploadService {
     }
   }
 
-  Future<Response> getStreetVideos() async {
+  Future<Response> getStreetVideos({int page = 1, int size = 10}) async {
     try {
-      final response = await _dio.get('/street-videos/');
+      final response = await _dio.get('/street-videos/', queryParameters: {'page': page, 'size': size});
       return response;
     } catch (e) {
       rethrow;

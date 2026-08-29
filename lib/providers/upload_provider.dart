@@ -26,25 +26,66 @@ class UploadProvider with ChangeNotifier {
   String? _errorMessage;
   String? get errorMessage => _errorMessage;
 
+  // Pagination for photos
+  int _photoCurrentPage = 1;
+  int _photoTotalPages = 1;
+  bool _isFetchingMorePhotos = false;
+  bool get isFetchingMorePhotos => _isFetchingMorePhotos;
+  final int _photoSize = 10;
+  int _totalPhotoData = 0;
+  int get totalPhotoData => _totalPhotoData;
+
+  // Pagination for videos
+  int _videoCurrentPage = 1;
+  int _videoTotalPages = 1;
+  bool _isFetchingMoreVideos = false;
+  bool get isFetchingMoreVideos => _isFetchingMoreVideos;
+  final int _videoSize = 10;
+  int _totalVideoData = 0;
+  int get totalVideoData => _totalVideoData;
+
   // ===================== PHOTOS =====================
 
-  Future<void> fetchStreetPhotos() async {
-    _isLoading = true;
-    _errorMessage = null;
-    notifyListeners();
+  Future<void> fetchStreetPhotos({bool isLoadMore = false}) async {
+    if (isLoadMore) {
+      if (_photoCurrentPage >= _photoTotalPages || _isFetchingMorePhotos) return;
+      _isFetchingMorePhotos = true;
+      _photoCurrentPage++;
+      notifyListeners();
+    } else {
+      _isLoading = true;
+      _photoCurrentPage = 1;
+      _uploadedPhotos.clear();
+      _errorMessage = null;
+      notifyListeners();
+    }
 
     try {
-      final response = await _uploadService.getStreetPhotos();
+      final response = await _uploadService.getStreetPhotos(page: _photoCurrentPage, size: _photoSize);
       if (response.statusCode == 200) {
-        final List<dynamic> data = response.data;
-        _uploadedPhotos = data
-            .map((json) => StreetPhotoModel.fromJson(json))
-            .toList();
+        final data = response.data;
+        if (data is Map<String, dynamic> && data.containsKey('data')) {
+          _photoTotalPages = data['total_pages'] ?? 1;
+          _totalPhotoData = data['total_data'] ?? 0;
+          final List<dynamic> listData = data['data'] ?? [];
+          final newPhotos = listData.map((json) => StreetPhotoModel.fromJson(json)).toList();
+          _uploadedPhotos.addAll(newPhotos);
+        } else if (data is List) {
+          final newPhotos = data.map((json) => StreetPhotoModel.fromJson(json)).toList();
+          _uploadedPhotos.addAll(newPhotos);
+        }
       }
     } catch (e) {
       _errorMessage = 'Failed to load photos: $e';
+      if (isLoadMore) {
+        _photoCurrentPage--;
+      }
     } finally {
-      _isLoading = false;
+      if (isLoadMore) {
+        _isFetchingMorePhotos = false;
+      } else {
+        _isLoading = false;
+      }
       notifyListeners();
     }
   }
@@ -159,23 +200,46 @@ class UploadProvider with ChangeNotifier {
 
   // ===================== VIDEOS =====================
 
-  Future<void> fetchStreetVideos() async {
-    _isLoading = true;
-    _errorMessage = null;
-    notifyListeners();
+  Future<void> fetchStreetVideos({bool isLoadMore = false}) async {
+    if (isLoadMore) {
+      if (_videoCurrentPage >= _videoTotalPages || _isFetchingMoreVideos) return;
+      _isFetchingMoreVideos = true;
+      _videoCurrentPage++;
+      notifyListeners();
+    } else {
+      _isLoading = true;
+      _videoCurrentPage = 1;
+      _uploadedVideos.clear();
+      _errorMessage = null;
+      notifyListeners();
+    }
 
     try {
-      final response = await _uploadService.getStreetVideos();
+      final response = await _uploadService.getStreetVideos(page: _videoCurrentPage, size: _videoSize);
       if (response.statusCode == 200) {
-        final List<dynamic> data = response.data;
-        _uploadedVideos = data
-            .map((json) => StreetVideoModel.fromJson(json))
-            .toList();
+        final data = response.data;
+        if (data is Map<String, dynamic> && data.containsKey('data')) {
+          _videoTotalPages = data['total_pages'] ?? 1;
+          _totalVideoData = data['total_data'] ?? 0;
+          final List<dynamic> listData = data['data'] ?? [];
+          final newVideos = listData.map((json) => StreetVideoModel.fromJson(json)).toList();
+          _uploadedVideos.addAll(newVideos);
+        } else if (data is List) {
+          final newVideos = data.map((json) => StreetVideoModel.fromJson(json)).toList();
+          _uploadedVideos.addAll(newVideos);
+        }
       }
     } catch (e) {
       _errorMessage = 'Failed to load videos: $e';
+      if (isLoadMore) {
+        _videoCurrentPage--;
+      }
     } finally {
-      _isLoading = false;
+      if (isLoadMore) {
+        _isFetchingMoreVideos = false;
+      } else {
+        _isLoading = false;
+      }
       notifyListeners();
     }
   }
