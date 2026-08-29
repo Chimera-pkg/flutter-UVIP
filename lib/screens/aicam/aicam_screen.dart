@@ -416,9 +416,19 @@ class _AiCamScreenState extends State<AiCamScreen> with WidgetsBindingObserver {
       // WAJIB: stop image stream sebelum startVideoRecording
       _stopImageStream();
 
-      await _controller!.startVideoRecording();
+      final camera = _cameras![0];
+      final provider = Provider.of<AiCamProvider>(context, listen: false);
+
+      await _controller!.startVideoRecording(
+        onAvailable: (CameraImage image) {
+          if (!mounted || !widget.isActive) return;
+          final screenSize = MediaQuery.of(context).size;
+          provider.processFrame(image, camera, screenSize);
+        },
+      );
       setState(() {
         _isRecording = true;
+        _isStreaming = true;
       });
       _startRecordingTimer();
     } catch (e) {
@@ -446,6 +456,7 @@ class _AiCamScreenState extends State<AiCamScreen> with WidgetsBindingObserver {
       final XFile videoFile = await _controller!.stopVideoRecording();
       setState(() {
         _isRecording = false;
+        _isStreaming = false;
       });
 
       // Restart image stream setelah recording selesai
@@ -666,7 +677,6 @@ class _AiCamScreenState extends State<AiCamScreen> with WidgetsBindingObserver {
           if (_controller != null && _controller!.value.isInitialized)
             Consumer<AiCamProvider>(
               builder: (context, provider, child) {
-                print(provider.detectedObjects);
                 return Stack(
                   children: provider.detectedObjects.map((obj) {
                     return ObjectDetectorBox(
