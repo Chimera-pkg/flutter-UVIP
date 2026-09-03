@@ -8,6 +8,7 @@ import 'package:uvip/widgets/summary_card.dart';
 import 'package:uvip/widgets/survey_item_tile.dart';
 import 'package:uvip/widgets/common/section_header.dart';
 import 'package:uvip/widgets/common/time_filter_dropdown.dart';
+
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
@@ -34,7 +35,8 @@ class HomeScreen extends StatelessWidget {
                       children: [
                         Text(
                           'Selamat pagi, ${authProvider.user?.name ?? 'User'}',
-                          style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                          style: Theme.of(context).textTheme.headlineMedium
+                              ?.copyWith(
                                 fontWeight: FontWeight.bold,
                                 color: Colors.black, // Dark color
                               ),
@@ -53,7 +55,7 @@ class HomeScreen extends StatelessWidget {
                   _buildChartCard(context, provider),
 
                   const SizedBox(height: 16),
-                  
+
                   // UVI Average Score below chart
                   Center(
                     child: RichText(
@@ -175,7 +177,10 @@ class HomeScreen extends StatelessWidget {
                               const Expanded(
                                 child: Text(
                                   '75% Selesai',
-                                  style: TextStyle(color: Colors.white70, fontSize: 12),
+                                  style: TextStyle(
+                                    color: Colors.white70,
+                                    fontSize: 12,
+                                  ),
                                 ),
                               ),
                               ElevatedButton(
@@ -186,7 +191,10 @@ class HomeScreen extends StatelessWidget {
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(8),
                                   ),
-                                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 20,
+                                    vertical: 10,
+                                  ),
                                 ),
                                 child: const Text(
                                   'Lanjutkan',
@@ -203,7 +211,9 @@ class HomeScreen extends StatelessWidget {
                               value: 0.75,
                               minHeight: 6,
                               backgroundColor: Colors.white24,
-                              valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                AppTheme.primaryColor,
+                              ),
                             ),
                           ),
                         ],
@@ -250,31 +260,11 @@ class HomeScreen extends StatelessWidget {
                   Text(
                     'Urban Visual Intelligence Platform',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Colors.black87,
-                          fontSize: 10,
-                        ),
+                      color: Colors.black87,
+                      fontSize: 10,
+                    ),
                   ),
                 ],
-              ),
-            ],
-          ),
-          Stack(
-            children: [
-              const Icon(
-                Icons.notifications_none_outlined,
-                size: 32,
-              ),
-              Positioned(
-                right: 2,
-                top: 2,
-                child: Container(
-                  width: 10,
-                  height: 10,
-                  decoration: const BoxDecoration(
-                    color: AppTheme.primaryColor, // or Red based on design, image looks teal/green
-                    shape: BoxShape.circle,
-                  ),
-                ),
               ),
             ],
           ),
@@ -353,8 +343,12 @@ class HomeScreen extends StatelessWidget {
                   ),
                   titlesData: FlTitlesData(
                     show: true,
-                    rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                    topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                    rightTitles: const AxisTitles(
+                      sideTitles: SideTitles(showTitles: false),
+                    ),
+                    topTitles: const AxisTitles(
+                      sideTitles: SideTitles(showTitles: false),
+                    ),
                     leftTitles: AxisTitles(
                       sideTitles: SideTitles(
                         showTitles: true,
@@ -363,7 +357,10 @@ class HomeScreen extends StatelessWidget {
                         getTitlesWidget: (value, meta) {
                           return Text(
                             value.toInt().toString(),
-                            style: const TextStyle(color: Colors.white70, fontSize: 10),
+                            style: const TextStyle(
+                              color: Colors.white70,
+                              fontSize: 10,
+                            ),
                           );
                         },
                       ),
@@ -374,13 +371,23 @@ class HomeScreen extends StatelessWidget {
                         reservedSize: 22,
                         interval: 1,
                         getTitlesWidget: (value, meta) {
-                          final days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
-                          if (value.toInt() >= 0 && value.toInt() < days.length) {
+                          final days = [
+                            'Monday',
+                            'Tuesday',
+                            'Wednesday',
+                            'Thursday',
+                            'Friday',
+                          ];
+                          if (value.toInt() >= 0 &&
+                              value.toInt() < days.length) {
                             return Padding(
                               padding: const EdgeInsets.only(top: 8.0),
                               child: Text(
                                 days[value.toInt()],
-                                style: const TextStyle(color: Colors.white70, fontSize: 10),
+                                style: const TextStyle(
+                                  color: Colors.white70,
+                                  fontSize: 10,
+                                ),
                               ),
                             );
                           }
@@ -426,7 +433,10 @@ class HomeScreen extends StatelessWidget {
                         return touchedSpots.map((spot) {
                           return LineTooltipItem(
                             spot.y.toString(),
-                            const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                            const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
                           );
                         }).toList();
                       },
