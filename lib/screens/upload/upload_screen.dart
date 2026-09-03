@@ -108,9 +108,7 @@ class _UploadScreenState extends State<UploadScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: const Row(
           children: [
             Icon(
@@ -134,10 +132,7 @@ class _UploadScreenState extends State<UploadScreen> {
             onPressed: () => Navigator.of(ctx).pop(false),
             child: const Text(
               'Batal',
-              style: TextStyle(
-                color: Colors.grey,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold),
             ),
           ),
           ElevatedButton(
@@ -197,9 +192,7 @@ class _UploadScreenState extends State<UploadScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: const Row(
           children: [
             Icon(
@@ -223,10 +216,7 @@ class _UploadScreenState extends State<UploadScreen> {
             onPressed: () => Navigator.of(ctx).pop(false),
             child: const Text(
               'Batal',
-              style: TextStyle(
-                color: Colors.grey,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold),
             ),
           ),
           ElevatedButton(
@@ -296,7 +286,8 @@ class _UploadScreenState extends State<UploadScreen> {
       ),
       body: Consumer<UploadProvider>(
         builder: (context, provider, child) {
-          final isCurrentlyLoading = provider.isLoading &&
+          final isCurrentlyLoading =
+              provider.isLoading &&
               ((_currentTab == 0 && provider.uploadedPhotos.isEmpty) ||
                   (_currentTab == 1 && provider.uploadedVideos.isEmpty));
 
@@ -470,11 +461,11 @@ class _UploadScreenState extends State<UploadScreen> {
                             Text(
                               provider.isUploading
                                   ? (_currentTab == 0
-                                      ? 'Uploading photo...'
-                                      : 'Uploading video...')
+                                        ? 'Uploading photo...'
+                                        : 'Uploading video...')
                                   : (_currentTab == 0
-                                      ? 'Upload your photo here'
-                                      : 'Upload your video here'),
+                                        ? 'Upload your photo here'
+                                        : 'Upload your video here'),
                               style: Theme.of(context).textTheme.bodySmall
                                   ?.copyWith(color: AppTheme.lightGray),
                             ),
@@ -696,8 +687,8 @@ class _UploadScreenState extends State<UploadScreen> {
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
-                      onPressed: (_currentTab == 0 &&
-                              provider.selectedPhoto != null)
+                      onPressed:
+                          (_currentTab == 0 && provider.selectedPhoto != null)
                           ? () {
                               Navigator.push(
                                 context,
@@ -709,17 +700,38 @@ class _UploadScreenState extends State<UploadScreen> {
                               );
                             }
                           : (_currentTab == 1 && provider.selectedVideo != null)
-                              ? () {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text(
-                                        'Analisa video sedang dalam proses pengolahan',
-                                      ),
-                                      behavior: SnackBarBehavior.floating,
-                                    ),
-                                  );
-                                }
-                              : null,
+                          ? () {
+                              final video = provider.selectedVideo!;
+                              final photoModel = StreetPhotoModel(
+                                id: video.id,
+                                missionId: video.missionId,
+                                uploadedBy: video.uploadedBy,
+                                source: video.source,
+                                originalFilename: video.originalFilename,
+                                filePath: video.filePath,
+                                fileSizeKb: video.fileSizeKb,
+                                latitude: video.latitude,
+                                longitude: video.longitude,
+                                gpsAccuracyM: video.gpsAccuracyM,
+                                compassAzimuth: video.compassAzimuth,
+                                exifTimestamp: '',
+                                isManualCapture: video.isManualCapture,
+                                isOfflineSync: video.isOfflineSync,
+                                privacyMasked: video.privacyMasked,
+                                processingStatus: video.processingStatus,
+                                errorMessage: video.errorMessage,
+                                capturedAt: video.capturedAt,
+                                createdAt: video.createdAt,
+                              );
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      ResultScreen(photo: photoModel, isVideo: true),
+                                ),
+                              );
+                            }
+                          : null,
                       style: ElevatedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 16),
                       ),

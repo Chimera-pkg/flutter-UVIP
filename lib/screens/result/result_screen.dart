@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:video_player/video_player.dart';
 import 'package:uvip/core/theme/app_theme.dart';
 import 'package:uvip/providers/result_provider.dart';
 import 'package:uvip/widgets/result/score_box.dart';
@@ -9,8 +10,9 @@ import 'package:uvip/models/street_photo_model.dart';
 
 class ResultScreen extends StatefulWidget {
   final StreetPhotoModel photo;
+  final bool isVideo;
 
-  const ResultScreen({super.key, required this.photo});
+  const ResultScreen({super.key, required this.photo, this.isVideo = false});
 
   @override
   State<ResultScreen> createState() => _ResultScreenState();
@@ -87,6 +89,12 @@ class _ResultScreenState extends State<ResultScreen> {
                 '$baseUrl/${fullImageUrl.startsWith('/') ? fullImageUrl.substring(1) : fullImageUrl}';
           }
 
+          final bool isVideo = widget.isVideo ||
+              widget.photo.originalFilename.toLowerCase().endsWith('.mp4') ||
+              widget.photo.originalFilename.toLowerCase().endsWith('.mov') ||
+              fullImageUrl.toLowerCase().endsWith('.mp4') ||
+              fullImageUrl.toLowerCase().endsWith('.mov');
+
           return SingleChildScrollView(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -105,23 +113,26 @@ class _ResultScreenState extends State<ResultScreen> {
                       ClipRRect(
                         borderRadius: BorderRadius.circular(16.0),
                         child: fullImageUrl.isNotEmpty
-                            ? Image.network(
-                                fullImageUrl,
-                                height: 220,
-                                width: double.infinity,
-                                fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) =>
-                                    Container(
+                            ? (isVideo
+                                  ? _InlineVideoPlayer(videoUrl: fullImageUrl)
+                                  : Image.network(
+                                      fullImageUrl,
                                       height: 220,
                                       width: double.infinity,
-                                      color: Colors.grey.shade300,
-                                      child: const Icon(
-                                        Icons.broken_image,
-                                        size: 64,
-                                        color: Colors.grey,
-                                      ),
-                                    ),
-                              )
+                                      fit: BoxFit.cover,
+                                      errorBuilder:
+                                          (context, error, stackTrace) =>
+                                              Container(
+                                                height: 220,
+                                                width: double.infinity,
+                                                color: Colors.grey.shade300,
+                                                child: const Icon(
+                                                  Icons.broken_image,
+                                                  size: 64,
+                                                  color: Colors.grey,
+                                                ),
+                                              ),
+                                    ))
                             : Container(
                                 height: 220,
                                 width: double.infinity,
@@ -185,31 +196,41 @@ class _ResultScreenState extends State<ResultScreen> {
                         children: [
                           ScoreBox(
                             title: 'UVI',
-                            score: double.parse(provider.predictionScores['UVI'].toString()).toStringAsFixed(2),
+                            score: double.parse(
+                              provider.predictionScores['UVI'].toString(),
+                            ).toStringAsFixed(2),
                             bgColor: Colors.lime.shade200,
                             textColor: Colors.lime.shade800,
                           ),
                           ScoreBox(
                             title: 'Safety',
-                            score: double.parse(provider.predictionScores['Safety'].toString()).toStringAsFixed(2),
+                            score: double.parse(
+                              provider.predictionScores['Safety'].toString(),
+                            ).toStringAsFixed(2),
                             bgColor: Colors.purple.shade100,
                             textColor: Colors.purple.shade800,
                           ),
                           ScoreBox(
                             title: 'Beauty',
-                            score: double.parse(provider.predictionScores['Beauty'].toString()).toStringAsFixed(2),
+                            score: double.parse(
+                              provider.predictionScores['Beauty'].toString(),
+                            ).toStringAsFixed(2),
                             bgColor: Colors.pink.shade100,
                             textColor: Colors.red.shade700,
                           ),
                           ScoreBox(
                             title: 'Comfort',
-                            score: double.parse(provider.predictionScores['Comfort'].toString()).toStringAsFixed(2),
+                            score: double.parse(
+                              provider.predictionScores['Comfort'].toString(),
+                            ).toStringAsFixed(2),
                             bgColor: Colors.orange.shade100,
                             textColor: Colors.orange.shade800,
                           ),
                           ScoreBox(
                             title: 'GVI',
-                            score: double.parse(provider.predictionScores['GVI'].toString()).toStringAsFixed(2),
+                            score: double.parse(
+                              provider.predictionScores['GVI'].toString(),
+                            ).toStringAsFixed(2),
                             bgColor: Colors.green.shade200,
                             textColor: Colors.green.shade800,
                           ),
@@ -436,6 +457,134 @@ class _ResultScreenState extends State<ResultScreen> {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _InlineVideoPlayer extends StatefulWidget {
+  final String videoUrl;
+  const _InlineVideoPlayer({required this.videoUrl});
+
+  @override
+  State<_InlineVideoPlayer> createState() => _InlineVideoPlayerState();
+}
+
+class _InlineVideoPlayerState extends State<_InlineVideoPlayer> {
+  late VideoPlayerController _controller;
+  bool _isInitialized = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Gunakan Uri.parse dan replace '\' dengan '/' untuk jaga-jaga URL Windows/lokal
+    String cleanUrl = widget.videoUrl.replaceAll('\\', '/');
+    _controller =
+        VideoPlayerController.networkUrl(Uri.parse(Uri.encodeFull(cleanUrl)))
+          ..initialize()
+              .then((_) {
+                if (mounted) {
+                  setState(() {
+                    _isInitialized = true;
+                  });
+                  _controller.setVolume(
+                    0.0,
+                  ); // Muted by default so it can autoplay reliably
+                  _controller.setLooping(true);
+                  _controller.play();
+                }
+              })
+              .catchError((e) {
+                debugPrint("Error loading inline video: $e");
+              });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!_isInitialized) {
+      return Container(
+        height: 220,
+        width: double.infinity,
+        color: Colors.black,
+        child: const Center(
+          child: CircularProgressIndicator(color: AppTheme.primaryColor),
+        ),
+      );
+    }
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _controller.value.isPlaying
+              ? _controller.pause()
+              : _controller.play();
+        });
+      },
+      child: Container(
+        height: 220,
+        width: double.infinity,
+        color: Colors.black,
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            SizedBox.expand(
+              child: FittedBox(
+                fit: BoxFit.cover,
+                child: SizedBox(
+                  width: _controller.value.size.width,
+                  height: _controller.value.size.height,
+                  child: VideoPlayer(_controller),
+                ),
+              ),
+            ),
+            if (!_controller.value.isPlaying)
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: const BoxDecoration(
+                  color: Colors.black54,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.play_arrow_rounded,
+                  color: Colors.white,
+                  size: 48,
+                ),
+              ),
+            // Unmute / Mute indicator
+            Positioned(
+              bottom: 8,
+              right: 8,
+              child: GestureDetector(
+                onTap: () {
+                  setState(() {
+                    _controller.setVolume(
+                      _controller.value.volume > 0 ? 0.0 : 1.0,
+                    );
+                  });
+                },
+                child: Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: const BoxDecoration(
+                    color: Colors.black54,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    _controller.value.volume > 0
+                        ? Icons.volume_up_rounded
+                        : Icons.volume_off_rounded,
+                    color: Colors.white,
+                    size: 20,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

@@ -665,7 +665,16 @@ class _AiCamScreenState extends State<AiCamScreen> with WidgetsBindingObserver {
                     ),
                   )
                 : _controller != null && _controller!.value.isInitialized
-                ? CameraPreview(_controller!)
+                ? SizedBox.expand(
+                    child: FittedBox(
+                      fit: BoxFit.cover,
+                      child: SizedBox(
+                        width: 100,
+                        height: 100 / _controller!.value.aspectRatio,
+                        child: CameraPreview(_controller!),
+                      ),
+                    ),
+                  )
                 : const Center(
                     child: CircularProgressIndicator(
                       color: AppTheme.primaryColor,
