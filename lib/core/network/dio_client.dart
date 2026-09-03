@@ -5,12 +5,10 @@ class DioClient {
   static final Dio _dio =
       Dio(
           BaseOptions(
-            baseUrl: 'http://103.92.214.110:8001',
+            baseUrl: 'http://80.241.214.39',
             connectTimeout: const Duration(seconds: 10),
             receiveTimeout: const Duration(seconds: 10),
-            headers: {
-              'Accept': 'application/json',
-            },
+            headers: {'Accept': 'application/json'},
           ),
         )
         ..interceptors.add(

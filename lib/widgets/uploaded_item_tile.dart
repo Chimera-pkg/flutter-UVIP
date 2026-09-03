@@ -62,10 +62,7 @@ class UploadedItemTile extends StatelessWidget {
     showDialog(
       context: context,
       builder: (context) {
-        return VideoPreviewDialog(
-          videoUrl: url,
-          title: fileName,
-        );
+        return VideoPreviewDialog(videoUrl: url, title: fileName);
       },
     );
   }
@@ -76,7 +73,7 @@ class UploadedItemTile extends StatelessWidget {
     String? fullImageUrl = imageUrl?.replaceAll('\\', '/');
     if (fullImageUrl != null && !fullImageUrl.startsWith('http')) {
       // Assuming base URL is http://103.92.214.110:8001
-      const baseUrl = 'http://103.92.214.110:8001';
+      const baseUrl = 'http://80.241.214.39';
       fullImageUrl =
           '$baseUrl/${fullImageUrl.startsWith('/') ? fullImageUrl.substring(1) : fullImageUrl}';
     }
@@ -108,7 +105,9 @@ class UploadedItemTile extends StatelessWidget {
               width: 50,
               height: 50,
               decoration: BoxDecoration(
-                color: isVideo ? AppTheme.secondaryColor : AppTheme.primaryColor,
+                color: isVideo
+                    ? AppTheme.secondaryColor
+                    : AppTheme.primaryColor,
                 borderRadius: BorderRadius.circular(8),
                 image: (fullImageUrl != null && !isVideo)
                     ? DecorationImage(
@@ -118,10 +117,14 @@ class UploadedItemTile extends StatelessWidget {
                     : null,
               ),
               child: isVideo
-                  ? const Icon(Icons.videocam_rounded, color: Colors.white, size: 28)
+                  ? const Icon(
+                      Icons.videocam_rounded,
+                      color: Colors.white,
+                      size: 28,
+                    )
                   : (fullImageUrl == null
-                      ? const Icon(Icons.image, color: Colors.white)
-                      : null),
+                        ? const Icon(Icons.image, color: Colors.white)
+                        : null),
             ),
             const SizedBox(width: 16),
             // File Details

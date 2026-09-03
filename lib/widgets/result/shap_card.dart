@@ -5,16 +5,16 @@ class ShapCard extends StatelessWidget {
   final bool isPositive;
   final List<ShapFactor> factors;
 
-  const ShapCard({
-    super.key,
-    required this.isPositive,
-    required this.factors,
-  });
+  const ShapCard({super.key, required this.isPositive, required this.factors});
 
   @override
   Widget build(BuildContext context) {
-    final Color headerColor = isPositive ? Colors.teal.shade100 : Colors.red.shade100;
-    final Color textColor = isPositive ? Colors.teal.shade700 : Colors.red.shade700;
+    final Color headerColor = isPositive
+        ? Colors.teal.shade100
+        : Colors.red.shade100;
+    final Color textColor = isPositive
+        ? Colors.teal.shade700
+        : Colors.red.shade700;
     final String title = isPositive ? 'Faktor Positif' : 'Faktor Negatif';
 
     return Container(
@@ -29,10 +29,15 @@ class ShapCard extends StatelessWidget {
         children: [
           // Header
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),
+            padding: const EdgeInsets.symmetric(
+              horizontal: 16.0,
+              vertical: 10.0,
+            ),
             decoration: BoxDecoration(
               color: headerColor,
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(11.0)),
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(11.0),
+              ),
             ),
             child: Text(
               title,
@@ -49,8 +54,8 @@ class ShapCard extends StatelessWidget {
             child: Column(
               children: factors.map((factor) {
                 final String valString = factor.value > 0
-                    ? '+ ${factor.value.abs()}'
-                    : '- ${factor.value.abs()}';
+                    ? '+ ${factor.value.abs().toStringAsFixed(2)}'
+                    : '- ${factor.value.abs().toStringAsFixed(2)}';
 
                 return Padding(
                   padding: const EdgeInsets.only(bottom: 12.0),
@@ -89,7 +94,9 @@ class ShapCard extends StatelessWidget {
                             value: factor.value.abs(),
                             minHeight: 8,
                             backgroundColor: Colors.transparent,
-                            valueColor: AlwaysStoppedAnimation<Color>(textColor),
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              textColor,
+                            ),
                           ),
                         ),
                       ),

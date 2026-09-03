@@ -82,7 +82,7 @@ class _ResultScreenState extends State<ResultScreen> {
 
           String? fullImageUrl = widget.photo.filePath;
           if (fullImageUrl.isNotEmpty && !fullImageUrl.startsWith('http')) {
-            final baseUrl = 'http://103.92.214.110:8001';
+            final baseUrl = 'http://80.241.214.39';
             fullImageUrl =
                 '$baseUrl/${fullImageUrl.startsWith('/') ? fullImageUrl.substring(1) : fullImageUrl}';
           }
@@ -185,34 +185,31 @@ class _ResultScreenState extends State<ResultScreen> {
                         children: [
                           ScoreBox(
                             title: 'UVI',
-                            score: provider.predictionScores['UVI'].toString(),
+                            score: double.parse(provider.predictionScores['UVI'].toString()).toStringAsFixed(2),
                             bgColor: Colors.lime.shade200,
                             textColor: Colors.lime.shade800,
                           ),
                           ScoreBox(
                             title: 'Safety',
-                            score: provider.predictionScores['Safety']
-                                .toString(),
+                            score: double.parse(provider.predictionScores['Safety'].toString()).toStringAsFixed(2),
                             bgColor: Colors.purple.shade100,
                             textColor: Colors.purple.shade800,
                           ),
                           ScoreBox(
                             title: 'Beauty',
-                            score: provider.predictionScores['Beauty']
-                                .toString(),
+                            score: double.parse(provider.predictionScores['Beauty'].toString()).toStringAsFixed(2),
                             bgColor: Colors.pink.shade100,
                             textColor: Colors.red.shade700,
                           ),
                           ScoreBox(
                             title: 'Comfort',
-                            score: provider.predictionScores['Comfort']
-                                .toString(),
+                            score: double.parse(provider.predictionScores['Comfort'].toString()).toStringAsFixed(2),
                             bgColor: Colors.orange.shade100,
                             textColor: Colors.orange.shade800,
                           ),
                           ScoreBox(
                             title: 'GVI',
-                            score: provider.predictionScores['GVI'],
+                            score: double.parse(provider.predictionScores['GVI'].toString()).toStringAsFixed(2),
                             bgColor: Colors.green.shade200,
                             textColor: Colors.green.shade800,
                           ),

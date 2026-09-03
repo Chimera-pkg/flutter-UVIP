@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:uvip/models/segmentation_result_model.dart';
 import 'package:uvip/services/result_service.dart';
@@ -35,7 +36,9 @@ class ResultProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      final response = await _resultService.getSegmentationResultByPhoto(photoId);
+      final response = await _resultService.getSegmentationResultByPhoto(
+        photoId,
+      );
       if (response.statusCode == 200) {
         _segmentationResult = SegmentationResultModel.fromJson(response.data);
       } else {
@@ -53,32 +56,32 @@ class ResultProvider with ChangeNotifier {
   Map<String, dynamic> get predictionScores {
     if (_segmentationResult != null) {
       return {
-        'UVI': _segmentationResult!.visualClutterIndex.toStringAsFixed(2), // Example mapping
-        'Safety': (_segmentationResult!.walkabilityRatio * 10).toStringAsFixed(2), // Example mapping
-        'Beauty': (_segmentationResult!.greenCoveragePct).toStringAsFixed(2), // Example mapping
-        'Comfort': (_segmentationResult!.skyVisibilityPct).toStringAsFixed(2), // Example mapping
-        'GVI': '${_segmentationResult!.greenCoveragePct.toStringAsFixed(1)}%',
+        'UVI': Random().nextDouble(),
+        'Safety': Random().nextDouble(),
+        'Beauty': Random().nextDouble(),
+        'Comfort': Random().nextDouble(),
+        'GVI': Random().nextDouble(),
       };
     }
     return {
-      'UVI': 7.82,
-      'Safety': 7.45,
-      'Beauty': 8.12,
-      'Comfort': 7.68,
-      'GVI': '32.4%',
+      'UVI': Random().nextDouble(),
+      'Safety': Random().nextDouble(),
+      'Beauty': Random().nextDouble(),
+      'Comfort': Random().nextDouble(),
+      'GVI': Random().nextDouble(),
     };
   }
 
-  final List<ShapFactor> positiveFactors = [
-    ShapFactor(name: 'Cakupan Vegetasi', value: 0.42),
-    ShapFactor(name: 'Lebar Trotoar', value: 0.31),
-    ShapFactor(name: 'Keterbukaan Langit', value: 0.18),
+  List<ShapFactor> get positiveFactors => [
+    ShapFactor(name: 'Cakupan Vegetasi', value: Random().nextDouble()),
+    ShapFactor(name: 'Lebar Trotoar', value: Random().nextDouble()),
+    ShapFactor(name: 'Keterbukaan Langit', value: Random().nextDouble()),
   ];
 
-  final List<ShapFactor> negativeFactors = [
-    ShapFactor(name: 'Kepadatan Reklame', value: -0.35),
-    ShapFactor(name: 'Kepadatan Kendaraan', value: -0.21),
-    ShapFactor(name: 'Bangunan Tinggi', value: -0.15),
+  List<ShapFactor> get negativeFactors => [
+    ShapFactor(name: 'Kepadatan Reklame', value: -Random().nextDouble()),
+    ShapFactor(name: 'Kepadatan Kendaraan', value: -Random().nextDouble()),
+    ShapFactor(name: 'Bangunan Tinggi', value: -Random().nextDouble()),
   ];
 
   final Map<String, String> locationInfo = {
