@@ -4,9 +4,13 @@ import 'package:uvip/core/network/dio_client.dart';
 class UploadService {
   final Dio _dio = DioClient.instance;
 
-  Future<Response> getStreetPhotos({int page = 1, int size = 10}) async {
+  Future<Response> getStreetPhotos({int page = 1, int size = 10, String? projectId}) async {
     try {
-      final response = await _dio.get('/street-photos/', queryParameters: {'page': page, 'size': size});
+      final queryParams = <String, dynamic>{'page': page, 'size': size};
+      if (projectId != null) {
+        queryParams['project_id'] = projectId;
+      }
+      final response = await _dio.get('/street-photos/', queryParameters: queryParams);
       return response;
     } catch (e) {
       rethrow;
@@ -15,6 +19,7 @@ class UploadService {
 
   Future<Response> uploadStreetPhoto(
     MultipartFile file, {
+    String? projectId,
     void Function(int, int)? onSendProgress,
   }) async {
     try {
@@ -26,6 +31,7 @@ class UploadService {
         'captured_at': DateTime.now().toUtc().toIso8601String(),
         'is_manual_capture': true,
         'is_offline_sync': false,
+        if (projectId != null) 'project_id': projectId,
       });
 
       final response = await _dio.post(
@@ -48,9 +54,13 @@ class UploadService {
     }
   }
 
-  Future<Response> getStreetVideos({int page = 1, int size = 10}) async {
+  Future<Response> getStreetVideos({int page = 1, int size = 10, String? projectId}) async {
     try {
-      final response = await _dio.get('/street-videos/', queryParameters: {'page': page, 'size': size});
+      final queryParams = <String, dynamic>{'page': page, 'size': size};
+      if (projectId != null) {
+        queryParams['project_id'] = projectId;
+      }
+      final response = await _dio.get('/street-videos/', queryParameters: queryParams);
       return response;
     } catch (e) {
       rethrow;
@@ -59,6 +69,7 @@ class UploadService {
 
   Future<Response> uploadStreetVideo(
     MultipartFile file, {
+    String? projectId,
     void Function(int, int)? onSendProgress,
   }) async {
     try {
@@ -70,6 +81,7 @@ class UploadService {
         'captured_at': DateTime.now().toUtc().toIso8601String(),
         'is_manual_capture': true,
         'is_offline_sync': false,
+        if (projectId != null) 'project_id': projectId,
       });
 
       final response = await _dio.post(

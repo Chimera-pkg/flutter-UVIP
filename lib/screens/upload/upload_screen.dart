@@ -11,8 +11,9 @@ import 'package:uvip/widgets/uploaded_item_tile.dart';
 
 class UploadScreen extends StatefulWidget {
   final int initialTab;
+  final String? projectId;
 
-  const UploadScreen({super.key, this.initialTab = 0});
+  const UploadScreen({super.key, this.initialTab = 0, this.projectId});
 
   @override
   State<UploadScreen> createState() => _UploadScreenState();
@@ -29,6 +30,7 @@ class _UploadScreenState extends State<UploadScreen> {
     _scrollController.addListener(_onScroll);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final provider = Provider.of<UploadProvider>(context, listen: false);
+      provider.setCurrentProjectId(widget.projectId);
       if (_currentTab == 0) {
         provider.fetchStreetPhotos();
       } else {

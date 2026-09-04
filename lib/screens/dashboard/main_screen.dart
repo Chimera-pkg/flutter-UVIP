@@ -6,7 +6,7 @@ import 'package:uvip/screens/aicam/aicam_screen.dart';
 import 'package:uvip/screens/dashboard/home_screen.dart';
 import 'package:uvip/screens/map/map_analysis_screen.dart';
 import 'package:uvip/screens/profile/profile_screen.dart';
-import 'package:uvip/screens/upload/upload_screen.dart';
+import 'package:uvip/screens/project/project_list_screen.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -77,9 +77,8 @@ class _MainScreenState extends State<MainScreen> {
                 isActive: _selectedIndex == 2,
                 onSwitchToUpload: _switchToUpload,
               )),
-              _buildTabChild(3, UploadScreen(
-                key: const PageStorageKey('UploadScreen'),
-                initialTab: _uploadInitialTab,
+              _buildTabChild(3, ProjectListScreen(
+                key: const PageStorageKey('ProjectListScreen'),
               )),
               _buildTabChild(4, const ProfileScreen(key: PageStorageKey('ProfileScreen'))),
             ],

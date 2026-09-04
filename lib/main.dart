@@ -9,6 +9,7 @@ import 'package:uvip/providers/home_provider.dart';
 import 'package:uvip/providers/map_provider.dart';
 import 'package:uvip/providers/aicam_provider.dart';
 import 'package:uvip/providers/auth_provider.dart';
+import 'package:uvip/providers/project_provider.dart';
 import 'package:uvip/screens/auth/login_screen.dart';
 import 'package:uvip/screens/dashboard/main_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -23,6 +24,7 @@ void main() async {
       providers: [
         ChangeNotifierProvider(create: (_) => ProfileProvider()),
         ChangeNotifierProvider(create: (_) => UploadProvider()),
+        ChangeNotifierProvider(create: (_) => ProjectProvider()),
         ChangeNotifierProvider(create: (_) => HomeProvider()),
         ChangeNotifierProvider(create: (_) => MapProvider()),
         ChangeNotifierProvider(create: (_) => AiCamProvider()),

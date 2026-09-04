@@ -4,13 +4,36 @@ import 'package:provider/provider.dart';
 import 'package:uvip/core/theme/app_theme.dart';
 import 'package:uvip/providers/home_provider.dart';
 import 'package:uvip/providers/auth_provider.dart';
+import 'package:uvip/providers/project_provider.dart';
 import 'package:uvip/widgets/summary_card.dart';
 import 'package:uvip/widgets/survey_item_tile.dart';
 import 'package:uvip/widgets/common/section_header.dart';
 import 'package:uvip/widgets/common/time_filter_dropdown.dart';
+import 'package:uvip/screens/project/project_detail_screen.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  @override
+  void initState() {
+    super.initState();
+    // Initialize providers after the first frame
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final projectProvider = Provider.of<ProjectProvider>(context, listen: false);
+      final homeProvider = Provider.of<HomeProvider>(context, listen: false);
+
+      // Set the project provider reference in home provider
+      homeProvider.setProjectProvider(projectProvider);
+
+      // Fetch projects to populate the dashboard
+      projectProvider.fetchProjects();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -153,71 +176,72 @@ class HomeScreen extends StatelessWidget {
                   // Bottom Banner
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                    child: Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(20.0),
-                      decoration: BoxDecoration(
-                        color: AppTheme.secondaryColor, // Navy blue
-                        borderRadius: BorderRadius.circular(12.0),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'Lanjutkan Misi Scanner',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                            ),
+                    child: Consumer<ProjectProvider>(
+                      builder: (context, projectProvider, child) {
+                        final lastProject = projectProvider.getLastOpenedProject();
+                        return Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(20.0),
+                          decoration: BoxDecoration(
+                            color: AppTheme.secondaryColor, // Navy blue
+                            borderRadius: BorderRadius.circular(12.0),
                           ),
-                          const SizedBox(height: 12),
-                          Row(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Expanded(
-                                child: Text(
-                                  '75% Selesai',
-                                  style: TextStyle(
-                                    color: Colors.white70,
-                                    fontSize: 12,
-                                  ),
+                              const Text(
+                                'Lanjutkan Misi Scanner',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
                                 ),
                               ),
-                              ElevatedButton(
-                                onPressed: () {},
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.white,
-                                  foregroundColor: AppTheme.primaryColor,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(8),
+                              const SizedBox(height: 12),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      lastProject != null ? lastProject.name : 'Belum ada project',
+                                      style: const TextStyle(
+                                        color: Colors.white70,
+                                        fontSize: 12,
+                                      ),
+                                    ),
                                   ),
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 20,
-                                    vertical: 10,
+                                  ElevatedButton(
+                                    onPressed: lastProject != null
+                                        ? () {
+                                            Navigator.push(
+                                              context,
+                                              MaterialPageRoute(
+                                                builder: (context) => ProjectDetailScreen(project: lastProject),
+                                              ),
+                                            );
+                                          }
+                                        : null,
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.white,
+                                      foregroundColor: AppTheme.primaryColor,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 20,
+                                        vertical: 10,
+                                      ),
+                                    ),
+                                    child: const Text(
+                                      'Lanjutkan',
+                                      style: TextStyle(fontWeight: FontWeight.bold),
+                                    ),
                                   ),
-                                ),
-                                child: const Text(
-                                  'Lanjutkan',
-                                  style: TextStyle(fontWeight: FontWeight.bold),
-                                ),
+                                ],
                               ),
                             ],
                           ),
-                          const SizedBox(height: 8),
-                          // Linear progress bar
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(8),
-                            child: const LinearProgressIndicator(
-                              value: 0.75,
-                              minHeight: 6,
-                              backgroundColor: Colors.white24,
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                AppTheme.primaryColor,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
+                        );
+                      },
                     ),
                   ),
 

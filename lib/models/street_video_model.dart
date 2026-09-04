@@ -18,6 +18,7 @@ class StreetVideoModel {
   final String errorMessage;
   final String capturedAt;
   final String createdAt;
+  final String? projectId;
 
   StreetVideoModel({
     required this.id,
@@ -39,6 +40,7 @@ class StreetVideoModel {
     required this.errorMessage,
     required this.capturedAt,
     required this.createdAt,
+    this.projectId,
   });
 
   factory StreetVideoModel.fromJson(Map<String, dynamic> json) {
@@ -62,6 +64,7 @@ class StreetVideoModel {
       errorMessage: json['error_message'] ?? '',
       capturedAt: json['captured_at'] ?? '',
       createdAt: json['created_at'] ?? '',
+      projectId: json['project_id']?.toString(),
     );
   }
 }

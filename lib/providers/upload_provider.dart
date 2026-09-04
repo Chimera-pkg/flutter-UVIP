@@ -26,6 +26,14 @@ class UploadProvider with ChangeNotifier {
   String? _errorMessage;
   String? get errorMessage => _errorMessage;
 
+  String? _currentProjectId;
+  String? get currentProjectId => _currentProjectId;
+
+  void setCurrentProjectId(String? projectId) {
+    _currentProjectId = projectId;
+    notifyListeners();
+  }
+
   // Pagination for photos
   int _photoCurrentPage = 1;
   int _photoTotalPages = 1;
@@ -61,7 +69,11 @@ class UploadProvider with ChangeNotifier {
     }
 
     try {
-      final response = await _uploadService.getStreetPhotos(page: _photoCurrentPage, size: _photoSize);
+      final response = await _uploadService.getStreetPhotos(
+        page: _photoCurrentPage,
+        size: _photoSize,
+        projectId: _currentProjectId,
+      );
       if (response.statusCode == 200) {
         final data = response.data;
         if (data is Map<String, dynamic> && data.containsKey('data')) {
@@ -109,6 +121,7 @@ class UploadProvider with ChangeNotifier {
 
       final response = await _uploadService.uploadStreetPhoto(
         multipartFile,
+        projectId: _currentProjectId,
         onSendProgress: (sent, total) {
           if (total > 0) {
             _uploadProgress = sent / total;
@@ -215,7 +228,11 @@ class UploadProvider with ChangeNotifier {
     }
 
     try {
-      final response = await _uploadService.getStreetVideos(page: _videoCurrentPage, size: _videoSize);
+      final response = await _uploadService.getStreetVideos(
+        page: _videoCurrentPage,
+        size: _videoSize,
+        projectId: _currentProjectId,
+      );
       if (response.statusCode == 200) {
         final data = response.data;
         if (data is Map<String, dynamic> && data.containsKey('data')) {
@@ -263,6 +280,7 @@ class UploadProvider with ChangeNotifier {
 
       final response = await _uploadService.uploadStreetVideo(
         multipartFile,
+        projectId: _currentProjectId,
         onSendProgress: (sent, total) {
           if (total > 0) {
             _uploadProgress = sent / total;
