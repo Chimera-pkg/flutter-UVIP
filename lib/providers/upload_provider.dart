@@ -54,16 +54,18 @@ class UploadProvider with ChangeNotifier {
 
   // ===================== PHOTOS =====================
 
-  Future<void> fetchStreetPhotos({bool isLoadMore = false}) async {
+  Future<void> fetchStreetPhotos({bool isLoadMore = false, bool isRefresh = false}) async {
     if (isLoadMore) {
       if (_photoCurrentPage >= _photoTotalPages || _isFetchingMorePhotos) return;
       _isFetchingMorePhotos = true;
       _photoCurrentPage++;
       notifyListeners();
     } else {
-      _isLoading = true;
+      if (!isRefresh) {
+        _isLoading = true;
+        _uploadedPhotos.clear();
+      }
       _photoCurrentPage = 1;
-      _uploadedPhotos.clear();
       _errorMessage = null;
       notifyListeners();
     }
@@ -76,15 +78,20 @@ class UploadProvider with ChangeNotifier {
       );
       if (response.statusCode == 200) {
         final data = response.data;
+        List<StreetPhotoModel> newPhotos = [];
         if (data is Map<String, dynamic> && data.containsKey('data')) {
           _photoTotalPages = data['total_pages'] ?? 1;
           _totalPhotoData = data['total_data'] ?? 0;
           final List<dynamic> listData = data['data'] ?? [];
-          final newPhotos = listData.map((json) => StreetPhotoModel.fromJson(json)).toList();
-          _uploadedPhotos.addAll(newPhotos);
+          newPhotos = listData.map((json) => StreetPhotoModel.fromJson(json)).toList();
         } else if (data is List) {
-          final newPhotos = data.map((json) => StreetPhotoModel.fromJson(json)).toList();
+          newPhotos = data.map((json) => StreetPhotoModel.fromJson(json)).toList();
+        }
+
+        if (isLoadMore) {
           _uploadedPhotos.addAll(newPhotos);
+        } else {
+          _uploadedPhotos = newPhotos;
         }
       }
     } catch (e) {
@@ -213,16 +220,18 @@ class UploadProvider with ChangeNotifier {
 
   // ===================== VIDEOS =====================
 
-  Future<void> fetchStreetVideos({bool isLoadMore = false}) async {
+  Future<void> fetchStreetVideos({bool isLoadMore = false, bool isRefresh = false}) async {
     if (isLoadMore) {
       if (_videoCurrentPage >= _videoTotalPages || _isFetchingMoreVideos) return;
       _isFetchingMoreVideos = true;
       _videoCurrentPage++;
       notifyListeners();
     } else {
-      _isLoading = true;
+      if (!isRefresh) {
+        _isLoading = true;
+        _uploadedVideos.clear();
+      }
       _videoCurrentPage = 1;
-      _uploadedVideos.clear();
       _errorMessage = null;
       notifyListeners();
     }
@@ -235,15 +244,20 @@ class UploadProvider with ChangeNotifier {
       );
       if (response.statusCode == 200) {
         final data = response.data;
+        List<StreetVideoModel> newVideos = [];
         if (data is Map<String, dynamic> && data.containsKey('data')) {
           _videoTotalPages = data['total_pages'] ?? 1;
           _totalVideoData = data['total_data'] ?? 0;
           final List<dynamic> listData = data['data'] ?? [];
-          final newVideos = listData.map((json) => StreetVideoModel.fromJson(json)).toList();
-          _uploadedVideos.addAll(newVideos);
+          newVideos = listData.map((json) => StreetVideoModel.fromJson(json)).toList();
         } else if (data is List) {
-          final newVideos = data.map((json) => StreetVideoModel.fromJson(json)).toList();
+          newVideos = data.map((json) => StreetVideoModel.fromJson(json)).toList();
+        }
+
+        if (isLoadMore) {
           _uploadedVideos.addAll(newVideos);
+        } else {
+          _uploadedVideos = newVideos;
         }
       }
     } catch (e) {

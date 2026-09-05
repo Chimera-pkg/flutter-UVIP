@@ -14,4 +14,15 @@ class ResultService {
       rethrow;
     }
   }
+
+  Future<Response> getVideoSegmentationResultByPhoto(String photoId) async {
+    try {
+      final response = await _dio.get(
+        '/video-output-segmentations/by-photo/$photoId',
+      );
+      return response;
+    } catch (e) {
+      rethrow;
+    }
+  }
 }

@@ -298,9 +298,9 @@ class _UploadScreenState extends State<UploadScreen> {
           return RefreshIndicator(
             onRefresh: () async {
               if (_currentTab == 0) {
-                await provider.fetchStreetPhotos();
+                await provider.fetchStreetPhotos(isRefresh: true);
               } else {
-                await provider.fetchStreetVideos();
+                await provider.fetchStreetVideos(isRefresh: true);
               }
             },
             child: SingleChildScrollView(
@@ -581,6 +581,7 @@ class _UploadScreenState extends State<UploadScreen> {
                             fileSize: '${photo.fileSizeKb} KB',
                             imageUrl: photo.filePath,
                             isVideo: false,
+                            processingStatus: photo.processingStatus,
                             isSelected: provider.selectedPhoto?.id == photo.id,
                             onSelect: (value) =>
                                 provider.togglePhotoSelection(photo),
@@ -642,6 +643,7 @@ class _UploadScreenState extends State<UploadScreen> {
                             fileSize: '${video.fileSizeKb} KB',
                             imageUrl: video.filePath,
                             isVideo: true,
+                            processingStatus: video.processingStatus,
                             isSelected: provider.selectedVideo?.id == video.id,
                             onSelect: (value) =>
                                 provider.toggleVideoSelection(video),
@@ -688,7 +690,7 @@ class _UploadScreenState extends State<UploadScreen> {
                     width: double.infinity,
                     child: ElevatedButton(
                       onPressed:
-                          (_currentTab == 0 && provider.selectedPhoto != null)
+                          (_currentTab == 0 && provider.selectedPhoto != null && provider.selectedPhoto!.processingStatus == 'completed')
                           ? () {
                               Navigator.push(
                                 context,
@@ -699,7 +701,7 @@ class _UploadScreenState extends State<UploadScreen> {
                                 ),
                               );
                             }
-                          : (_currentTab == 1 && provider.selectedVideo != null)
+                          : (_currentTab == 1 && provider.selectedVideo != null && provider.selectedVideo!.processingStatus == 'completed')
                           ? () {
                               final video = provider.selectedVideo!;
                               final photoModel = StreetPhotoModel(

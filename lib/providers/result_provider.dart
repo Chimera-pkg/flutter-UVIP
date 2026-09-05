@@ -1,6 +1,7 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:uvip/models/segmentation_result_model.dart';
+import 'package:uvip/models/video_segmentation_result_model.dart';
 import 'package:uvip/services/result_service.dart';
 
 class ShapFactor {
@@ -25,24 +26,34 @@ class ResultProvider with ChangeNotifier {
   SegmentationResultModel? _segmentationResult;
   SegmentationResultModel? get segmentationResult => _segmentationResult;
 
+  VideoSegmentationResultModel? _videoSegmentationResult;
+  VideoSegmentationResultModel? get videoSegmentationResult => _videoSegmentationResult;
+
   void toggleTab(bool isBidang) {
     _isBidangActive = isBidang;
     notifyListeners();
   }
 
-  Future<void> fetchSegmentationResult(String photoId) async {
+  Future<void> fetchSegmentationResult(String photoId, {bool isVideo = false}) async {
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
 
     try {
-      final response = await _resultService.getSegmentationResultByPhoto(
-        photoId,
-      );
-      if (response.statusCode == 200) {
-        _segmentationResult = SegmentationResultModel.fromJson(response.data);
+      if (isVideo) {
+        final response = await _resultService.getVideoSegmentationResultByPhoto(photoId);
+        if (response.statusCode == 200) {
+          _videoSegmentationResult = VideoSegmentationResultModel.fromJson(response.data);
+        } else {
+          _errorMessage = 'Gagal memuat hasil segmentasi video.';
+        }
       } else {
-        _errorMessage = 'Gagal memuat hasil segmentasi.';
+        final response = await _resultService.getSegmentationResultByPhoto(photoId);
+        if (response.statusCode == 200) {
+          _segmentationResult = SegmentationResultModel.fromJson(response.data);
+        } else {
+          _errorMessage = 'Gagal memuat hasil segmentasi.';
+        }
       }
     } catch (e) {
       _errorMessage = 'Terjadi kesalahan: $e';
@@ -54,7 +65,7 @@ class ResultProvider with ChangeNotifier {
 
   // Fallback / Mock Data where API is lacking
   Map<String, dynamic> get predictionScores {
-    if (_segmentationResult != null) {
+    if (_segmentationResult != null || _videoSegmentationResult != null) {
       return {
         'UVI': Random().nextDouble(),
         'Safety': Random().nextDouble(),

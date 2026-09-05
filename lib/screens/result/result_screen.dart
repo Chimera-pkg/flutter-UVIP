@@ -26,7 +26,7 @@ class _ResultScreenState extends State<ResultScreen> {
       Provider.of<ResultProvider>(
         context,
         listen: false,
-      ).fetchSegmentationResult(widget.photo.id);
+      ).fetchSegmentationResult(widget.photo.id, isVideo: widget.isVideo);
     });
   }
 
@@ -78,12 +78,17 @@ class _ResultScreenState extends State<ResultScreen> {
             );
           }
 
-          if (provider.segmentationResult == null) {
+          if (provider.segmentationResult == null && provider.videoSegmentationResult == null) {
             return const Center(child: Text('Hasil tidak ditemukan.'));
           }
 
-          String? fullImageUrl =
-              provider.segmentationResult?.segmentationOverlayUrl;
+          String? fullImageUrl;
+          if (widget.isVideo) {
+            fullImageUrl = provider.videoSegmentationResult?.videoUrl;
+          } else {
+            fullImageUrl = provider.segmentationResult?.segmentationOverlayUrl;
+          }
+          
           if (fullImageUrl == null || fullImageUrl.isEmpty) {
             fullImageUrl = widget.photo.filePath;
           }

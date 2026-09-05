@@ -10,6 +10,7 @@ class UploadedItemTile extends StatelessWidget {
   final bool isSelected;
   final ValueChanged<bool?>? onSelect;
   final bool isVideo;
+  final String? processingStatus;
 
   const UploadedItemTile({
     super.key,
@@ -20,6 +21,7 @@ class UploadedItemTile extends StatelessWidget {
     this.isSelected = false,
     this.onSelect,
     this.isVideo = false,
+    this.processingStatus,
   });
 
   void _showImagePreview(BuildContext context, String url) {
@@ -78,6 +80,8 @@ class UploadedItemTile extends StatelessWidget {
           '$baseUrl/${fullImageUrl.startsWith('/') ? fullImageUrl.substring(1) : fullImageUrl}';
     }
 
+    final bool canSelect = processingStatus == 'completed';
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 16.0),
       child: InkWell(
@@ -97,7 +101,7 @@ class UploadedItemTile extends StatelessWidget {
             if (onSelect != null)
               Checkbox(
                 value: isSelected,
-                onChanged: onSelect,
+                onChanged: canSelect ? onSelect : null,
                 activeColor: AppTheme.primaryColor,
               ),
             // Thumbnail
@@ -148,6 +152,24 @@ class UploadedItemTile extends StatelessWidget {
                       context,
                     ).textTheme.bodySmall?.copyWith(fontSize: 12),
                   ),
+                  if (processingStatus != null && processingStatus!.isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: processingStatus == 'completed' ? Colors.green.shade100 : (processingStatus == 'failed' || processingStatus == 'error' ? Colors.red.shade100 : Colors.orange.shade100),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        processingStatus!,
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                          color: processingStatus == 'completed' ? Colors.green.shade800 : (processingStatus == 'failed' || processingStatus == 'error' ? Colors.red.shade800 : Colors.orange.shade800),
+                        ),
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),
