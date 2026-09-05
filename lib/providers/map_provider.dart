@@ -10,9 +10,10 @@ class MapProvider with ChangeNotifier {
   final List<String> filters = ['UVI', 'Safety', 'Beauty', 'Comfort', 'GVI'];
   String _selectedFilter = 'UVI';
 
-  // Map Coordinates (Klojen, Malang)
-  final double latitude = -7.9786;
-  final double longitude = 112.6316;
+  // Map Coordinates & Location
+  double latitude = -7.9786;
+  double longitude = 112.6316;
+  String locationName = 'Klojen, Malang';
 
   // Selected Area Summary Data
   final String rataRataUvi = "7.68";
@@ -28,6 +29,15 @@ class MapProvider with ChangeNotifier {
   // Setters
   void setFilter(String filter) {
     _selectedFilter = filter;
+    notifyListeners();
+  }
+
+  void updateCoordinates(double lat, double lng, {String? locName}) {
+    latitude = lat;
+    longitude = lng;
+    if (locName != null) {
+      locationName = locName;
+    }
     notifyListeners();
   }
 }

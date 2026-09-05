@@ -3,6 +3,8 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:provider/provider.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:geocoding/geocoding.dart';
 import 'package:uvip/core/theme/app_theme.dart';
 import 'package:uvip/providers/map_provider.dart';
 import 'package:uvip/widgets/data_summary_card.dart';
@@ -18,6 +20,78 @@ class MapAnalysisScreen extends StatefulWidget {
 
 class _MapAnalysisScreenState extends State<MapAnalysisScreen> {
   final MapController _mapController = MapController();
+  LatLng? _currentLocation;
+
+  @override
+  void initState() {
+    super.initState();
+    _determinePosition();
+  }
+
+  Future<void> _determinePosition() async {
+    bool serviceEnabled;
+    LocationPermission permission;
+
+    serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      return;
+    }
+
+    permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) {
+        return;
+      }
+    }
+
+    if (permission == LocationPermission.deniedForever) {
+      return;
+    }
+
+    final position = await Geolocator.getCurrentPosition();
+
+    String? locationName;
+    try {
+      List<Placemark> placemarks = await Geocoding().placemarkFromCoordinates(
+        position.latitude,
+        position.longitude,
+      );
+      if (placemarks.isNotEmpty) {
+        Placemark place = placemarks.first;
+        String locality = place.subLocality?.isNotEmpty == true
+            ? place.subLocality!
+            : (place.locality ?? '');
+        String city = place.subAdministrativeArea?.isNotEmpty == true
+            ? place.subAdministrativeArea!
+            : (place.administrativeArea ?? '');
+
+        if (locality.isNotEmpty && city.isNotEmpty) {
+          locationName = '$locality, $city';
+        } else if (locality.isNotEmpty) {
+          locationName = locality;
+        } else if (city.isNotEmpty) {
+          locationName = city;
+        } else {
+          locationName = place.country ?? 'Unknown Location';
+        }
+      }
+    } catch (e) {
+      debugPrint('Error reverse geocoding: $e');
+    }
+
+    if (mounted) {
+      setState(() {
+        _currentLocation = LatLng(position.latitude, position.longitude);
+      });
+      Provider.of<MapProvider>(context, listen: false).updateCoordinates(
+        position.latitude,
+        position.longitude,
+        locName: locationName,
+      );
+      _mapController.move(_currentLocation!, 15.0);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -26,9 +100,9 @@ class _MapAnalysisScreenState extends State<MapAnalysisScreen> {
       appBar: AppBar(
         title: Text(
           'Peta Analisis',
-          style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+          style: Theme.of(
+            context,
+          ).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold),
         ),
         centerTitle: true,
         backgroundColor: AppTheme.backgroundColor,
@@ -49,7 +123,10 @@ class _MapAnalysisScreenState extends State<MapAnalysisScreen> {
                 // Filter Chips
                 SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 8.0),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24.0,
+                    vertical: 8.0,
+                  ),
                   child: Row(
                     children: provider.filters.map((filter) {
                       final isSelected = provider.selectedFilter == filter;
@@ -68,16 +145,27 @@ class _MapAnalysisScreenState extends State<MapAnalysisScreen> {
                             if (selected) provider.setFilter(filter);
                           },
                           backgroundColor: Colors.white,
-                          selectedColor: AppTheme.primaryColor, // Teal background
+                          selectedColor:
+                              AppTheme.primaryColor, // Teal background
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(8.0),
                             side: BorderSide(
-                              color: isSelected ? AppTheme.primaryColor : Colors.grey.shade300,
+                              color: isSelected
+                                  ? AppTheme.primaryColor
+                                  : Colors.grey.shade300,
                             ),
                           ),
                           avatar: isSelected
-                              ? const Icon(Icons.eco, color: Colors.white, size: 18) // Leaf icon for UVI
-                              : const Icon(Icons.eco_outlined, color: Colors.grey, size: 18),
+                              ? const Icon(
+                                  Icons.eco,
+                                  color: Colors.white,
+                                  size: 18,
+                                ) // Leaf icon for UVI
+                              : const Icon(
+                                  Icons.eco_outlined,
+                                  color: Colors.grey,
+                                  size: 18,
+                                ),
                         ),
                       );
                     }).toList(),
@@ -97,17 +185,38 @@ class _MapAnalysisScreenState extends State<MapAnalysisScreen> {
                           FlutterMap(
                             mapController: _mapController,
                             options: MapOptions(
-                              initialCenter: LatLng(provider.latitude, provider.longitude),
+                              initialCenter: LatLng(
+                                provider.latitude,
+                                provider.longitude,
+                              ),
                               initialZoom: 13.0,
                               interactionOptions: const InteractionOptions(
-                                flags: InteractiveFlag.all & ~InteractiveFlag.rotate,
+                                flags:
+                                    InteractiveFlag.all &
+                                    ~InteractiveFlag.rotate,
                               ),
                             ),
                             children: [
                               TileLayer(
-                                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                                urlTemplate:
+                                    'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                                 userAgentPackageName: 'com.example.uvip',
                               ),
+                              if (_currentLocation != null)
+                                MarkerLayer(
+                                  markers: [
+                                    Marker(
+                                      point: _currentLocation!,
+                                      width: 40,
+                                      height: 40,
+                                      child: const Icon(
+                                        Icons.my_location,
+                                        color: Colors.blue,
+                                        size: 30,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                             ],
                           ),
                           // Overlay Buttons (Top Right)
@@ -120,12 +229,25 @@ class _MapAnalysisScreenState extends State<MapAnalysisScreen> {
                                 const SizedBox(height: 8),
                                 GestureDetector(
                                   onTap: () {
-                                    _mapController.move(
-                                      LatLng(provider.latitude, provider.longitude),
-                                      13.0,
-                                    );
+                                    if (_currentLocation != null) {
+                                      _mapController.move(
+                                        _currentLocation!,
+                                        15.0,
+                                      );
+                                    } else {
+                                      _mapController.move(
+                                        LatLng(
+                                          provider.latitude,
+                                          provider.longitude,
+                                        ),
+                                        13.0,
+                                      );
+                                      _determinePosition();
+                                    }
                                   },
-                                  child: _buildFloatingMapButton(Icons.my_location),
+                                  child: _buildFloatingMapButton(
+                                    Icons.my_location,
+                                  ),
                                 ),
                               ],
                             ),
@@ -159,10 +281,23 @@ class _MapAnalysisScreenState extends State<MapAnalysisScreen> {
                                   ),
                                   const SizedBox(height: 4),
                                   Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
                                     children: const [
-                                      Text('UVI Tinggi', style: TextStyle(fontSize: 10, color: Colors.black54)),
-                                      Text('UVI Rendah', style: TextStyle(fontSize: 10, color: Colors.black54)),
+                                      Text(
+                                        'UVI Tinggi',
+                                        style: TextStyle(
+                                          fontSize: 10,
+                                          color: Colors.black54,
+                                        ),
+                                      ),
+                                      Text(
+                                        'UVI Rendah',
+                                        style: TextStyle(
+                                          fontSize: 10,
+                                          color: Colors.black54,
+                                        ),
+                                      ),
                                     ],
                                   ),
                                 ],
@@ -186,13 +321,16 @@ class _MapAnalysisScreenState extends State<MapAnalysisScreen> {
                       const SizedBox(height: 4),
                       Row(
                         children: [
-                          const Icon(Icons.location_on_outlined, color: AppTheme.primaryColor, size: 16),
+                          const Icon(
+                            Icons.location_on_outlined,
+                            color: AppTheme.primaryColor,
+                            size: 16,
+                          ),
                           const SizedBox(width: 4),
                           Text(
-                            'Klojen, Malang',
-                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                  color: Colors.black54,
-                                ),
+                            provider.locationName,
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(color: Colors.black54),
                           ),
                         ],
                       ),
@@ -241,9 +379,16 @@ class _MapAnalysisScreenState extends State<MapAnalysisScreen> {
                                 Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    const Text('Rata-Rata UVI', style: TextStyle(fontSize: 10, color: Colors.black54)),
+                                    const Text(
+                                      'Rata-Rata UVI',
+                                      style: TextStyle(
+                                        fontSize: 10,
+                                        color: Colors.black54,
+                                      ),
+                                    ),
                                     Row(
-                                      crossAxisAlignment: CrossAxisAlignment.end,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.end,
                                       children: [
                                         Text(
                                           provider.rataRataUvi,
@@ -291,8 +436,12 @@ class _MapAnalysisScreenState extends State<MapAnalysisScreen> {
                                   ),
                                   titlesData: FlTitlesData(
                                     show: true,
-                                    rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                                    topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                                    rightTitles: const AxisTitles(
+                                      sideTitles: SideTitles(showTitles: false),
+                                    ),
+                                    topTitles: const AxisTitles(
+                                      sideTitles: SideTitles(showTitles: false),
+                                    ),
                                     leftTitles: AxisTitles(
                                       sideTitles: SideTitles(
                                         showTitles: true,
@@ -301,7 +450,10 @@ class _MapAnalysisScreenState extends State<MapAnalysisScreen> {
                                         getTitlesWidget: (value, meta) {
                                           return Text(
                                             value.toInt().toString(),
-                                            style: const TextStyle(color: Colors.black54, fontSize: 8),
+                                            style: const TextStyle(
+                                              color: Colors.black54,
+                                              fontSize: 8,
+                                            ),
                                           );
                                         },
                                       ),
@@ -312,13 +464,25 @@ class _MapAnalysisScreenState extends State<MapAnalysisScreen> {
                                         reservedSize: 18,
                                         interval: 1,
                                         getTitlesWidget: (value, meta) {
-                                          final days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
-                                          if (value.toInt() >= 0 && value.toInt() < days.length) {
+                                          final days = [
+                                            'Monday',
+                                            'Tuesday',
+                                            'Wednesday',
+                                            'Thursday',
+                                            'Friday',
+                                          ];
+                                          if (value.toInt() >= 0 &&
+                                              value.toInt() < days.length) {
                                             return Padding(
-                                              padding: const EdgeInsets.only(top: 8.0),
+                                              padding: const EdgeInsets.only(
+                                                top: 8.0,
+                                              ),
                                               child: Text(
                                                 days[value.toInt()],
-                                                style: const TextStyle(color: Colors.black54, fontSize: 8),
+                                                style: const TextStyle(
+                                                  color: Colors.black54,
+                                                  fontSize: 8,
+                                                ),
                                               ),
                                             );
                                           }
@@ -337,7 +501,12 @@ class _MapAnalysisScreenState extends State<MapAnalysisScreen> {
                                       spots: provider.chartData
                                           .asMap()
                                           .entries
-                                          .map((e) => FlSpot(e.key.toDouble(), e.value))
+                                          .map(
+                                            (e) => FlSpot(
+                                              e.key.toDouble(),
+                                              e.value,
+                                            ),
+                                          )
                                           .toList(),
                                       isCurved: false,
                                       color: AppTheme.primaryColor,
@@ -345,21 +514,26 @@ class _MapAnalysisScreenState extends State<MapAnalysisScreen> {
                                       isStrokeCapRound: true,
                                       dotData: FlDotData(
                                         show: true,
-                                        getDotPainter: (spot, percent, barData, index) {
-                                          return FlDotCirclePainter(
-                                            radius: 4,
-                                            color: AppTheme.primaryColor,
-                                            strokeWidth: 2,
-                                            strokeColor: Colors.white,
-                                          );
-                                        },
+                                        getDotPainter:
+                                            (spot, percent, barData, index) {
+                                              return FlDotCirclePainter(
+                                                radius: 4,
+                                                color: AppTheme.primaryColor,
+                                                strokeWidth: 2,
+                                                strokeColor: Colors.white,
+                                              );
+                                            },
                                       ),
                                       belowBarData: BarAreaData(
                                         show: true,
                                         gradient: LinearGradient(
                                           colors: [
-                                            AppTheme.primaryColor.withValues(alpha: 0.3),
-                                            AppTheme.primaryColor.withValues(alpha: 0.0),
+                                            AppTheme.primaryColor.withValues(
+                                              alpha: 0.3,
+                                            ),
+                                            AppTheme.primaryColor.withValues(
+                                              alpha: 0.0,
+                                            ),
                                           ],
                                           begin: Alignment.topCenter,
                                           end: Alignment.bottomCenter,
@@ -369,12 +543,16 @@ class _MapAnalysisScreenState extends State<MapAnalysisScreen> {
                                   ],
                                   lineTouchData: LineTouchData(
                                     touchTooltipData: LineTouchTooltipData(
-                                      getTooltipColor: (touchedSpot) => Colors.white,
+                                      getTooltipColor: (touchedSpot) =>
+                                          Colors.white,
                                       getTooltipItems: (touchedSpots) {
                                         return touchedSpots.map((spot) {
                                           return LineTooltipItem(
                                             spot.y.toString(),
-                                            const TextStyle(color: AppTheme.primaryColor, fontWeight: FontWeight.bold),
+                                            const TextStyle(
+                                              color: AppTheme.primaryColor,
+                                              fontWeight: FontWeight.bold,
+                                            ),
                                           );
                                         }).toList();
                                       },
@@ -405,11 +583,7 @@ class _MapAnalysisScreenState extends State<MapAnalysisScreen> {
         color: Colors.white,
         borderRadius: BorderRadius.circular(8.0),
         boxShadow: const [
-          BoxShadow(
-            color: Colors.black12,
-            blurRadius: 4,
-            offset: Offset(0, 2),
-          ),
+          BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 2)),
         ],
       ),
       child: Icon(icon, color: Colors.black87),
