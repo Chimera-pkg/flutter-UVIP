@@ -34,7 +34,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
       context,
       MaterialPageRoute(
         builder: (context) => UploadScreen(
-          projectId: widget.project.id,
+          // projectId: widget.project.id,
           initialTab: initialTab,
         ),
       ),
@@ -80,7 +80,11 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
                   children: [
                     Row(
                       children: [
-                        Icon(Icons.location_on, color: AppTheme.primaryColor, size: 20),
+                        Icon(
+                          Icons.location_on,
+                          color: AppTheme.primaryColor,
+                          size: 20,
+                        ),
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
@@ -96,10 +100,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
                     const SizedBox(height: 12),
                     Text(
                       widget.project.description,
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey[700],
-                      ),
+                      style: TextStyle(fontSize: 14, color: Colors.grey[700]),
                     ),
                     const SizedBox(height: 12),
                     Row(
@@ -128,10 +129,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
             // Section Title
             const Text(
               'Folder Media',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
 
@@ -168,9 +166,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
   }) {
     return Card(
       elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(12),
@@ -185,11 +181,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
                   color: color.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: Icon(
-                  icon,
-                  color: color,
-                  size: 32,
-                ),
+                child: Icon(icon, color: color, size: 32),
               ),
               const SizedBox(width: 16),
               Expanded(
@@ -206,19 +198,12 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
                     const SizedBox(height: 4),
                     Text(
                       'Lihat dan kelola $title',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey[600],
-                      ),
+                      style: TextStyle(fontSize: 14, color: Colors.grey[600]),
                     ),
                   ],
                 ),
               ),
-              Icon(
-                Icons.arrow_forward_ios,
-                color: Colors.grey[400],
-                size: 20,
-              ),
+              Icon(Icons.arrow_forward_ios, color: Colors.grey[400], size: 20),
             ],
           ),
         ),

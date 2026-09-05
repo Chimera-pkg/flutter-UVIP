@@ -82,16 +82,25 @@ class _ResultScreenState extends State<ResultScreen> {
             return const Center(child: Text('Hasil tidak ditemukan.'));
           }
 
-          String? fullImageUrl = widget.photo.filePath;
+          String? fullImageUrl =
+              provider.segmentationResult?.segmentationOverlayUrl;
+          if (fullImageUrl == null || fullImageUrl.isEmpty) {
+            fullImageUrl = widget.photo.filePath;
+          }
           if (fullImageUrl.isNotEmpty && !fullImageUrl.startsWith('http')) {
             final baseUrl = 'http://80.241.214.39';
             fullImageUrl =
                 '$baseUrl/${fullImageUrl.startsWith('/') ? fullImageUrl.substring(1) : fullImageUrl}';
           }
 
-          final bool isVideo = widget.isVideo ||
-              widget.photo.originalFilename.toLowerCase().endsWith('.mp4') ||
-              widget.photo.originalFilename.toLowerCase().endsWith('.mov') ||
+          // final bool isVideo =
+          //     widget.isVideo ||
+          //     widget.photo.originalFilename.toLowerCase().endsWith('.mp4') ||
+          //     widget.photo.originalFilename.toLowerCase().endsWith('.mov') ||
+          //     fullImageUrl.toLowerCase().endsWith('.mp4') ||
+          //     fullImageUrl.toLowerCase().endsWith('.mov');
+
+          final bool isVideo =
               fullImageUrl.toLowerCase().endsWith('.mp4') ||
               fullImageUrl.toLowerCase().endsWith('.mov');
 
