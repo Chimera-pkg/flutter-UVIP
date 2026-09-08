@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:uvip/providers/project_provider.dart';
-import 'package:uvip/models/project_model.dart';
 
 class SurveyItem {
   final String title;

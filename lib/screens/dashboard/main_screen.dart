@@ -6,7 +6,7 @@ import 'package:uvip/screens/aicam/aicam_screen.dart';
 import 'package:uvip/screens/dashboard/home_screen.dart';
 import 'package:uvip/screens/map/map_analysis_screen.dart';
 import 'package:uvip/screens/profile/profile_screen.dart';
-import 'package:uvip/screens/upload/upload_screen.dart';
+import 'package:uvip/screens/project/project_list_screen.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -17,7 +17,6 @@ class MainScreen extends StatefulWidget {
 
 class _MainScreenState extends State<MainScreen> {
   int _selectedIndex = 0;
-  int _uploadInitialTab = 0;
   // Track tab yang pernah dikunjungi — screen berat hanya dibuild saat pernah dipilih
   final Set<int> _visitedTabs = {0}; // Tab 0 (Home) langsung aktif
 
@@ -41,7 +40,7 @@ class _MainScreenState extends State<MainScreen> {
 
   void _switchToUpload([int subTab = 0]) {
     setState(() {
-      _uploadInitialTab = subTab;
+      // _uploadInitialTab = subTab;
       _visitedTabs.add(3);
       _selectedIndex = 3;
     });
@@ -88,11 +87,17 @@ class _MainScreenState extends State<MainScreen> {
                   onSwitchToUpload: _switchToUpload,
                 ),
               ),
+              // _buildTabChild(
+              //   3,
+              //   UploadScreen(
+              //     key: const PageStorageKey('UploadScreen'),
+              //     initialTab: _uploadInitialTab,
+              //   ),
+              // ),
               _buildTabChild(
                 3,
-                UploadScreen(
-                  key: const PageStorageKey('UploadScreen'),
-                  initialTab: _uploadInitialTab,
+                ProjectListScreen(
+                  key: const PageStorageKey('ProjectListScreen'),
                 ),
               ),
               _buildTabChild(

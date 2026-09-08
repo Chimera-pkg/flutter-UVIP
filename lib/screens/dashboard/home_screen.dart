@@ -24,7 +24,10 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     // Initialize providers after the first frame
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final projectProvider = Provider.of<ProjectProvider>(context, listen: false);
+      final projectProvider = Provider.of<ProjectProvider>(
+        context,
+        listen: false,
+      );
       final homeProvider = Provider.of<HomeProvider>(context, listen: false);
 
       // Set the project provider reference in home provider
@@ -178,7 +181,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     padding: const EdgeInsets.symmetric(horizontal: 24.0),
                     child: Consumer<ProjectProvider>(
                       builder: (context, projectProvider, child) {
-                        final lastProject = projectProvider.getLastOpenedProject();
+                        final lastProject = projectProvider
+                            .getLastOpenedProject();
                         return Container(
                           width: double.infinity,
                           padding: const EdgeInsets.all(20.0),
@@ -202,7 +206,9 @@ class _HomeScreenState extends State<HomeScreen> {
                                 children: [
                                   Expanded(
                                     child: Text(
-                                      lastProject != null ? lastProject.name : 'Belum ada project',
+                                      lastProject != null
+                                          ? lastProject.name
+                                          : 'Belum ada project',
                                       style: const TextStyle(
                                         color: Colors.white70,
                                         fontSize: 12,
@@ -215,7 +221,10 @@ class _HomeScreenState extends State<HomeScreen> {
                                             Navigator.push(
                                               context,
                                               MaterialPageRoute(
-                                                builder: (context) => ProjectDetailScreen(project: lastProject),
+                                                builder: (context) =>
+                                                    ProjectDetailScreen(
+                                                      project: lastProject,
+                                                    ),
                                               ),
                                             );
                                           }
@@ -233,7 +242,9 @@ class _HomeScreenState extends State<HomeScreen> {
                                     ),
                                     child: const Text(
                                       'Lanjutkan',
-                                      style: TextStyle(fontWeight: FontWeight.bold),
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                      ),
                                     ),
                                   ),
                                 ],
