@@ -92,11 +92,17 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> {
                   const SizedBox(height: 16),
                   TextFormField(
                     controller: _nameController,
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       labelText: 'Nama Project *',
                       hintText: 'Masukkan nama project',
-                      border: OutlineInputBorder(),
-                      prefixIcon: Icon(Icons.folder),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(color: AppTheme.unselectedIconColor),
+                      ),
+                      prefixIcon: const Icon(Icons.folder),
                     ),
                     validator: (value) {
                       if (value == null || value.trim().isEmpty) {
@@ -108,11 +114,17 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> {
                   const SizedBox(height: 16),
                   TextFormField(
                     controller: _locationController,
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       labelText: 'Lokasi *',
                       hintText: 'Masukkan lokasi',
-                      border: OutlineInputBorder(),
-                      prefixIcon: Icon(Icons.location_on),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(color: AppTheme.unselectedIconColor),
+                      ),
+                      prefixIcon: const Icon(Icons.location_on),
                     ),
                     validator: (value) {
                       if (value == null || value.trim().isEmpty) {
@@ -124,11 +136,17 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> {
                   const SizedBox(height: 16),
                   TextFormField(
                     controller: _descriptionController,
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       labelText: 'Deskripsi *',
                       hintText: 'Masukkan deskripsi project',
-                      border: OutlineInputBorder(),
-                      prefixIcon: Icon(Icons.description),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(color: AppTheme.unselectedIconColor),
+                      ),
+                      prefixIcon: const Icon(Icons.description),
                       alignLabelWithHint: true,
                     ),
                     maxLines: 4,
@@ -140,32 +158,34 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> {
                     },
                   ),
                   const SizedBox(height: 32),
-                  ElevatedButton(
-                    onPressed: _isSubmitting ? null : _submitForm,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppTheme.primaryColor,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
+                  SizedBox(
+                    height: 50,
+                    child: ElevatedButton(
+                      onPressed: _isSubmitting ? null : _submitForm,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppTheme.primaryColor,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                       ),
+                      child: _isSubmitting
+                          ? const SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                              ),
+                            )
+                          : const Text(
+                              'Buat Project',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                     ),
-                    child: _isSubmitting
-                        ? const SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                            ),
-                          )
-                        : const Text(
-                            'Buat Project',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
                   ),
                 ],
               ),

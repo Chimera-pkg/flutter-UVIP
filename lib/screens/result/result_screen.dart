@@ -78,7 +78,8 @@ class _ResultScreenState extends State<ResultScreen> {
             );
           }
 
-          if (provider.segmentationResult == null && provider.videoSegmentationResult == null) {
+          if (provider.segmentationResult == null &&
+              provider.videoSegmentationResult == null) {
             return const Center(child: Text('Hasil tidak ditemukan.'));
           }
 
@@ -88,7 +89,7 @@ class _ResultScreenState extends State<ResultScreen> {
           } else {
             fullImageUrl = provider.segmentationResult?.segmentationOverlayUrl;
           }
-          
+
           if (fullImageUrl == null || fullImageUrl.isEmpty) {
             fullImageUrl = widget.photo.filePath;
           }
