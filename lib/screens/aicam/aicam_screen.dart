@@ -11,6 +11,7 @@ import 'package:uvip/providers/upload_provider.dart';
 import 'package:uvip/screens/upload/upload_screen.dart';
 import 'package:uvip/widgets/object_detector_box.dart';
 import 'package:uvip/widgets/recorded_video_preview_dialog.dart';
+import 'package:uvip/widgets/recorded_photo_preview_dialog.dart';
 
 enum CameraMode { photo, video }
 
@@ -258,7 +259,7 @@ class _AiCamScreenState extends State<AiCamScreen> with WidgetsBindingObserver {
     return '${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
   }
 
-  /// Mengambil foto, menyimpan ke galeri, dan mengunggahnya ke UploadScreen.
+  /// Mengambil foto dan menampilkan modal preview sebelum upload
   Future<void> _takePictureAndUpload() async {
     if (_isCapturing) return;
 
@@ -284,97 +285,14 @@ class _AiCamScreenState extends State<AiCamScreen> with WidgetsBindingObserver {
       // 1. Ambil foto menggunakan controller kamera
       final XFile photo = await _controller!.takePicture();
 
-      // 2. Simpan foto ke folder Downloads (Web / Chrome) atau Galeri (Mobile)
-      try {
-        if (kIsWeb) {
-          final timestamp = DateTime.now().millisecondsSinceEpoch;
-          final fileName = 'uvip_capture_$timestamp.jpg';
-          await photo.saveTo(fileName);
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Row(
-                  children: [
-                    Icon(Icons.check_circle, color: Colors.white, size: 20),
-                    SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        'Foto diunduh ke folder Downloads & dialihkan ke Upload',
-                      ),
-                    ),
-                  ],
-                ),
-                backgroundColor: Colors.green,
-                duration: Duration(seconds: 2),
-                behavior: SnackBarBehavior.floating,
-              ),
-            );
-          }
-        } else {
-          final hasAccess = await Gal.hasAccess(toAlbum: false);
-          if (!hasAccess) {
-            await Gal.requestAccess(toAlbum: false);
-          }
-          await Gal.putImage(photo.path);
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Row(
-                  children: [
-                    Icon(Icons.check_circle, color: Colors.white, size: 20),
-                    SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        'Foto tersimpan di galeri & dialihkan ke Upload',
-                      ),
-                    ),
-                  ],
-                ),
-                backgroundColor: Colors.green,
-                duration: Duration(seconds: 2),
-                behavior: SnackBarBehavior.floating,
-              ),
-            );
-          }
-        }
-      } catch (saveError) {
-        debugPrint("Error saving photo: $saveError");
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                kIsWeb
-                    ? 'Gagal mengunduh ke folder Downloads: $saveError'
-                    : 'Gagal menyimpan ke galeri: $saveError',
-              ),
-              backgroundColor: Colors.orange,
-              behavior: SnackBarBehavior.floating,
-            ),
-          );
-        }
-      }
+      // Restart image stream setelah capture selesai
+      _startImageStream();
 
-      // 3. Trigger upload di UploadProvider dan beralih ke UploadScreen
-      if (mounted) {
-        final uploadProvider = Provider.of<UploadProvider>(
-          context,
-          listen: false,
-        );
-        // Mulai proses upload di background provider
-        uploadProvider.uploadPhoto(photo);
+      if (!mounted) return;
 
-        // Beralih ke halaman UploadScreen (Tab 0: Foto)
-        if (widget.onSwitchToUpload != null) {
-          widget.onSwitchToUpload!(0);
-        } else {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const UploadScreen(initialTab: 0),
-            ),
-          );
-        }
-      }
+      // Buka modal preview foto tangkapan
+      _showRecordedPhotoPreview(photo);
+
     } catch (e) {
       debugPrint("Error taking picture: $e");
       if (mounted) {
@@ -385,16 +303,96 @@ class _AiCamScreenState extends State<AiCamScreen> with WidgetsBindingObserver {
             behavior: SnackBarBehavior.floating,
           ),
         );
+        _startImageStream();
       }
     } finally {
       if (mounted) {
         setState(() {
           _isCapturing = false;
         });
-        // Restart image stream setelah capture selesai
-        _startImageStream();
       }
     }
+  }
+
+  /// Menampilkan dialog preview foto yang baru direkam
+  void _showRecordedPhotoPreview(XFile photoFile) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => RecordedPhotoPreviewDialog(
+        photoFile: photoFile,
+        onConfirmUpload: (projectId) async {
+          // 1. Simpan foto ke folder Downloads (Web / Chrome) atau Galeri (Mobile)
+          try {
+            if (kIsWeb) {
+              final timestamp = DateTime.now().millisecondsSinceEpoch;
+              final fileName = 'uvip_capture_$timestamp.jpg';
+              await photoFile.saveTo(fileName);
+            } else {
+              final hasAccess = await Gal.hasAccess(toAlbum: false);
+              if (!hasAccess) {
+                await Gal.requestAccess(toAlbum: false);
+              }
+              await Gal.putImage(photoFile.path);
+            }
+          } catch (saveError) {
+            debugPrint("Error saving photo: $saveError");
+          }
+
+          // 2. Upload foto via UploadProvider
+          if (mounted) {
+            final uploadProvider = Provider.of<UploadProvider>(
+              context,
+              listen: false,
+            );
+            uploadProvider.setCurrentProjectId(projectId);
+            uploadProvider.uploadPhoto(photoFile);
+
+            // 3. Switch ke tab Upload (Tab 0: Foto)
+            if (widget.onSwitchToUpload != null) {
+              widget.onSwitchToUpload!(0);
+            } else {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const UploadScreen(initialTab: 0),
+                ),
+              );
+            }
+
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Row(
+                  children: [
+                    Icon(Icons.check_circle, color: Colors.white, size: 20),
+                    SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Foto berhasil disimpan & dialihkan ke Upload',
+                      ),
+                    ),
+                  ],
+                ),
+                backgroundColor: Colors.green,
+                behavior: SnackBarBehavior.floating,
+                duration: Duration(seconds: 2),
+              ),
+            );
+          }
+        },
+        onCancel: () {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Pengambilan foto dibatalkan'),
+                duration: Duration(seconds: 1),
+                behavior: SnackBarBehavior.floating,
+              ),
+            );
+          }
+        },
+      ),
+    );
   }
 
   /// Memulai perekaman video kamera
@@ -490,7 +488,7 @@ class _AiCamScreenState extends State<AiCamScreen> with WidgetsBindingObserver {
       barrierDismissible: false,
       builder: (ctx) => RecordedVideoPreviewDialog(
         videoFile: videoFile,
-        onConfirmUpload: () async {
+        onConfirmUpload: (projectId) async {
           // 1. Simpan video ke Galeri (Mobile) atau Downloads (Web)
           try {
             if (kIsWeb) {
@@ -514,6 +512,7 @@ class _AiCamScreenState extends State<AiCamScreen> with WidgetsBindingObserver {
               context,
               listen: false,
             );
+            uploadProvider.setCurrentProjectId(projectId);
             uploadProvider.uploadVideo(videoFile);
 
             // 3. Switch ke tab Upload (Tab 1: Video)
