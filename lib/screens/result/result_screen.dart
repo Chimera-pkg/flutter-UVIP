@@ -211,41 +211,61 @@ class _ResultScreenState extends State<ResultScreen> {
                         children: [
                           ScoreBox(
                             title: 'UVI',
-                            score: double.parse(
-                              provider.predictionScores['UVI'].toString(),
-                            ).toStringAsFixed(2),
+                            score:
+                                provider
+                                    .segmentationResult
+                                    ?.prediction
+                                    ?.uviScore
+                                    ?.toString() ??
+                                "-",
                             bgColor: Colors.lime.shade200,
                             textColor: Colors.lime.shade800,
                           ),
                           ScoreBox(
                             title: 'Safety',
-                            score: double.parse(
-                              provider.predictionScores['Safety'].toString(),
-                            ).toStringAsFixed(2),
+                            score:
+                                provider
+                                    .segmentationResult
+                                    ?.prediction
+                                    ?.safetyScore
+                                    ?.toString() ??
+                                "-",
                             bgColor: Colors.purple.shade100,
                             textColor: Colors.purple.shade800,
                           ),
                           ScoreBox(
                             title: 'Beauty',
-                            score: double.parse(
-                              provider.predictionScores['Beauty'].toString(),
-                            ).toStringAsFixed(2),
+                            score:
+                                provider
+                                    .segmentationResult
+                                    ?.prediction
+                                    ?.beautyScore
+                                    ?.toString() ??
+                                "-",
                             bgColor: Colors.pink.shade100,
                             textColor: Colors.red.shade700,
                           ),
                           ScoreBox(
                             title: 'Comfort',
-                            score: double.parse(
-                              provider.predictionScores['Comfort'].toString(),
-                            ).toStringAsFixed(2),
+                            score:
+                                provider
+                                    .segmentationResult
+                                    ?.prediction
+                                    ?.comfortScore
+                                    ?.toString() ??
+                                "-",
                             bgColor: Colors.orange.shade100,
                             textColor: Colors.orange.shade800,
                           ),
                           ScoreBox(
                             title: 'GVI',
-                            score: double.parse(
-                              provider.predictionScores['GVI'].toString(),
-                            ).toStringAsFixed(2),
+                            score:
+                                provider
+                                    .segmentationResult
+                                    ?.prediction
+                                    ?.gviScore
+                                    ?.toString() ??
+                                "-",
                             bgColor: Colors.green.shade200,
                             textColor: Colors.green.shade800,
                           ),

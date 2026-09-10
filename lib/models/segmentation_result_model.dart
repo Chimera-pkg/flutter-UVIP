@@ -1,3 +1,50 @@
+class PredictionModel {
+  final String id;
+  final String photoId;
+  final String segmentationId;
+  final String? modelVersion;
+  final num? beautyScore;
+  final num? safetyScore;
+  final num? comfortScore;
+  final num? uviScore;
+  final num? gviScore;
+  final int? inferenceTimeMs;
+  final String? r2Reference;
+  final String createdAt;
+
+  PredictionModel({
+    required this.id,
+    required this.photoId,
+    required this.segmentationId,
+    this.modelVersion,
+    this.beautyScore,
+    this.safetyScore,
+    this.comfortScore,
+    this.uviScore,
+    this.gviScore,
+    this.inferenceTimeMs,
+    this.r2Reference,
+    required this.createdAt,
+  });
+
+  factory PredictionModel.fromJson(Map<String, dynamic> json) {
+    return PredictionModel(
+      id: json['id'] ?? '',
+      photoId: json['photo_id'] ?? '',
+      segmentationId: json['segmentation_id'] ?? '',
+      modelVersion: json['model_version'],
+      beautyScore: json['beauty_score'],
+      safetyScore: json['safety_score'],
+      comfortScore: json['comfort_score'],
+      uviScore: json['uvi_score'],
+      gviScore: json['gvi_score'],
+      inferenceTimeMs: json['inference_time_ms'],
+      r2Reference: json['r2_reference'],
+      createdAt: json['created_at'] ?? '',
+    );
+  }
+}
+
 class SegmentationResultModel {
   final String id;
   final String photoId;
@@ -22,6 +69,7 @@ class SegmentationResultModel {
   final String? segmentationOverlayUrl;
   final int? inferenceTimeMs;
   final String createdAt;
+  final PredictionModel? prediction;
 
   SegmentationResultModel({
     required this.id,
@@ -47,6 +95,7 @@ class SegmentationResultModel {
     this.segmentationOverlayUrl,
     this.inferenceTimeMs,
     required this.createdAt,
+    this.prediction,
   });
 
   factory SegmentationResultModel.fromJson(Map<String, dynamic> json) {
@@ -74,6 +123,9 @@ class SegmentationResultModel {
       segmentationOverlayUrl: json['segmentation_overlay_url'],
       inferenceTimeMs: json['inference_time_ms'],
       createdAt: json['created_at'] ?? '',
+      prediction: json['prediction'] != null
+          ? PredictionModel.fromJson(json['prediction'])
+          : null,
     );
   }
 }
