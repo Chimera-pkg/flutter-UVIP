@@ -120,59 +120,6 @@ class _MapAnalysisScreenState extends State<MapAnalysisScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Filter Chips
-                SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 24.0,
-                    vertical: 8.0,
-                  ),
-                  child: Row(
-                    children: provider.filters.map((filter) {
-                      final isSelected = provider.selectedFilter == filter;
-                      return Padding(
-                        padding: const EdgeInsets.only(right: 8.0),
-                        child: ChoiceChip(
-                          label: Text(
-                            filter,
-                            style: TextStyle(
-                              color: isSelected ? Colors.white : Colors.black87,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          selected: isSelected,
-                          onSelected: (selected) {
-                            if (selected) provider.setFilter(filter);
-                          },
-                          backgroundColor: Colors.white,
-                          selectedColor:
-                              AppTheme.primaryColor, // Teal background
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8.0),
-                            side: BorderSide(
-                              color: isSelected
-                                  ? AppTheme.primaryColor
-                                  : Colors.grey.shade300,
-                            ),
-                          ),
-                          avatar: isSelected
-                              ? const Icon(
-                                  Icons.eco,
-                                  color: Colors.white,
-                                  size: 18,
-                                ) // Leaf icon for UVI
-                              : const Icon(
-                                  Icons.eco_outlined,
-                                  color: Colors.grey,
-                                  size: 18,
-                                ),
-                        ),
-                      );
-                    }).toList(),
-                  ),
-                ),
-                const SizedBox(height: 16),
-
                 // Map Area
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 24.0),

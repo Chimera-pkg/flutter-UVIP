@@ -7,6 +7,7 @@ class SummaryCard extends StatelessWidget {
   final String title;
   final String score;
   final String status;
+  final Color? statusColor;
 
   const SummaryCard({
     super.key,
@@ -16,10 +17,16 @@ class SummaryCard extends StatelessWidget {
     required this.title,
     required this.score,
     required this.status,
+    this.statusColor,
   });
 
   @override
   Widget build(BuildContext context) {
+    final Color effectiveColor = statusColor ??
+        (status == 'Buruk'
+            ? Colors.red
+            : (status == 'Sedang' ? Colors.orange : Colors.green));
+
     return Container(
       width: 100,
       padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 8.0),
@@ -57,8 +64,8 @@ class SummaryCard extends StatelessWidget {
           const SizedBox(height: 4),
           Text(
             status,
-            style: const TextStyle(
-              color: Colors.green, // "Baik" color
+            style: TextStyle(
+              color: effectiveColor,
               fontSize: 10,
               fontWeight: FontWeight.bold,
             ),

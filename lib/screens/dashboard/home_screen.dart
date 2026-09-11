@@ -35,6 +35,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
       // Fetch projects to populate the dashboard
       projectProvider.fetchProjects();
+
+      // Fetch home dashboard summary scores
+      homeProvider.fetchHomeDashboard();
     });
   }
 
@@ -97,10 +100,10 @@ class _HomeScreenState extends State<HomeScreen> {
                               color: Colors.black,
                             ),
                           ),
-                          const TextSpan(
-                            text: '  Baik',
+                          TextSpan(
+                            text: '  ${provider.uviStatus}',
                             style: TextStyle(
-                              color: Colors.green,
+                              color: provider.uviStatusColor,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
@@ -122,7 +125,8 @@ class _HomeScreenState extends State<HomeScreen> {
                           iconBgColor: Colors.lightGreen,
                           title: 'Safety Score',
                           score: provider.safetyScore,
-                          status: 'Baik',
+                          status: provider.safetyStatus,
+                          statusColor: provider.safetyStatusColor,
                         ),
                         SummaryCard(
                           icon: Icons.star_rounded, // Star approx
@@ -130,7 +134,8 @@ class _HomeScreenState extends State<HomeScreen> {
                           iconBgColor: Colors.pinkAccent.shade100,
                           title: 'Beauty Score',
                           score: provider.beautyScore,
-                          status: 'Baik',
+                          status: provider.beautyStatus,
+                          statusColor: provider.beautyStatusColor,
                         ),
                         SummaryCard(
                           icon: Icons.cloud_rounded, // Cloud approx
@@ -138,7 +143,8 @@ class _HomeScreenState extends State<HomeScreen> {
                           iconBgColor: Colors.orange.shade300,
                           title: 'Comfort Score',
                           score: provider.comfortScore,
-                          status: 'Baik',
+                          status: provider.comfortStatus,
+                          statusColor: provider.comfortStatusColor,
                         ),
                       ],
                     ),

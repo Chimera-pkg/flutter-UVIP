@@ -13,6 +13,15 @@ class ProjectService {
     }
   }
 
+  Future<Response> getHomeDashboard() async {
+    try {
+      final response = await _dio.get('/projects/home-dashboard');
+      return response;
+    } catch (e) {
+      rethrow;
+    }
+  }
+
   Future<Response> createProject({
     required String name,
     required String location,
@@ -21,11 +30,7 @@ class ProjectService {
     try {
       final response = await _dio.post(
         '/projects/',
-        data: {
-          'name': name,
-          'location': location,
-          'description': description,
-        },
+        data: {'name': name, 'location': location, 'description': description},
       );
       return response;
     } catch (e) {
