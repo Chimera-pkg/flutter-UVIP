@@ -46,18 +46,26 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       backgroundColor: AppTheme.backgroundColor,
       body: SafeArea(
-        child: Consumer2<HomeProvider, AuthProvider>(
-          builder: (context, provider, authProvider, child) {
-            return SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Custom Header
-                  _buildHeader(context),
-                  const SizedBox(height: 16),
+        child: Consumer3<HomeProvider, AuthProvider, ProjectProvider>(
+          builder: (context, provider, authProvider, projectProvider, child) {
+            return RefreshIndicator(
+              onRefresh: () async {
+                await Future.wait([
+                  provider.fetchHomeDashboard(),
+                  projectProvider.fetchProjects(),
+                ]);
+              },
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Custom Header
+                    _buildHeader(context),
+                    const SizedBox(height: 16),
 
-                  // Welcome Texts
-                  Padding(
+                    // Welcome Texts
+                    Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 24.0),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -265,9 +273,10 @@ class _HomeScreenState extends State<HomeScreen> {
                   const SizedBox(height: 100), // padding for bottom nav
                 ],
               ),
-            );
-          },
-        ),
+            ),
+          );
+        },
+      ),
       ),
     );
   }

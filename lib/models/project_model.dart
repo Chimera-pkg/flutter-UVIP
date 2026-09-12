@@ -21,18 +21,47 @@ class ProjectModel {
     this.comfortScore,
   });
 
-  factory ProjectModel.fromJson(Map<String, dynamic> json) {
+  factory ProjectModel.fromJson(dynamic rawData) {
+    if (rawData == null) {
+      return ProjectModel(
+        id: '',
+        name: '',
+        location: '',
+        description: '',
+        createdAt: '',
+      );
+    }
+    Map<String, dynamic> json;
+    if (rawData is Map) {
+      json = Map<String, dynamic>.from(rawData);
+    } else {
+      return ProjectModel(
+        id: '',
+        name: '',
+        location: '',
+        description: '',
+        createdAt: '',
+      );
+    }
+
     return ProjectModel(
       id: json['id']?.toString() ?? '',
-      name: json['name'] ?? '',
-      location: json['location'] ?? '',
-      description: json['description'] ?? '',
-      createdAt: json['created_at'] ?? '',
-      lastOpenedAt: json['last_opened_at'],
-      beautyScore: (json['beauty_score'] as num?)?.toDouble(),
-      safetyScore: (json['safety_score'] as num?)?.toDouble(),
-      comfortScore: (json['comfort_score'] as num?)?.toDouble(),
+      name: json['name']?.toString() ?? '',
+      location: json['location']?.toString() ?? '',
+      description: json['description']?.toString() ?? '',
+      createdAt: json['created_at']?.toString() ?? '',
+      lastOpenedAt: json['last_opened_at']?.toString(),
+      beautyScore: _parseDouble(json['beauty_score'] ?? json['beauty'] ?? json['Beauty']),
+      safetyScore: _parseDouble(json['safety_score'] ?? json['safety'] ?? json['Safety']),
+      comfortScore: _parseDouble(json['comfort_score'] ?? json['comfort'] ?? json['Comfort']),
     );
+  }
+
+  static double? _parseDouble(dynamic val) {
+    if (val == null) return null;
+    if (val is num) return val.toDouble();
+    if (val is String) return double.tryParse(val);
+    return null;
   }
 
   Map<String, dynamic> toJson() {

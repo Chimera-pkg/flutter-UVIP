@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:uvip/models/project_model.dart';
 import 'package:uvip/services/project_service.dart';
@@ -24,8 +25,25 @@ class ProjectProvider with ChangeNotifier {
 
     try {
       final response = await _projectService.getProjects();
-      final List<dynamic> data = response.data;
-      _projects = data.map((json) => ProjectModel.fromJson(json)).toList();
+      dynamic rawData = response.data;
+      if (rawData is String) {
+        try {
+          rawData = jsonDecode(rawData);
+        } catch (_) {}
+      }
+
+      List<dynamic> listData = [];
+      if (rawData is List) {
+        listData = rawData;
+      } else if (rawData is Map) {
+        if (rawData['data'] is List) {
+          listData = rawData['data'];
+        } else if (rawData['projects'] is List) {
+          listData = rawData['projects'];
+        }
+      }
+
+      _projects = listData.map((json) => ProjectModel.fromJson(json)).toList();
       _isLoading = false;
       notifyListeners();
     } catch (e) {

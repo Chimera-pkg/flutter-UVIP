@@ -20,7 +20,7 @@ class SurveyItem {
 /// [HomeProvider] mengelola data utama untuk dashboard (HomeScreen).
 /// State yang dikelola meliputi:
 /// - Data poin grafik historis (chartData)
-/// - Skor summary harian (Safety, Beauty, Comfort)
+/// - Skor summary harian (Safety, Beauty, Comfort, Rata-rata UVI)
 /// - Daftar survei terbaru
 class HomeProvider with ChangeNotifier {
   final ProjectService _projectService = ProjectService();
@@ -29,7 +29,7 @@ class HomeProvider with ChangeNotifier {
   final List<double> chartData = [60.0, 80.0, 20.0, 60.0, 110.0];
 
   // Dynamic data from ProjectProvider
-  late final ProjectProvider _projectProvider;
+  ProjectProvider? _projectProvider;
 
   HomeDashboardModel? _dashboardData;
   HomeDashboardModel? get dashboardData => _dashboardData;
@@ -41,8 +41,22 @@ class HomeProvider with ChangeNotifier {
   String? get errorMessage => _errorMessage;
 
   void setProjectProvider(ProjectProvider projectProvider) {
-    _projectProvider = projectProvider;
+    if (_projectProvider != projectProvider) {
+      _projectProvider?.removeListener(_onProjectProviderChanged);
+      _projectProvider = projectProvider;
+      _projectProvider?.addListener(_onProjectProviderChanged);
+      notifyListeners();
+    }
+  }
+
+  void _onProjectProviderChanged() {
     notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    _projectProvider?.removeListener(_onProjectProviderChanged);
+    super.dispose();
   }
 
   Future<void> fetchHomeDashboard() async {
@@ -52,79 +66,109 @@ class HomeProvider with ChangeNotifier {
 
     try {
       final response = await _projectService.getHomeDashboard();
-      if (response.statusCode == 200) {
+      if (response.statusCode == 200 || response.statusCode == 201) {
         _dashboardData = HomeDashboardModel.fromJson(response.data);
+        debugPrint(
+          'fetchHomeDashboard success: total=${_dashboardData?.totalProjects}, '
+          'uvi=${_dashboardData?.averageScores?.uviScore}, '
+          'safety=${_dashboardData?.averageScores?.safetyScore}, '
+          'beauty=${_dashboardData?.averageScores?.beautyScore}, '
+          'comfort=${_dashboardData?.averageScores?.comfortScore}',
+        );
       } else {
-        _errorMessage = 'Gagal memuat data dashboard.';
+        _errorMessage =
+            'Gagal memuat data dashboard (status: ${response.statusCode}).';
+        debugPrint(_errorMessage);
       }
-    } catch (e) {
+    } catch (e, stack) {
       _errorMessage = 'Terjadi kesalahan: $e';
+      debugPrint('Error in fetchHomeDashboard: $e\n$stack');
     } finally {
       _isLoading = false;
       notifyListeners();
     }
   }
 
-  // Summary Scores - Dynamic from API or ProjectProvider
-  int get totalSurvei =>
-      _dashboardData?.totalProjects ?? _projectProvider.projects.length;
+  // Summary Scores - Dynamic from API or fallback to ProjectProvider
+  int get totalSurvei {
+    final count = _dashboardData?.totalProjects ?? 0;
+    if (count > 0) return count;
+    return _projectProvider?.projects.length ?? 0;
+  }
 
   String get rataRataUvi {
-    if (_dashboardData?.averageScores?.uviScore != null) {
-      return _dashboardData!.averageScores!.uviScore!
-          .toDouble()
-          .toStringAsFixed(2);
+    final score = _dashboardData?.averageScores?.uviScore;
+    if (score != null && score > 0) {
+      return score.toDouble().toStringAsFixed(2);
     }
-    final avg = _projectProvider.getAverageUVI();
-    return avg.toStringAsFixed(2);
+    final avg = _projectProvider?.getAverageUVI() ?? 0.0;
+    if (avg > 0) {
+      return avg.toStringAsFixed(2);
+    }
+    if (score != null) {
+      return score.toDouble().toStringAsFixed(2);
+    }
+    return "0.00";
   }
 
   String get safetyScore {
-    if (_dashboardData?.averageScores?.safetyScore != null) {
-      return _dashboardData!.averageScores!.safetyScore!
-          .toDouble()
-          .toStringAsFixed(2);
+    final score = _dashboardData?.averageScores?.safetyScore;
+    if (score != null && score > 0) {
+      return score.toDouble().toStringAsFixed(2);
     }
-    if (_projectProvider.projects.isEmpty) return "0.00";
-    final scores = _projectProvider.projects
-        .where((p) => p.safetyScore != null)
+    final projects = _projectProvider?.projects ?? [];
+    final scores = projects
+        .where((p) => p.safetyScore != null && p.safetyScore! > 0)
         .map((p) => p.safetyScore!)
         .toList();
-    if (scores.isEmpty) return "0.00";
-    final avg = scores.reduce((a, b) => a + b) / scores.length;
-    return avg.toStringAsFixed(2);
+    if (scores.isNotEmpty) {
+      final avg = scores.reduce((a, b) => a + b) / scores.length;
+      return avg.toStringAsFixed(2);
+    }
+    if (score != null) {
+      return score.toDouble().toStringAsFixed(2);
+    }
+    return "0.00";
   }
 
   String get beautyScore {
-    if (_dashboardData?.averageScores?.beautyScore != null) {
-      return _dashboardData!.averageScores!.beautyScore!
-          .toDouble()
-          .toStringAsFixed(2);
+    final score = _dashboardData?.averageScores?.beautyScore;
+    if (score != null && score > 0) {
+      return score.toDouble().toStringAsFixed(2);
     }
-    if (_projectProvider.projects.isEmpty) return "0.00";
-    final scores = _projectProvider.projects
-        .where((p) => p.beautyScore != null)
+    final projects = _projectProvider?.projects ?? [];
+    final scores = projects
+        .where((p) => p.beautyScore != null && p.beautyScore! > 0)
         .map((p) => p.beautyScore!)
         .toList();
-    if (scores.isEmpty) return "0.00";
-    final avg = scores.reduce((a, b) => a + b) / scores.length;
-    return avg.toStringAsFixed(2);
+    if (scores.isNotEmpty) {
+      final avg = scores.reduce((a, b) => a + b) / scores.length;
+      return avg.toStringAsFixed(2);
+    }
+    if (score != null) {
+      return score.toDouble().toStringAsFixed(2);
+    }
+    return "0.00";
   }
 
   String get comfortScore {
-    if (_dashboardData?.averageScores?.comfortScore != null) {
-      return _dashboardData!.averageScores!.comfortScore!
-          .toDouble()
-          .toStringAsFixed(2);
+    final score = _dashboardData?.averageScores?.comfortScore;
+    if (score != null && score > 0) {
+      return score.toDouble().toStringAsFixed(2);
     }
-    if (_projectProvider.projects.isEmpty) return "0.00";
-    final scores = _projectProvider.projects
-        .where((p) => p.comfortScore != null)
+    final projects = _projectProvider?.projects ?? [];
+    final scores = projects
+        .where((p) => p.comfortScore != null && p.comfortScore! > 0)
         .map((p) => p.comfortScore!)
         .toList();
-    if (scores.isEmpty) return "0.00";
-    final avg = scores.reduce((a, b) => a + b) / scores.length;
-    return avg.toStringAsFixed(2);
+    if (scores.isNotEmpty) {
+      final avg = scores.reduce((a, b) => a + b) / scores.length;
+      return avg.toStringAsFixed(2);
+    }
+    if (score != null) {
+      return score.toDouble().toStringAsFixed(2);
+    }
+    return "0.00";
   }
 
   // Status Category Helper (1-4: Buruk, 5-6: Sedang, 7-10: Baik)
@@ -158,7 +202,7 @@ class HomeProvider with ChangeNotifier {
 
   // Survey List - Recent projects
   List<SurveyItem> get recentSurveys {
-    final recentProjects = _projectProvider.getRecentProjects(limit: 3);
+    final recentProjects = _projectProvider?.getRecentProjects(limit: 3) ?? [];
     return recentProjects.map((project) {
       return SurveyItem(
         title: project.name,
