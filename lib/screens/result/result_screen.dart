@@ -52,12 +52,6 @@ class _ResultScreenState extends State<ResultScreen> {
             fontSize: 20,
           ),
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.info_outline, color: Colors.black87),
-            onPressed: () {},
-          ),
-        ],
       ),
       body: Consumer<ResultProvider>(
         builder: (context, provider, child) {
@@ -114,12 +108,6 @@ class _ResultScreenState extends State<ResultScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const SizedBox(height: 16),
-
-                // Toggle Tab (Bidang / Garis Kontur)
-                _buildToggle(context, provider),
-                const SizedBox(height: 24),
-
                 // Main Image & Legend
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 24.0),
@@ -401,74 +389,6 @@ class _ResultScreenState extends State<ResultScreen> {
             ),
           );
         },
-      ),
-    );
-  }
-
-  Widget _buildToggle(BuildContext context, ResultProvider provider) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 24.0),
-      height: 40,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(8.0),
-        border: Border.all(color: Colors.grey.shade300),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: GestureDetector(
-              onTap: () => provider.toggleTab(true),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: provider.isBidangActive
-                      ? AppTheme.primaryColor
-                      : Colors.transparent,
-                  borderRadius: const BorderRadius.horizontal(
-                    left: Radius.circular(7.0),
-                  ),
-                ),
-                alignment: Alignment.center,
-                child: Text(
-                  'Bidang',
-                  style: TextStyle(
-                    color: provider.isBidangActive
-                        ? Colors.white
-                        : Colors.black87,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 14,
-                  ),
-                ),
-              ),
-            ),
-          ),
-          Expanded(
-            child: GestureDetector(
-              onTap: () => provider.toggleTab(false),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: !provider.isBidangActive
-                      ? AppTheme.primaryColor
-                      : Colors.transparent,
-                  borderRadius: const BorderRadius.horizontal(
-                    right: Radius.circular(7.0),
-                  ),
-                ),
-                alignment: Alignment.center,
-                child: Text(
-                  'Garis Kontur',
-                  style: TextStyle(
-                    color: !provider.isBidangActive
-                        ? Colors.white
-                        : Colors.black87,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 14,
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ],
       ),
     );
   }

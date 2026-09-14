@@ -5,6 +5,7 @@ import 'package:uvip/core/theme/app_theme.dart';
 import 'package:uvip/providers/home_provider.dart';
 import 'package:uvip/providers/auth_provider.dart';
 import 'package:uvip/providers/project_provider.dart';
+import 'package:uvip/screens/project/project_list_screen.dart';
 import 'package:uvip/widgets/summary_card.dart';
 import 'package:uvip/widgets/survey_item_tile.dart';
 import 'package:uvip/widgets/common/section_header.dart';
@@ -66,217 +67,226 @@ class _HomeScreenState extends State<HomeScreen> {
 
                     // Welcome Texts
                     Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Selamat pagi, ${authProvider.user?.name ?? 'User'}',
-                          style: Theme.of(context).textTheme.headlineMedium
-                              ?.copyWith(
-                                fontWeight: FontWeight.bold,
-                                color: Colors.black, // Dark color
-                              ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Berikut ringkasan survei Anda hari ini.',
-                          style: Theme.of(context).textTheme.bodyMedium,
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-
-                  // Main Chart Card
-                  _buildChartCard(context, provider),
-
-                  const SizedBox(height: 16),
-
-                  // UVI Average Score below chart
-                  Center(
-                    child: RichText(
-                      text: TextSpan(
-                        style: Theme.of(context).textTheme.bodyMedium,
+                      padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const TextSpan(text: 'Rata-rata UVI  '),
-                          TextSpan(
-                            text: provider.rataRataUvi,
-                            style: const TextStyle(
-                              fontSize: 24,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.black,
-                            ),
+                          Text(
+                            'Selamat pagi, ${authProvider.user?.name ?? 'User'}',
+                            style: Theme.of(context).textTheme.headlineMedium
+                                ?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.black, // Dark color
+                                ),
                           ),
-                          TextSpan(
-                            text: '  ${provider.uviStatus}',
-                            style: TextStyle(
-                              color: provider.uviStatusColor,
-                              fontWeight: FontWeight.bold,
-                            ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Berikut ringkasan survei Anda hari ini.',
+                            style: Theme.of(context).textTheme.bodyMedium,
                           ),
                         ],
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 24),
+                    const SizedBox(height: 24),
 
-                  // Summary Cards Row
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        SummaryCard(
-                          icon: Icons.verified_user_rounded, // Shield approx
-                          iconColor: Colors.white,
-                          iconBgColor: Colors.lightGreen,
-                          title: 'Safety Score',
-                          score: provider.safetyScore,
-                          status: provider.safetyStatus,
-                          statusColor: provider.safetyStatusColor,
+                    // Main Chart Card
+                    _buildChartCard(context, provider),
+
+                    const SizedBox(height: 16),
+
+                    // UVI Average Score below chart
+                    Center(
+                      child: RichText(
+                        text: TextSpan(
+                          style: Theme.of(context).textTheme.bodyMedium,
+                          children: [
+                            const TextSpan(text: 'Rata-rata UVI  '),
+                            TextSpan(
+                              text: provider.rataRataUvi,
+                              style: const TextStyle(
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black,
+                              ),
+                            ),
+                            TextSpan(
+                              text: '  ${provider.uviStatus}',
+                              style: TextStyle(
+                                color: provider.uviStatusColor,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
                         ),
-                        SummaryCard(
-                          icon: Icons.star_rounded, // Star approx
-                          iconColor: Colors.white,
-                          iconBgColor: Colors.pinkAccent.shade100,
-                          title: 'Beauty Score',
-                          score: provider.beautyScore,
-                          status: provider.beautyStatus,
-                          statusColor: provider.beautyStatusColor,
-                        ),
-                        SummaryCard(
-                          icon: Icons.cloud_rounded, // Cloud approx
-                          iconColor: Colors.white,
-                          iconBgColor: Colors.orange.shade300,
-                          title: 'Comfort Score',
-                          score: provider.comfortScore,
-                          status: provider.comfortStatus,
-                          statusColor: provider.comfortStatusColor,
-                        ),
-                      ],
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 32),
+                    const SizedBox(height: 24),
 
-                  // Survei Terbaru Section
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                    child: SectionHeader(
-                      title: 'Survei Terbaru',
-                      actionText: 'Lihat Semua',
-                      onActionPressed: () {},
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-
-                  // Survei List
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                    child: ListView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      itemCount: provider.recentSurveys.length,
-                      itemBuilder: (context, index) {
-                        final survey = provider.recentSurveys[index];
-                        return SurveyItemTile(
-                          title: survey.title,
-                          subtitle: survey.subtitle,
-                          uviScore: survey.uviScore,
-                          time: survey.time,
-                        );
-                      },
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-
-                  // Bottom Banner
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                    child: Consumer<ProjectProvider>(
-                      builder: (context, projectProvider, child) {
-                        final lastProject = projectProvider
-                            .getLastOpenedProject();
-                        return Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.all(20.0),
-                          decoration: BoxDecoration(
-                            color: AppTheme.secondaryColor, // Navy blue
-                            borderRadius: BorderRadius.circular(12.0),
+                    // Summary Cards Row
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          SummaryCard(
+                            icon: Icons.verified_user_rounded, // Shield approx
+                            iconColor: Colors.white,
+                            iconBgColor: Colors.lightGreen,
+                            title: 'Safety Score',
+                            score: provider.safetyScore,
+                            status: provider.safetyStatus,
+                            statusColor: provider.safetyStatusColor,
                           ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text(
-                                'Lanjutkan Misi Scanner',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
+                          SummaryCard(
+                            icon: Icons.star_rounded, // Star approx
+                            iconColor: Colors.white,
+                            iconBgColor: Colors.pinkAccent.shade100,
+                            title: 'Beauty Score',
+                            score: provider.beautyScore,
+                            status: provider.beautyStatus,
+                            statusColor: provider.beautyStatusColor,
+                          ),
+                          SummaryCard(
+                            icon: Icons.cloud_rounded, // Cloud approx
+                            iconColor: Colors.white,
+                            iconBgColor: Colors.orange.shade300,
+                            title: 'Comfort Score',
+                            score: provider.comfortScore,
+                            status: provider.comfortStatus,
+                            statusColor: provider.comfortStatusColor,
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 32),
+
+                    // Survei Terbaru Section
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                      child: SectionHeader(
+                        title: 'Survei Terbaru',
+                        actionText: 'Lihat Semua',
+                        onActionPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const ProjectListScreen(),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+
+                    // Survei List
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                      child: ListView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemCount: provider.recentSurveys.length,
+                        itemBuilder: (context, index) {
+                          final survey = provider.recentSurveys[index];
+                          return SurveyItemTile(
+                            title: survey.title,
+                            subtitle: survey.subtitle,
+                            uviScore: survey.uviScore,
+                            time: survey.time,
+                          );
+                        },
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+
+                    // Bottom Banner
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                      child: Consumer<ProjectProvider>(
+                        builder: (context, projectProvider, child) {
+                          final lastProject = projectProvider
+                              .getLastOpenedProject();
+                          return Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(20.0),
+                            decoration: BoxDecoration(
+                              color: AppTheme.secondaryColor, // Navy blue
+                              borderRadius: BorderRadius.circular(12.0),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'Lanjutkan Misi Scanner',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
-                              ),
-                              const SizedBox(height: 12),
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: Text(
-                                      lastProject != null
-                                          ? lastProject.name
-                                          : 'Belum ada project',
-                                      style: const TextStyle(
-                                        color: Colors.white70,
-                                        fontSize: 12,
+                                const SizedBox(height: 12),
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        lastProject != null
+                                            ? lastProject.name
+                                            : 'Belum ada project',
+                                        style: const TextStyle(
+                                          color: Colors.white70,
+                                          fontSize: 12,
+                                        ),
                                       ),
                                     ),
-                                  ),
-                                  ElevatedButton(
-                                    onPressed: lastProject != null
-                                        ? () {
-                                            Navigator.push(
-                                              context,
-                                              MaterialPageRoute(
-                                                builder: (context) =>
-                                                    ProjectDetailScreen(
-                                                      project: lastProject,
-                                                    ),
-                                              ),
-                                            );
-                                          }
-                                        : null,
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: Colors.white,
-                                      foregroundColor: AppTheme.primaryColor,
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(8),
+                                    ElevatedButton(
+                                      onPressed: lastProject != null
+                                          ? () {
+                                              Navigator.push(
+                                                context,
+                                                MaterialPageRoute(
+                                                  builder: (context) =>
+                                                      ProjectDetailScreen(
+                                                        project: lastProject,
+                                                      ),
+                                                ),
+                                              );
+                                            }
+                                          : null,
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Colors.white,
+                                        foregroundColor: AppTheme.primaryColor,
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(
+                                            8,
+                                          ),
+                                        ),
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 20,
+                                          vertical: 10,
+                                        ),
                                       ),
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 20,
-                                        vertical: 10,
+                                      child: const Text(
+                                        'Lanjutkan',
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                        ),
                                       ),
                                     ),
-                                    child: const Text(
-                                      'Lanjutkan',
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        );
-                      },
+                                  ],
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
                     ),
-                  ),
 
-                  const SizedBox(height: 100), // padding for bottom nav
-                ],
+                    const SizedBox(height: 100), // padding for bottom nav
+                  ],
+                ),
               ),
-            ),
-          );
-        },
-      ),
+            );
+          },
+        ),
       ),
     );
   }

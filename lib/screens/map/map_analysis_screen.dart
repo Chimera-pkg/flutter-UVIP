@@ -7,7 +7,8 @@ import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:uvip/core/theme/app_theme.dart';
 import 'package:uvip/providers/map_provider.dart';
-import 'package:uvip/widgets/data_summary_card.dart';
+import 'package:uvip/providers/home_provider.dart';
+import 'package:uvip/widgets/summary_card.dart';
 import 'package:uvip/widgets/common/section_header.dart';
 import 'package:uvip/widgets/common/time_filter_dropdown.dart';
 
@@ -107,15 +108,9 @@ class _MapAnalysisScreenState extends State<MapAnalysisScreen> {
         centerTitle: true,
         backgroundColor: AppTheme.backgroundColor,
         elevation: 0,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.filter_alt_outlined),
-            onPressed: () {},
-          ),
-        ],
       ),
-      body: Consumer<MapProvider>(
-        builder: (context, provider, child) {
+      body: Consumer2<MapProvider, HomeProvider>(
+        builder: (context, provider, homeProvider, child) {
           return SingleChildScrollView(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -284,26 +279,34 @@ class _MapAnalysisScreenState extends State<MapAnalysisScreen> {
                       const SizedBox(height: 16),
                       // Summary Cards Row
                       Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          DataSummaryCard(
-                            title: 'Rata-rata UVI',
-                            value: provider.rataRataUvi,
-                            subtitle: 'Baik',
-                            subtitleColor: Colors.lightGreen,
+                          SummaryCard(
+                            icon: Icons.verified_user_rounded, // Shield approx
+                            iconColor: Colors.white,
+                            iconBgColor: Colors.lightGreen,
+                            title: 'Safety Score',
+                            score: homeProvider.safetyScore,
+                            status: homeProvider.safetyStatus,
+                            statusColor: homeProvider.safetyStatusColor,
                           ),
-                          const SizedBox(width: 8),
-                          DataSummaryCard(
-                            title: 'Survei Points',
-                            value: provider.surveyPoints,
-                            subtitle: 'Pts',
-                            subtitleColor: Colors.pinkAccent,
+                          SummaryCard(
+                            icon: Icons.star_rounded, // Star approx
+                            iconColor: Colors.white,
+                            iconBgColor: Colors.pinkAccent.shade100,
+                            title: 'Beauty Score',
+                            score: homeProvider.beautyScore,
+                            status: homeProvider.beautyStatus,
+                            statusColor: homeProvider.beautyStatusColor,
                           ),
-                          const SizedBox(width: 8),
-                          DataSummaryCard(
-                            title: 'Luas Area',
-                            value: provider.luasArea,
-                            subtitle: 'Km2',
-                            subtitleColor: Colors.orange,
+                          SummaryCard(
+                            icon: Icons.cloud_rounded, // Cloud approx
+                            iconColor: Colors.white,
+                            iconBgColor: Colors.orange.shade300,
+                            title: 'Comfort Score',
+                            score: homeProvider.comfortScore,
+                            status: homeProvider.comfortStatus,
+                            statusColor: homeProvider.comfortStatusColor,
                           ),
                         ],
                       ),
@@ -311,26 +314,28 @@ class _MapAnalysisScreenState extends State<MapAnalysisScreen> {
 
                       // Chart Card
                       Container(
-                        padding: const EdgeInsets.all(16.0),
+                        padding: const EdgeInsets.all(20.0),
                         decoration: BoxDecoration(
-                          color: Colors.white,
+                          color: AppTheme.primaryColor.withValues(
+                            alpha: 0.9,
+                          ), // Dark teal
                           borderRadius: BorderRadius.circular(16.0),
-                          border: Border.all(color: Colors.grey.shade200),
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     const Text(
-                                      'Rata-Rata UVI',
+                                      'Total Survei',
                                       style: TextStyle(
-                                        fontSize: 10,
-                                        color: Colors.black54,
+                                        color: Colors.white70,
+                                        fontSize: 12,
                                       ),
                                     ),
                                     Row(
@@ -338,19 +343,20 @@ class _MapAnalysisScreenState extends State<MapAnalysisScreen> {
                                           CrossAxisAlignment.end,
                                       children: [
                                         Text(
-                                          provider.rataRataUvi,
+                                          '${homeProvider.totalSurvei}',
                                           style: const TextStyle(
-                                            fontSize: 24,
+                                            color: Colors.white,
+                                            fontSize: 28,
                                             fontWeight: FontWeight.bold,
                                             height: 1.0,
                                           ),
                                         ),
-                                        const SizedBox(width: 4),
+                                        const SizedBox(width: 8),
                                         const Text(
                                           '+16%',
                                           style: TextStyle(
-                                            color: Colors.lightGreen,
-                                            fontSize: 10,
+                                            color: Colors.yellowAccent,
+                                            fontSize: 12,
                                             fontWeight: FontWeight.bold,
                                           ),
                                         ),
@@ -358,25 +364,22 @@ class _MapAnalysisScreenState extends State<MapAnalysisScreen> {
                                     ),
                                   ],
                                 ),
-                                const TimeFilterDropdown(
-                                  backgroundColor: AppTheme.secondaryColor,
-                                  textColor: Colors.white,
-                                ),
+                                const TimeFilterDropdown(),
                               ],
                             ),
                             const SizedBox(height: 24),
-                            // Area Chart
+                            // Chart Area
                             SizedBox(
-                              height: 100,
+                              height: 150,
                               child: LineChart(
                                 LineChartData(
                                   gridData: FlGridData(
                                     show: true,
                                     drawVerticalLine: false,
-                                    horizontalInterval: 2,
+                                    horizontalInterval: 50,
                                     getDrawingHorizontalLine: (value) {
                                       return const FlLine(
-                                        color: Colors.black12,
+                                        color: Colors.white24,
                                         strokeWidth: 1,
                                       );
                                     },
@@ -392,14 +395,14 @@ class _MapAnalysisScreenState extends State<MapAnalysisScreen> {
                                     leftTitles: AxisTitles(
                                       sideTitles: SideTitles(
                                         showTitles: true,
-                                        interval: 2,
-                                        reservedSize: 20,
+                                        interval: 50,
+                                        reservedSize: 28,
                                         getTitlesWidget: (value, meta) {
                                           return Text(
                                             value.toInt().toString(),
                                             style: const TextStyle(
-                                              color: Colors.black54,
-                                              fontSize: 8,
+                                              color: Colors.white70,
+                                              fontSize: 10,
                                             ),
                                           );
                                         },
@@ -408,7 +411,7 @@ class _MapAnalysisScreenState extends State<MapAnalysisScreen> {
                                     bottomTitles: AxisTitles(
                                       sideTitles: SideTitles(
                                         showTitles: true,
-                                        reservedSize: 18,
+                                        reservedSize: 22,
                                         interval: 1,
                                         getTitlesWidget: (value, meta) {
                                           final days = [
@@ -427,8 +430,8 @@ class _MapAnalysisScreenState extends State<MapAnalysisScreen> {
                                               child: Text(
                                                 days[value.toInt()],
                                                 style: const TextStyle(
-                                                  color: Colors.black54,
-                                                  fontSize: 8,
+                                                  color: Colors.white70,
+                                                  fontSize: 10,
                                                 ),
                                               ),
                                             );
@@ -441,11 +444,11 @@ class _MapAnalysisScreenState extends State<MapAnalysisScreen> {
                                   borderData: FlBorderData(show: false),
                                   minX: 0,
                                   maxX: 4,
-                                  minY: 2,
-                                  maxY: 8,
+                                  minY: 0,
+                                  maxY: 150,
                                   lineBarsData: [
                                     LineChartBarData(
-                                      spots: provider.chartData
+                                      spots: homeProvider.chartData
                                           .asMap()
                                           .entries
                                           .map(
@@ -456,29 +459,18 @@ class _MapAnalysisScreenState extends State<MapAnalysisScreen> {
                                           )
                                           .toList(),
                                       isCurved: false,
-                                      color: AppTheme.primaryColor,
+                                      color: Colors.yellowAccent,
                                       barWidth: 2,
                                       isStrokeCapRound: true,
-                                      dotData: FlDotData(
-                                        show: true,
-                                        getDotPainter:
-                                            (spot, percent, barData, index) {
-                                              return FlDotCirclePainter(
-                                                radius: 4,
-                                                color: AppTheme.primaryColor,
-                                                strokeWidth: 2,
-                                                strokeColor: Colors.white,
-                                              );
-                                            },
-                                      ),
+                                      dotData: const FlDotData(show: true),
                                       belowBarData: BarAreaData(
                                         show: true,
                                         gradient: LinearGradient(
                                           colors: [
-                                            AppTheme.primaryColor.withValues(
+                                            Colors.yellowAccent.withValues(
                                               alpha: 0.3,
                                             ),
-                                            AppTheme.primaryColor.withValues(
+                                            Colors.yellowAccent.withValues(
                                               alpha: 0.0,
                                             ),
                                           ],
@@ -491,13 +483,13 @@ class _MapAnalysisScreenState extends State<MapAnalysisScreen> {
                                   lineTouchData: LineTouchData(
                                     touchTooltipData: LineTouchTooltipData(
                                       getTooltipColor: (touchedSpot) =>
-                                          Colors.white,
+                                          Colors.black87,
                                       getTooltipItems: (touchedSpots) {
                                         return touchedSpots.map((spot) {
                                           return LineTooltipItem(
                                             spot.y.toString(),
                                             const TextStyle(
-                                              color: AppTheme.primaryColor,
+                                              color: Colors.white,
                                               fontWeight: FontWeight.bold,
                                             ),
                                           );
