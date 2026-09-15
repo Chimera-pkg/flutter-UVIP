@@ -29,6 +29,7 @@ class SurveyItemTile extends StatelessWidget {
               color: AppTheme.primaryColor,
               borderRadius: BorderRadius.circular(8.0),
             ),
+            child: const Icon(Icons.folder, color: Colors.white, size: 24),
           ),
           const SizedBox(width: 16),
           // Title & Subtitle
@@ -39,15 +40,15 @@ class SurveyItemTile extends StatelessWidget {
                 Text(
                   title,
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 Text(
                   subtitle,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        fontSize: 12,
-                      ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodySmall?.copyWith(fontSize: 12),
                 ),
               ],
             ),
@@ -58,13 +59,16 @@ class SurveyItemTile extends StatelessWidget {
             children: [
               Text(
                 time,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      fontSize: 12,
-                    ),
+                style: Theme.of(
+                  context,
+                ).textTheme.bodySmall?.copyWith(fontSize: 12),
               ),
               const SizedBox(height: 4),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 8.0,
+                  vertical: 4.0,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.lime.shade200, // Light yellow-green
                   borderRadius: BorderRadius.circular(4.0),
