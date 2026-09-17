@@ -16,6 +16,8 @@ import 'package:uvip/screens/auth/login_screen.dart';
 import 'package:uvip/screens/dashboard/main_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final prefs = await SharedPreferences.getInstance();
@@ -49,6 +51,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      navigatorKey: navigatorKey,
       title: 'UVIP App',
       theme: AppTheme.lightTheme,
       home: isLoggedIn ? const MainScreen() : const LoginScreen(),
