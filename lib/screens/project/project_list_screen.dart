@@ -14,13 +14,31 @@ class ProjectListScreen extends StatefulWidget {
 }
 
 class _ProjectListScreenState extends State<ProjectListScreen> {
+  final ScrollController _scrollController = ScrollController();
   @override
   void initState() {
     super.initState();
+    _scrollController.addListener(_onScroll);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final provider = Provider.of<ProjectProvider>(context, listen: false);
       provider.fetchProjects();
     });
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - 200) {
+      final provider = Provider.of<ProjectProvider>(context, listen: false);
+      if (!provider.isFetchingMore) {
+        provider.fetchProjects(isLoadMore: true);
+      }
+    }
   }
 
   Future<void> _createProject() async {
@@ -176,11 +194,19 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
           }
 
           return RefreshIndicator(
-            onRefresh: () => provider.fetchProjects(),
+            onRefresh: () => provider.fetchProjects(isRefresh: true),
             child: ListView.builder(
+              controller: _scrollController,
+              physics: const AlwaysScrollableScrollPhysics(),
               padding: const EdgeInsets.all(16),
-              itemCount: provider.projects.length,
+              itemCount: provider.projects.length + (provider.isFetchingMore ? 1 : 0),
               itemBuilder: (context, index) {
+                if (index == provider.projects.length) {
+                  return const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 16.0),
+                    child: Center(child: CircularProgressIndicator()),
+                  );
+                }
                 final project = provider.projects[index];
                 return ProjectCard(
                   project: project,

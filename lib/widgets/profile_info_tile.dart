@@ -37,25 +37,20 @@ class ProfileInfoTile extends StatelessWidget {
                 children: [
                   Text(
                     label,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          fontSize: 12,
-                        ),
+                    style: Theme.of(
+                      context,
+                    ).textTheme.bodySmall?.copyWith(fontSize: 12),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     value,
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ],
               ),
-            ),
-            // Right Arrow
-            const Icon(
-              Icons.chevron_right,
-              color: AppTheme.unselectedIconColor,
             ),
           ],
         ),

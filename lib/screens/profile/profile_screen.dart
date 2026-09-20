@@ -56,20 +56,14 @@ class ProfileScreen extends StatelessWidget {
                 const SizedBox(height: 40),
                 // List Items
                 ProfileInfoTile(
-                  icon: Icons.phone_outlined, // Teal icon on the left
-                  label: 'No. Telepon',
-                  value: provider.phone,
+                  icon: Icons.person_outline, // Teal icon on the left
+                  label: 'Username',
+                  value: user?.name ?? '-',
                 ),
                 ProfileInfoTile(
                   icon: Icons.mail_outline, // Teal icon on the left
                   label: 'Email',
                   value: user?.email ?? '-',
-                ),
-                ProfileInfoTile(
-                  icon: Icons
-                      .map_outlined, // You can use a more precise icon if needed
-                  label: 'Alamat',
-                  value: provider.address,
                 ),
                 const SizedBox(height: 32),
                 Padding(

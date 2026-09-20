@@ -4,9 +4,12 @@ import 'package:uvip/core/network/dio_client.dart';
 class ProjectService {
   final Dio _dio = DioClient.instance;
 
-  Future<Response> getProjects() async {
+  Future<Response> getProjects({int page = 1, int size = 10}) async {
     try {
-      final response = await _dio.get('/projects/');
+      final response = await _dio.get(
+        '/projects/',
+        queryParameters: {'page': page, 'size': size},
+      );
       return response;
     } catch (e) {
       rethrow;

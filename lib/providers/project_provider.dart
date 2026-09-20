@@ -18,13 +18,33 @@ class ProjectProvider with ChangeNotifier {
   ProjectModel? _selectedProject;
   ProjectModel? get selectedProject => _selectedProject;
 
-  Future<void> fetchProjects() async {
-    _isLoading = true;
-    _errorMessage = null;
-    notifyListeners();
+  // Pagination
+  int _currentPage = 1;
+  int _totalPages = 1;
+  bool _isFetchingMore = false;
+  bool get isFetchingMore => _isFetchingMore;
+  final int _pageSize = 10;
+  int _totalData = 0;
+  int get totalData => _totalData;
+
+  Future<void> fetchProjects({bool isLoadMore = false, bool isRefresh = false}) async {
+    if (isLoadMore) {
+      if (_currentPage >= _totalPages || _isFetchingMore) return;
+      _isFetchingMore = true;
+      _currentPage++;
+      notifyListeners();
+    } else {
+      if (!isRefresh) {
+        _isLoading = true;
+        _projects.clear();
+      }
+      _currentPage = 1;
+      _errorMessage = null;
+      notifyListeners();
+    }
 
     try {
-      final response = await _projectService.getProjects();
+      final response = await _projectService.getProjects(page: _currentPage, size: _pageSize);
       dynamic rawData = response.data;
       if (rawData is String) {
         try {
@@ -38,17 +58,31 @@ class ProjectProvider with ChangeNotifier {
       } else if (rawData is Map) {
         if (rawData['data'] is List) {
           listData = rawData['data'];
+          _totalPages = rawData['total_pages'] ?? 1;
+          _totalData = rawData['total_data'] ?? 0;
         } else if (rawData['projects'] is List) {
           listData = rawData['projects'];
         }
       }
 
-      _projects = listData.map((json) => ProjectModel.fromJson(json)).toList();
-      _isLoading = false;
-      notifyListeners();
+      final newProjects = listData.map((json) => ProjectModel.fromJson(json)).toList();
+      
+      if (isLoadMore) {
+        _projects.addAll(newProjects);
+      } else {
+        _projects = newProjects;
+      }
     } catch (e) {
-      _isLoading = false;
       _errorMessage = 'Gagal memuat project: $e';
+      if (isLoadMore) {
+        _currentPage--;
+      }
+    } finally {
+      if (isLoadMore) {
+        _isFetchingMore = false;
+      } else {
+        _isLoading = false;
+      }
       notifyListeners();
     }
   }
