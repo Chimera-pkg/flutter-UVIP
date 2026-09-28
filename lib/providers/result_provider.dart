@@ -29,6 +29,12 @@ class ResultProvider with ChangeNotifier {
   VideoSegmentationResultModel? get videoSegmentationResult =>
       _videoSegmentationResult;
 
+  SegmentationResultModel? get currentSegmentation =>
+      _segmentationResult ?? _videoSegmentationResult?.segmentation;
+
+  PredictionModel? get currentPrediction =>
+      _segmentationResult?.prediction ?? _videoSegmentationResult?.prediction;
+
   void toggleTab(bool isBidang) {
     _isBidangActive = isBidang;
     notifyListeners();
@@ -95,30 +101,30 @@ class ResultProvider with ChangeNotifier {
   List<ShapFactor> get positiveFactors => [
     ShapFactor(
       name: 'Cakupan Vegetasi',
-      value: _segmentationResult?.greenCoveragePct?.toDouble() ?? 0,
+      value: currentSegmentation?.greenCoveragePct?.toDouble() ?? 0,
     ),
     ShapFactor(
       name: 'Lebar Trotoar',
-      value: _segmentationResult?.sidewalkPct?.toDouble() ?? 0,
+      value: currentSegmentation?.sidewalkPct?.toDouble() ?? 0,
     ),
     ShapFactor(
       name: 'Keterbukaan Langit',
-      value: _segmentationResult?.skyVisibilityPct?.toDouble() ?? 0,
+      value: currentSegmentation?.skyVisibilityPct?.toDouble() ?? 0,
     ),
   ];
 
   List<ShapFactor> get negativeFactors => [
     ShapFactor(
       name: 'Kepadatan Reklame',
-      value: -(_segmentationResult?.signagePct?.toDouble() ?? 0),
+      value: -(currentSegmentation?.signagePct?.toDouble() ?? 0),
     ),
     ShapFactor(
       name: 'Kepadatan Kendaraan',
-      value: -(_segmentationResult?.vehiclePct?.toDouble() ?? 0),
+      value: -(currentSegmentation?.vehiclePct?.toDouble() ?? 0),
     ),
     ShapFactor(
       name: 'Bangunan Tinggi',
-      value: -(_segmentationResult?.buildingCoveragePct?.toDouble() ?? 0),
+      value: -(currentSegmentation?.buildingCoveragePct?.toDouble() ?? 0),
     ),
   ];
 

@@ -201,8 +201,7 @@ class _ResultScreenState extends State<ResultScreen> {
                             title: 'UVI',
                             score:
                                 provider
-                                    .segmentationResult
-                                    ?.prediction
+                                    .currentPrediction
                                     ?.uviScore
                                     ?.toString() ??
                                 "-",
@@ -213,8 +212,7 @@ class _ResultScreenState extends State<ResultScreen> {
                             title: 'Safety',
                             score:
                                 provider
-                                    .segmentationResult
-                                    ?.prediction
+                                    .currentPrediction
                                     ?.safetyScore
                                     ?.toString() ??
                                 "-",
@@ -225,8 +223,7 @@ class _ResultScreenState extends State<ResultScreen> {
                             title: 'Beauty',
                             score:
                                 provider
-                                    .segmentationResult
-                                    ?.prediction
+                                    .currentPrediction
                                     ?.beautyScore
                                     ?.toString() ??
                                 "-",
@@ -237,8 +234,7 @@ class _ResultScreenState extends State<ResultScreen> {
                             title: 'Comfort',
                             score:
                                 provider
-                                    .segmentationResult
-                                    ?.prediction
+                                    .currentPrediction
                                     ?.comfortScore
                                     ?.toString() ??
                                 "-",
@@ -249,8 +245,7 @@ class _ResultScreenState extends State<ResultScreen> {
                             title: 'GVI',
                             score:
                                 provider
-                                    .segmentationResult
-                                    ?.prediction
+                                    .currentPrediction
                                     ?.gviScore
                                     ?.toString() ??
                                 "-",
