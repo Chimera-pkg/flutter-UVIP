@@ -52,6 +52,30 @@ class UploadService {
     }
   }
 
+  Future<Response> uploadStreetPhotosBulk(
+    List<MultipartFile> files,
+    String metadataJsonStr, {
+    String? projectId,
+    void Function(int, int)? onSendProgress,
+  }) async {
+    try {
+      final formData = FormData.fromMap({
+        'files': files,
+        'metadata_json': metadataJsonStr,
+        if (projectId != null) 'project_id': projectId,
+      });
+
+      final response = await _dio.post(
+        '/street-photos/bulk',
+        data: formData,
+        onSendProgress: onSendProgress,
+      );
+      return response;
+    } catch (e) {
+      rethrow;
+    }
+  }
+
   Future<Response> deleteStreetPhoto(String photoId) async {
     try {
       final response = await _dio.delete('/street-photos/$photoId');

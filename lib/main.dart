@@ -1,5 +1,3 @@
-import 'package:device_preview/device_preview.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:uvip/core/theme/app_theme.dart';
@@ -35,10 +33,7 @@ void main() async {
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => ResultProvider()),
       ],
-      child: DevicePreview(
-        enabled: !kReleaseMode,
-        builder: (context) => MyApp(isLoggedIn: hasToken),
-      ),
+      child: MyApp(isLoggedIn: hasToken),
     ),
   );
 }

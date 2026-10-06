@@ -6,6 +6,7 @@ import 'package:uvip/core/theme/app_theme.dart';
 import 'package:uvip/models/street_photo_model.dart';
 import 'package:uvip/models/street_video_model.dart';
 import 'package:uvip/providers/upload_provider.dart';
+import 'package:uvip/providers/map_provider.dart';
 import 'package:uvip/screens/result/result_screen.dart';
 import 'package:uvip/widgets/uploaded_item_tile.dart';
 
@@ -91,9 +92,15 @@ class _UploadScreenState extends State<UploadScreen> {
     final provider = Provider.of<UploadProvider>(context, listen: false);
 
     if (_currentTab == 0) {
-      final XFile? image = await picker.pickImage(source: ImageSource.gallery);
-      if (image != null && context.mounted) {
-        await provider.uploadPhoto(image);
+      final List<XFile> images = await picker.pickMultiImage();
+      if (images.isNotEmpty && context.mounted) {
+        final mapProvider = Provider.of<MapProvider>(context, listen: false);
+        await provider.uploadPhotosBulk(
+          images,
+          latitude: mapProvider.latitude,
+          longitude: mapProvider.longitude,
+          locationName: mapProvider.locationName,
+        );
       }
     } else {
       final XFile? video = await picker.pickVideo(source: ImageSource.gallery);
@@ -463,10 +470,10 @@ class _UploadScreenState extends State<UploadScreen> {
                             Text(
                               provider.isUploading
                                   ? (_currentTab == 0
-                                        ? 'Uploading photo...'
+                                        ? 'Uploading photos...'
                                         : 'Uploading video...')
                                   : (_currentTab == 0
-                                        ? 'Upload your photo here'
+                                        ? 'Upload your photos here'
                                         : 'Upload your video here'),
                               style: Theme.of(context).textTheme.bodySmall
                                   ?.copyWith(color: AppTheme.lightGray),
@@ -474,7 +481,7 @@ class _UploadScreenState extends State<UploadScreen> {
                             if (!provider.isUploading) ...[
                               const SizedBox(height: 8),
                               Text(
-                                'Browse ${_currentTab == 0 ? 'Photo' : 'Video'}',
+                                'Browse ${_currentTab == 0 ? 'Photos' : 'Video'}',
                                 style: Theme.of(context).textTheme.titleLarge
                                     ?.copyWith(
                                       color: AppTheme.primaryColor,
@@ -524,7 +531,7 @@ class _UploadScreenState extends State<UploadScreen> {
                   // Uploading Section
                   if (provider.isUploading) ...[
                     Text(
-                      'Uploading 1 ${_currentTab == 0 ? 'image' : 'video'}',
+                      'Uploading ${_currentTab == 0 ? 'photos' : 'video'}...',
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(
                         fontWeight: FontWeight.bold,
                         fontSize: 16,

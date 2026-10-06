@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 import 'package:image_picker/image_picker.dart';
@@ -157,6 +158,86 @@ class UploadProvider with ChangeNotifier {
         }
       } else {
         _errorMessage = 'Upload error: $e';
+      }
+      return false;
+    } finally {
+      _isUploading = false;
+      _uploadProgress = 0.0;
+      notifyListeners();
+    }
+  }
+
+  Future<bool> uploadPhotosBulk(
+    List<XFile> files, {
+    required double latitude,
+    required double longitude,
+    required String locationName,
+  }) async {
+    _isUploading = true;
+    _uploadProgress = 0.0;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      List<MultipartFile> multipartFiles = [];
+      List<Map<String, dynamic>> metadataList = [];
+
+      for (var i = 0; i < files.length; i++) {
+        final file = files[i];
+        final bytes = await file.readAsBytes();
+        String filename = file.name.isNotEmpty
+            ? file.name
+            : 'uvip_${DateTime.now().millisecondsSinceEpoch}_$i.jpg';
+        if (!filename.contains('.')) {
+          filename = '$filename.jpg';
+        }
+        multipartFiles.add(MultipartFile.fromBytes(bytes, filename: filename));
+
+        metadataList.add({
+          "latitude": latitude,
+          "longitude": longitude,
+          "captured_at": DateTime.now().toUtc().toIso8601String(),
+          "source": "mobile_upload",
+          "street_name": locationName,
+          "is_manual_capture": true
+        });
+      }
+
+      final String metadataJsonStr = jsonEncode(metadataList);
+
+      final response = await _uploadService.uploadStreetPhotosBulk(
+        multipartFiles,
+        metadataJsonStr,
+        projectId: _currentProjectId,
+        onSendProgress: (sent, total) {
+          if (total > 0) {
+            _uploadProgress = sent / total;
+            notifyListeners();
+          }
+        },
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        await fetchStreetPhotos(); // Refresh list after success
+        return true;
+      } else {
+        _errorMessage = 'Bulk upload failed: ${response.statusCode}';
+        return false;
+      }
+    } catch (e) {
+      if (e is DioException) {
+        final data = e.response?.data;
+        if (data is Map && data.containsKey('detail')) {
+          _errorMessage = 'Bulk upload error: ${data['detail']}';
+        } else if (data is Map && data.containsKey('message')) {
+          _errorMessage = 'Bulk upload error: ${data['message']}';
+        } else if (data != null) {
+          _errorMessage = 'Bulk upload error (${e.response?.statusCode}): $data';
+        } else {
+          _errorMessage = 'Bulk upload error: ${e.message}';
+        }
+      } else {
+        _errorMessage = 'Bulk upload error: $e';
       }
       return false;
     } finally {
