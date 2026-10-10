@@ -1,3 +1,4 @@
+import 'package:uvip/models/project_model.dart';
 import 'package:uvip/models/segmentation_result_model.dart';
 
 class VideoSegmentationResultModel {
@@ -14,6 +15,7 @@ class VideoSegmentationResultModel {
   final String createdAt;
   final SegmentationResultModel? segmentation;
   final PredictionModel? prediction;
+  final ProjectModel? project;
 
   VideoSegmentationResultModel({
     required this.id,
@@ -29,6 +31,7 @@ class VideoSegmentationResultModel {
     required this.createdAt,
     this.segmentation,
     this.prediction,
+    this.project,
   });
 
   factory VideoSegmentationResultModel.fromJson(Map<String, dynamic> json) {
@@ -49,6 +52,9 @@ class VideoSegmentationResultModel {
           : null,
       prediction: json['prediction'] != null
           ? PredictionModel.fromJson(json['prediction'])
+          : null,
+      project: json['project'] != null
+          ? ProjectModel.fromJson(json['project'])
           : null,
     );
   }

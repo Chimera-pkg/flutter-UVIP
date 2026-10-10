@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:dio/dio.dart';
 import 'package:uvip/core/network/dio_client.dart';
 
@@ -20,6 +22,7 @@ class ResultService {
       final response = await _dio.get(
         '/video-output-segmentations/by-photo/$photoId',
       );
+      log(response.toString());
       return response;
     } catch (e) {
       rethrow;

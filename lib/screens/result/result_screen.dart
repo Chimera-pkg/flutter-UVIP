@@ -11,12 +11,14 @@ import 'package:uvip/widgets/result/score_box.dart';
 import 'package:uvip/widgets/result/shap_card.dart';
 import 'package:uvip/widgets/common/section_header.dart';
 import 'package:uvip/models/street_photo_model.dart';
+import 'package:uvip/models/street_video_model.dart';
 
 class ResultScreen extends StatefulWidget {
-  final StreetPhotoModel photo;
+  final StreetPhotoModel? photo;
+  final StreetVideoModel? video;
   final bool isVideo;
 
-  const ResultScreen({super.key, required this.photo, this.isVideo = false});
+  const ResultScreen({super.key, this.photo, this.video, this.isVideo = false});
 
   @override
   State<ResultScreen> createState() => _ResultScreenState();
@@ -29,10 +31,11 @@ class _ResultScreenState extends State<ResultScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      final id = widget.isVideo ? widget.video!.id : widget.photo!.id;
       Provider.of<ResultProvider>(
         context,
         listen: false,
-      ).fetchSegmentationResult(widget.photo.id, isVideo: widget.isVideo);
+      ).fetchSegmentationResult(id, isVideo: widget.isVideo);
     });
   }
 
@@ -84,20 +87,40 @@ class _ResultScreenState extends State<ResultScreen> {
           }
 
           String? fullImageUrl;
+          String? originalUrl;
           if (widget.isVideo) {
             fullImageUrl = provider.videoSegmentationResult?.videoUrl;
+            originalUrl = widget.video!.filePath;
           } else {
             fullImageUrl = provider.segmentationResult?.segmentationOverlayUrl;
+            originalUrl = provider.segmentationResult?.privacyMaskedUrl;
           }
 
           if (fullImageUrl == null || fullImageUrl.isEmpty) {
-            fullImageUrl = widget.photo.filePath;
+            fullImageUrl = widget.isVideo
+                ? widget.video!.filePath
+                : widget.photo!.filePath;
           }
           if (fullImageUrl.isNotEmpty && !fullImageUrl.startsWith('http')) {
             final baseUrl = 'http://80.241.214.39';
             fullImageUrl =
                 '$baseUrl/${fullImageUrl.startsWith('/') ? fullImageUrl.substring(1) : fullImageUrl}';
           }
+
+          if (originalUrl == null || originalUrl.isEmpty) {
+            originalUrl = widget.isVideo
+                ? widget.video!.filePath
+                : widget.photo!.filePath;
+          }
+          if (originalUrl.isNotEmpty && !originalUrl.startsWith('http')) {
+            final baseUrl = 'http://80.241.214.39';
+            originalUrl =
+                '$baseUrl/${originalUrl.startsWith('/') ? originalUrl.substring(1) : originalUrl}';
+          }
+
+          final String projectName = widget.isVideo
+              ? (provider.videoSegmentationResult?.project?.name ?? '-')
+              : (provider.segmentationResult?.project?.name ?? '-');
 
           final bool isVideo =
               fullImageUrl.toLowerCase().endsWith('.mp4') ||
@@ -111,85 +134,253 @@ class _ResultScreenState extends State<ResultScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Main Image & Legend
+                    // Metadata Card with Original Image
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                      child: Stack(
-                        children: [
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(16.0),
-                            child: fullImageUrl.isNotEmpty
-                                ? (isVideo
-                                      ? _InlineVideoPlayer(
-                                          videoUrl: fullImageUrl,
-                                        )
-                                      : Image.network(
-                                          fullImageUrl,
-                                          height: 220,
-                                          width: double.infinity,
-                                          fit: BoxFit.cover,
-                                          errorBuilder:
-                                              (context, error, stackTrace) =>
-                                                  Container(
-                                                    height: 220,
-                                                    width: double.infinity,
-                                                    color: Colors.grey.shade300,
-                                                    child: const Icon(
-                                                      Icons.broken_image,
-                                                      size: 64,
-                                                      color: Colors.grey,
-                                                    ),
-                                                  ),
-                                        ))
-                                : Container(
-                                    height: 220,
-                                    width: double.infinity,
-                                    color: Colors.grey.shade300,
-                                    child: const Icon(
-                                      Icons.image,
-                                      size: 64,
-                                      color: Colors.grey,
-                                    ),
+                      child: Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: Colors.grey.shade200),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: Row(
+                                    children: [
+                                      Container(
+                                        padding: const EdgeInsets.all(8),
+                                        decoration: BoxDecoration(
+                                          color: Colors.teal.shade50,
+                                          borderRadius: BorderRadius.circular(
+                                            8,
+                                          ),
+                                        ),
+                                        child: const Icon(
+                                          Icons.folder_outlined,
+                                          color: Colors.teal,
+                                          size: 16,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            const Text(
+                                              'Project',
+                                              style: TextStyle(
+                                                color: Colors.black54,
+                                                fontSize: 12,
+                                              ),
+                                            ),
+                                            Text(
+                                              projectName,
+                                              style: const TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 14,
+                                              ),
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
                                   ),
-                          ),
-                          Positioned(
-                            bottom: 12,
-                            left: 0,
-                            right: 0,
-                            child: Center(
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 16.0,
-                                  vertical: 8.0,
                                 ),
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withValues(alpha: 0.9),
-                                  borderRadius: BorderRadius.circular(24.0),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Row(
+                                    children: [
+                                      Container(
+                                        padding: const EdgeInsets.all(8),
+                                        decoration: BoxDecoration(
+                                          color: Colors.teal.shade50,
+                                          borderRadius: BorderRadius.circular(
+                                            8,
+                                          ),
+                                        ),
+                                        child: const Icon(
+                                          Icons.image_outlined,
+                                          color: Colors.teal,
+                                          size: 16,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            const Text(
+                                              'Nama File',
+                                              style: TextStyle(
+                                                color: Colors.black54,
+                                                fontSize: 12,
+                                              ),
+                                            ),
+                                            Text(
+                                              widget.isVideo
+                                                  ? widget
+                                                        .video!
+                                                        .originalFilename
+                                                  : widget
+                                                        .photo!
+                                                        .originalFilename,
+                                              style: const TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 14,
+                                              ),
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
-                                child: Wrap(
-                                  spacing: 12.0,
-                                  children: [
-                                    _buildLegendItem(
-                                      Colors.green.shade600,
-                                      'Vegetation',
+                              ],
+                            ),
+                            const SizedBox(height: 16),
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(12.0),
+                              child: originalUrl.isNotEmpty
+                                  ? (isVideo
+                                        ? _InlineVideoPlayer(
+                                            videoUrl: originalUrl,
+                                          )
+                                        : Image.network(
+                                            originalUrl,
+                                            height: 200,
+                                            width: double.infinity,
+                                            fit: BoxFit.cover,
+                                            errorBuilder:
+                                                (context, error, stackTrace) =>
+                                                    Container(
+                                                      height: 200,
+                                                      width: double.infinity,
+                                                      color:
+                                                          Colors.grey.shade300,
+                                                      child: const Icon(
+                                                        Icons.broken_image,
+                                                        size: 64,
+                                                        color: Colors.grey,
+                                                      ),
+                                                    ),
+                                          ))
+                                  : Container(
+                                      height: 200,
+                                      width: double.infinity,
+                                      color: Colors.grey.shade300,
+                                      child: const Icon(
+                                        Icons.image,
+                                        size: 64,
+                                        color: Colors.grey,
+                                      ),
                                     ),
-                                    _buildLegendItem(Colors.purple, 'Building'),
-                                    _buildLegendItem(Colors.lightBlue, 'Sky'),
-                                    _buildLegendItem(Colors.amber, 'Sidewalk'),
-                                    _buildLegendItem(
-                                      Colors.red.shade400,
-                                      'Vehicles',
-                                    ),
-                                    _buildLegendItem(
-                                      Colors.grey.shade700,
-                                      'Road',
-                                    ),
-                                  ],
-                                ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+
+                    // Segmentasi AI Header
+                    const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 24.0),
+                      child: SectionHeader(title: 'Segmentasi AI'),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Segmentasi AI Card
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                      child: Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: Colors.grey.shade200),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Foto Overlay AI',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
                               ),
                             ),
-                          ),
-                        ],
+                            const SizedBox(height: 16),
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(12.0),
+                              child: fullImageUrl.isNotEmpty
+                                  ? (isVideo
+                                        ? _InlineVideoPlayer(
+                                            videoUrl: fullImageUrl,
+                                          )
+                                        : Image.network(
+                                            fullImageUrl,
+                                            height: 200,
+                                            width: double.infinity,
+                                            fit: BoxFit.cover,
+                                            errorBuilder:
+                                                (context, error, stackTrace) =>
+                                                    Container(
+                                                      height: 200,
+                                                      width: double.infinity,
+                                                      color:
+                                                          Colors.grey.shade300,
+                                                      child: const Icon(
+                                                        Icons.broken_image,
+                                                        size: 64,
+                                                        color: Colors.grey,
+                                                      ),
+                                                    ),
+                                          ))
+                                  : Container(
+                                      height: 200,
+                                      width: double.infinity,
+                                      color: Colors.grey.shade300,
+                                      child: const Icon(
+                                        Icons.image,
+                                        size: 64,
+                                        color: Colors.grey,
+                                      ),
+                                    ),
+                            ),
+                            const SizedBox(height: 16),
+                            // Legend Grid
+                            GridView.count(
+                              crossAxisCount: 3,
+                              shrinkWrap: true,
+                              physics: const NeverScrollableScrollPhysics(),
+                              childAspectRatio: 3.5,
+                              children: [
+                                _buildLegendItem(
+                                  Colors.green.shade700,
+                                  'Vegetation',
+                                ),
+                                _buildLegendItem(Colors.blue, 'Sky'),
+                                _buildLegendItem(
+                                  Colors.red.shade600,
+                                  'Vehicles',
+                                ),
+                                _buildLegendItem(Colors.purple, 'Building'),
+                                _buildLegendItem(Colors.amber, 'Sidewalk'),
+                                _buildLegendItem(Colors.grey.shade800, 'Road'),
+                              ],
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                     const SizedBox(height: 32),
@@ -653,17 +844,16 @@ class _ResultScreenState extends State<ResultScreen> {
       mainAxisSize: MainAxisSize.min,
       children: [
         Container(
-          width: 8,
-          height: 8,
+          width: 14,
+          height: 14,
           decoration: BoxDecoration(color: color, shape: BoxShape.circle),
         ),
-        const SizedBox(width: 4),
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 8,
-            color: Colors.black87,
-            fontWeight: FontWeight.bold,
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            label,
+            style: const TextStyle(fontSize: 12, color: Colors.black54),
+            overflow: TextOverflow.ellipsis,
           ),
         ),
       ],

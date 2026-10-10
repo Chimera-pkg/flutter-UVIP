@@ -1,3 +1,5 @@
+import 'package:uvip/models/project_model.dart';
+
 class PredictionModel {
   final String id;
   final String photoId;
@@ -70,6 +72,7 @@ class SegmentationResultModel {
   final int? inferenceTimeMs;
   final String createdAt;
   final PredictionModel? prediction;
+  final ProjectModel? project;
 
   SegmentationResultModel({
     required this.id,
@@ -96,6 +99,7 @@ class SegmentationResultModel {
     this.inferenceTimeMs,
     required this.createdAt,
     this.prediction,
+    this.project,
   });
 
   factory SegmentationResultModel.fromJson(Map<String, dynamic> json) {
@@ -125,6 +129,9 @@ class SegmentationResultModel {
       createdAt: json['created_at'] ?? '',
       prediction: json['prediction'] != null
           ? PredictionModel.fromJson(json['prediction'])
+          : null,
+      project: json['project'] != null
+          ? ProjectModel.fromJson(json['project'])
           : null,
     );
   }
