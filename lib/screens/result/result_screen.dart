@@ -1,6 +1,10 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:video_player/video_player.dart';
+import 'package:screenshot/screenshot.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:gal/gal.dart';
 import 'package:uvip/core/theme/app_theme.dart';
 import 'package:uvip/providers/result_provider.dart';
 import 'package:uvip/widgets/result/score_box.dart';
@@ -19,6 +23,8 @@ class ResultScreen extends StatefulWidget {
 }
 
 class _ResultScreenState extends State<ResultScreen> {
+  final ScreenshotController _screenshotController = ScreenshotController();
+
   @override
   void initState() {
     super.initState();
@@ -93,297 +99,551 @@ class _ResultScreenState extends State<ResultScreen> {
                 '$baseUrl/${fullImageUrl.startsWith('/') ? fullImageUrl.substring(1) : fullImageUrl}';
           }
 
-          // final bool isVideo =
-          //     widget.isVideo ||
-          //     widget.photo.originalFilename.toLowerCase().endsWith('.mp4') ||
-          //     widget.photo.originalFilename.toLowerCase().endsWith('.mov') ||
-          //     fullImageUrl.toLowerCase().endsWith('.mp4') ||
-          //     fullImageUrl.toLowerCase().endsWith('.mov');
-
           final bool isVideo =
               fullImageUrl.toLowerCase().endsWith('.mp4') ||
               fullImageUrl.toLowerCase().endsWith('.mov');
 
           return SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Main Image & Legend
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                  child: Stack(
-                    children: [
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(16.0),
-                        child: fullImageUrl.isNotEmpty
-                            ? (isVideo
-                                  ? _InlineVideoPlayer(videoUrl: fullImageUrl)
-                                  : Image.network(
-                                      fullImageUrl,
-                                      height: 220,
-                                      width: double.infinity,
-                                      fit: BoxFit.cover,
-                                      errorBuilder:
-                                          (context, error, stackTrace) =>
-                                              Container(
-                                                height: 220,
-                                                width: double.infinity,
-                                                color: Colors.grey.shade300,
-                                                child: const Icon(
-                                                  Icons.broken_image,
-                                                  size: 64,
-                                                  color: Colors.grey,
-                                                ),
-                                              ),
-                                    ))
-                            : Container(
-                                height: 220,
-                                width: double.infinity,
-                                color: Colors.grey.shade300,
-                                child: const Icon(
-                                  Icons.image,
-                                  size: 64,
-                                  color: Colors.grey,
+            child: Screenshot(
+              controller: _screenshotController,
+              child: Container(
+                color: AppTheme.backgroundColor,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Main Image & Legend
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                      child: Stack(
+                        children: [
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(16.0),
+                            child: fullImageUrl.isNotEmpty
+                                ? (isVideo
+                                      ? _InlineVideoPlayer(
+                                          videoUrl: fullImageUrl,
+                                        )
+                                      : Image.network(
+                                          fullImageUrl,
+                                          height: 220,
+                                          width: double.infinity,
+                                          fit: BoxFit.cover,
+                                          errorBuilder:
+                                              (context, error, stackTrace) =>
+                                                  Container(
+                                                    height: 220,
+                                                    width: double.infinity,
+                                                    color: Colors.grey.shade300,
+                                                    child: const Icon(
+                                                      Icons.broken_image,
+                                                      size: 64,
+                                                      color: Colors.grey,
+                                                    ),
+                                                  ),
+                                        ))
+                                : Container(
+                                    height: 220,
+                                    width: double.infinity,
+                                    color: Colors.grey.shade300,
+                                    child: const Icon(
+                                      Icons.image,
+                                      size: 64,
+                                      color: Colors.grey,
+                                    ),
+                                  ),
+                          ),
+                          Positioned(
+                            bottom: 12,
+                            left: 0,
+                            right: 0,
+                            child: Center(
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16.0,
+                                  vertical: 8.0,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withValues(alpha: 0.9),
+                                  borderRadius: BorderRadius.circular(24.0),
+                                ),
+                                child: Wrap(
+                                  spacing: 12.0,
+                                  children: [
+                                    _buildLegendItem(
+                                      Colors.green.shade600,
+                                      'Vegetation',
+                                    ),
+                                    _buildLegendItem(Colors.purple, 'Building'),
+                                    _buildLegendItem(Colors.lightBlue, 'Sky'),
+                                    _buildLegendItem(Colors.amber, 'Sidewalk'),
+                                    _buildLegendItem(
+                                      Colors.red.shade400,
+                                      'Vehicles',
+                                    ),
+                                    _buildLegendItem(
+                                      Colors.grey.shade700,
+                                      'Road',
+                                    ),
+                                  ],
                                 ),
                               ),
-                      ),
-                      Positioned(
-                        bottom: 12,
-                        left: 0,
-                        right: 0,
-                        child: Center(
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16.0,
-                              vertical: 8.0,
                             ),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.9),
-                              borderRadius: BorderRadius.circular(24.0),
-                            ),
-                            child: Wrap(
-                              spacing: 12.0,
-                              children: [
-                                _buildLegendItem(
-                                  Colors.green.shade600,
-                                  'Vegetation',
-                                ),
-                                _buildLegendItem(Colors.purple, 'Building'),
-                                _buildLegendItem(Colors.lightBlue, 'Sky'),
-                                _buildLegendItem(Colors.amber, 'Sidewalk'),
-                                _buildLegendItem(
-                                  Colors.red.shade400,
-                                  'Vehicles',
-                                ),
-                                _buildLegendItem(Colors.grey.shade700, 'Road'),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 32),
-
-                // Skor Prediksi Section
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const SectionHeader(title: 'Skor Prediksi'),
-                      const SizedBox(height: 16),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          ScoreBox(
-                            title: 'UVI',
-                            score:
-                                provider
-                                    .currentPrediction
-                                    ?.uviScore
-                                    ?.toString() ??
-                                "-",
-                            bgColor: Colors.lime.shade200,
-                            textColor: Colors.lime.shade800,
-                          ),
-                          ScoreBox(
-                            title: 'Safety',
-                            score:
-                                provider
-                                    .currentPrediction
-                                    ?.safetyScore
-                                    ?.toString() ??
-                                "-",
-                            bgColor: Colors.purple.shade100,
-                            textColor: Colors.purple.shade800,
-                          ),
-                          ScoreBox(
-                            title: 'Beauty',
-                            score:
-                                provider
-                                    .currentPrediction
-                                    ?.beautyScore
-                                    ?.toString() ??
-                                "-",
-                            bgColor: Colors.pink.shade100,
-                            textColor: Colors.red.shade700,
-                          ),
-                          ScoreBox(
-                            title: 'Comfort',
-                            score:
-                                provider
-                                    .currentPrediction
-                                    ?.comfortScore
-                                    ?.toString() ??
-                                "-",
-                            bgColor: Colors.orange.shade100,
-                            textColor: Colors.orange.shade800,
-                          ),
-                          ScoreBox(
-                            title: 'GVI',
-                            score:
-                                provider
-                                    .currentPrediction
-                                    ?.gviScore
-                                    ?.toString() ??
-                                "-",
-                            bgColor: Colors.green.shade200,
-                            textColor: Colors.green.shade800,
                           ),
                         ],
                       ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 32),
+                    ),
+                    const SizedBox(height: 32),
 
-                // Faktor Pengaruh (SHAP)
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const SectionHeader(title: 'Faktor Pengaruh (SHAP)'),
-                      const SizedBox(height: 16),
-                      ShapCard(
-                        isPositive: true,
-                        factors: provider.positiveFactors,
-                      ),
-                      ShapCard(
-                        isPositive: false,
-                        factors: provider.negativeFactors,
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 16),
+                    _buildUrbanVisualIndexSection(provider),
+                    const SizedBox(height: 32),
 
-                // Informasi Lokasi
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const SectionHeader(title: 'Informasi Lokasi'),
-                      const SizedBox(height: 16),
-                      Row(
+                    // Skor Prediksi Section
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                      child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Icon(
-                            Icons.location_on,
-                            color: AppTheme.primaryColor,
-                            size: 36,
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  provider.locationInfo['address']!,
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 14,
-                                  ),
-                                ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  provider.locationInfo['city']!,
-                                  style: const TextStyle(
-                                    color: Colors.black54,
-                                    fontSize: 12,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const Icon(
-                            Icons.calendar_month,
-                            color: AppTheme.primaryColor,
-                            size: 32,
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  provider.locationInfo['date']!,
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 14,
-                                  ),
-                                ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  provider.locationInfo['time']!,
-                                  style: const TextStyle(
-                                    color: Colors.black54,
-                                    fontSize: 12,
-                                  ),
-                                ),
-                              ],
-                            ),
+                          const SectionHeader(title: 'Skor Prediksi'),
+                          const SizedBox(height: 16),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                            children: [
+                              ScoreBox(
+                                title: 'Beauty',
+                                score:
+                                    provider.currentPrediction?.beautyScore
+                                        ?.toString() ??
+                                    "-",
+                                bgColor: Colors.teal.shade400,
+                                textColor: Colors.white,
+                              ),
+                              ScoreBox(
+                                title: 'Safety',
+                                score:
+                                    provider.currentPrediction?.safetyScore
+                                        ?.toString() ??
+                                    "-",
+                                bgColor: Colors.teal.shade400,
+                                textColor: Colors.white,
+                              ),
+                              ScoreBox(
+                                title: 'Comfort',
+                                score:
+                                    provider.currentPrediction?.comfortScore
+                                        ?.toString() ??
+                                    "-",
+                                bgColor: Colors.teal.shade400,
+                                textColor: Colors.white,
+                              ),
+                            ],
                           ),
                         ],
                       ),
-                      const SizedBox(height: 24),
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.center,
+                    ),
+                    const SizedBox(height: 32),
+
+                    // Faktor Pengaruh (SHAP)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Icon(
-                            Icons.compare_arrows_outlined,
-                            color: AppTheme.primaryColor,
-                            size: 28,
+                          const SectionHeader(title: 'Faktor Pengaruh (SHAP)'),
+                          const SizedBox(height: 16),
+                          ShapCard(
+                            isPositive: true,
+                            factors: provider.positiveFactors,
                           ),
-                          const SizedBox(width: 12),
-                          Text(
-                            provider.locationInfo['coordinates']!,
-                            style: const TextStyle(
-                              fontSize: 12,
-                              color: Colors.black87,
+                          ShapCard(
+                            isPositive: false,
+                            factors: provider.negativeFactors,
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    _buildVisualEnvironmentIndicators(provider),
+                    const SizedBox(height: 32),
+
+                    // Bottom Buttons
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                      child: Column(
+                        children: [
+                          OutlinedButton(
+                            onPressed: _downloadReport,
+                            style: OutlinedButton.styleFrom(
+                              minimumSize: const Size(double.infinity, 50),
+                              side: const BorderSide(
+                                color: AppTheme.primaryColor,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(25),
+                              ),
+                            ),
+                            child: const Text(
+                              'Unduh Laporan',
+                              style: TextStyle(
+                                color: AppTheme.primaryColor,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                           ),
-                          const Spacer(),
-                          Text(
-                            provider.locationInfo['accuracy']!,
-                            style: const TextStyle(
-                              fontSize: 12,
-                              color: Colors.black87,
+                          const SizedBox(height: 16),
+                          ElevatedButton(
+                            onPressed: () {
+                              Navigator.popUntil(
+                                context,
+                                (route) => route.isFirst,
+                              );
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppTheme.primaryColor,
+                              minimumSize: const Size(double.infinity, 50),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(25),
+                              ),
+                            ),
+                            child: const Text(
+                              'Kembali ke Beranda',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                           ),
                         ],
                       ),
-                    ],
-                  ),
+                    ),
+                    const SizedBox(height: 48), // Bottom Padding
+                  ],
                 ),
-                const SizedBox(height: 48), // Bottom Padding
-              ],
+              ),
             ),
           );
         },
+      ),
+    );
+  }
+
+  Future<void> _downloadReport() async {
+    try {
+      final image = await _screenshotController.capture(
+        delay: const Duration(milliseconds: 10),
+      );
+      if (image != null) {
+        final directory = await getTemporaryDirectory();
+        final imagePath = await File(
+          '${directory.path}/report_${DateTime.now().millisecondsSinceEpoch}.png',
+        ).create();
+        await imagePath.writeAsBytes(image);
+
+        await Gal.putImage(imagePath.path);
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Laporan berhasil disimpan ke galeri'),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Gagal menyimpan laporan: $e')));
+      }
+    }
+  }
+
+  Widget _buildUrbanVisualIndexSection(ResultProvider provider) {
+    final uviScore = provider.currentPrediction?.uviScore ?? 0;
+    String uviText = 'Kurang Baik';
+    Color uviColor = Colors.red;
+    IconData uviIcon = Icons.thumb_down;
+
+    if (uviScore >= 6) {
+      uviText = 'Sangat Tinggi';
+      uviColor = Colors.green;
+      uviIcon = Icons.thumb_up;
+    } else if (uviScore >= 3) {
+      uviText = 'Cukup';
+      uviColor = Colors.orange;
+      uviIcon = Icons.thumbs_up_down;
+    } else {
+      uviText = 'Kurang Baik';
+      uviColor = Colors.red;
+      uviIcon = Icons.thumb_down;
+    }
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SectionHeader(title: 'Urban Visual Index'),
+          const SizedBox(height: 16),
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: Colors.grey.shade200),
+            ),
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      width: 80,
+                      height: 80,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: AppTheme.primaryColor,
+                          width: 6,
+                        ),
+                      ),
+                      alignment: Alignment.center,
+                      child: Text(
+                        provider.currentPrediction?.uviScore?.toString() ?? "-",
+                        style: const TextStyle(
+                          fontSize: 32,
+                          fontWeight: FontWeight.bold,
+                          color: AppTheme.primaryColor,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 24),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Icon(uviIcon, color: uviColor, size: 20),
+                              const SizedBox(width: 8),
+                              Text(
+                                uviText,
+                                style: TextStyle(
+                                  color: uviColor,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          const Text(
+                            "Urban Visual Index adalah tingkat visual ruang suatu kota yang memberikan gambaran kualitas visual dari suatu lokasi, nilai ini diperoleh dari pemrosesan gambar jalan menggunakan AI.",
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.black54,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+                const Divider(height: 1, color: Colors.grey),
+                const SizedBox(height: 24),
+                // Informasi Lokasi
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          const Icon(
+                            Icons.location_on_outlined,
+                            color: AppTheme.primaryColor,
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            "${provider.locationInfo['address']}\n${provider.locationInfo['city']}",
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              fontSize: 10,
+                              color: Colors.black87,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          const Icon(
+                            Icons.calendar_today_outlined,
+                            color: AppTheme.primaryColor,
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            "${provider.locationInfo['date']}\n${provider.locationInfo['time']}",
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              fontSize: 10,
+                              color: Colors.black87,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          const Icon(
+                            Icons.map_outlined,
+                            color: AppTheme.primaryColor,
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            "Lat/Long\n${provider.locationInfo['coordinates']}",
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              fontSize: 10,
+                              color: Colors.black87,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildVisualEnvironmentIndicators(ResultProvider provider) {
+    final segResult = provider.currentSegmentation;
+    if (segResult == null) return const SizedBox.shrink();
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SectionHeader(title: 'Visual Environment Indicators'),
+          const SizedBox(height: 16),
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: Colors.grey.shade200),
+            ),
+            child: Column(
+              children: [
+                _buildIndicatorRow(
+                  icon: Icons.business,
+                  title: 'Indeks Visibilitas Bangunan',
+                  subtitle: 'Mempengaruhi tingkat keamanan ruang',
+                  percentage: segResult.buildingPct?.toDouble() ?? 0.0,
+                ),
+                const Divider(height: 1, color: Colors.black12),
+                _buildIndicatorRow(
+                  icon: Icons.park,
+                  title: 'Indeks Tutupan Vegetasi',
+                  subtitle: 'Menunjukkan tingkat kenyamanan visual',
+                  percentage: segResult.vegetationPct?.toDouble() ?? 0.0,
+                ),
+                const Divider(height: 1, color: Colors.black12),
+                _buildIndicatorRow(
+                  icon: Icons.cloud_outlined,
+                  title: 'Indeks Keterbukaan Langit',
+                  subtitle: 'Tingkat pandangan visual pada langit',
+                  percentage: segResult.skyVisibilityPct?.toDouble() ?? 0.0,
+                ),
+                const Divider(height: 1, color: Colors.black12),
+                _buildIndicatorRow(
+                  icon: Icons.directions_walk,
+                  title: 'Indeks Aksesibilitas Area',
+                  subtitle: 'Menunjukkan tingkat kemudahan akses',
+                  percentage: segResult.walkabilityRatio?.toDouble() ?? 0.0,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildIndicatorRow({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required double percentage,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.blue.shade50,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(icon, color: Colors.blue, size: 24),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 12,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  subtitle,
+                  style: const TextStyle(color: Colors.black54, fontSize: 10),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 16),
+          SizedBox(
+            width: 48,
+            height: 48,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                CircularProgressIndicator(
+                  value: percentage / 100, // Assuming 0-100
+                  backgroundColor: Colors.grey.shade200,
+                  color: Colors.blue,
+                  strokeWidth: 4,
+                ),
+                Text(
+                  '${percentage.toStringAsFixed(1)}%',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 10,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
