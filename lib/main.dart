@@ -47,7 +47,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       navigatorKey: navigatorKey,
-      title: 'UVIP App',
+      title: 'Urban Lens',
       theme: AppTheme.lightTheme,
       home: isLoggedIn ? const MainScreen() : const LoginScreen(),
       debugShowCheckedModeBanner: false,
