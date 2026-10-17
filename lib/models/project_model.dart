@@ -29,8 +29,8 @@ class ProjectModel {
     this.status,
   });
 
-  int get photoCount => totalPhotos ?? 12;
-  int get videoCount => totalVideos ?? 5;
+  int get photoCount => totalPhotos ?? 0;
+  int get videoCount => totalVideos ?? 0;
 
   factory ProjectModel.fromJson(dynamic rawData) {
     if (rawData == null) {

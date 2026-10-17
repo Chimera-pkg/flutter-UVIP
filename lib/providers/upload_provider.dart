@@ -16,7 +16,19 @@ class UploadProvider with ChangeNotifier {
   List<StreetVideoModel> get uploadedVideos => _uploadedVideos;
 
   bool _isLoading = false;
-  bool get isLoading => _isLoading;
+  bool get isLoading => _isLoading || _isLoadingPhotos || _isLoadingVideos;
+
+  bool _isLoadingPhotos = false;
+  bool get isLoadingPhotos => _isLoadingPhotos;
+
+  bool _isLoadingVideos = false;
+  bool get isLoadingVideos => _isLoadingVideos;
+
+  bool _hasFetchedPhotos = false;
+  bool get hasFetchedPhotos => _hasFetchedPhotos;
+
+  bool _hasFetchedVideos = false;
+  bool get hasFetchedVideos => _hasFetchedVideos;
 
   bool _isUploading = false;
   bool get isUploading => _isUploading;
@@ -31,8 +43,22 @@ class UploadProvider with ChangeNotifier {
   String? get currentProjectId => _currentProjectId;
 
   void setCurrentProjectId(String? projectId) {
-    _currentProjectId = projectId;
-    notifyListeners();
+    if (_currentProjectId != projectId) {
+      _currentProjectId = projectId;
+      _uploadedPhotos = [];
+      _uploadedVideos = [];
+      _totalPhotoData = 0;
+      _totalVideoData = 0;
+      _photoCurrentPage = 1;
+      _photoTotalPages = 1;
+      _videoCurrentPage = 1;
+      _videoTotalPages = 1;
+      _hasFetchedPhotos = false;
+      _hasFetchedVideos = false;
+      _selectedPhoto = null;
+      _selectedVideo = null;
+      notifyListeners();
+    }
   }
 
   // Pagination for photos
@@ -42,7 +68,9 @@ class UploadProvider with ChangeNotifier {
   bool get isFetchingMorePhotos => _isFetchingMorePhotos;
   final int _photoSize = 10;
   int _totalPhotoData = 0;
-  int get totalPhotoData => _totalPhotoData;
+  int get totalPhotoData => _totalPhotoData >= _uploadedPhotos.length
+      ? _totalPhotoData
+      : _uploadedPhotos.length;
 
   // Pagination for videos
   int _videoCurrentPage = 1;
@@ -51,19 +79,25 @@ class UploadProvider with ChangeNotifier {
   bool get isFetchingMoreVideos => _isFetchingMoreVideos;
   final int _videoSize = 10;
   int _totalVideoData = 0;
-  int get totalVideoData => _totalVideoData;
+  int get totalVideoData => _totalVideoData >= _uploadedVideos.length
+      ? _totalVideoData
+      : _uploadedVideos.length;
 
   // ===================== PHOTOS =====================
 
-  Future<void> fetchStreetPhotos({bool isLoadMore = false, bool isRefresh = false}) async {
+  Future<void> fetchStreetPhotos({
+    bool isLoadMore = false,
+    bool isRefresh = false,
+  }) async {
     if (isLoadMore) {
-      if (_photoCurrentPage >= _photoTotalPages || _isFetchingMorePhotos) return;
+      if (_photoCurrentPage >= _photoTotalPages || _isFetchingMorePhotos)
+        return;
       _isFetchingMorePhotos = true;
       _photoCurrentPage++;
       notifyListeners();
     } else {
       if (!isRefresh) {
-        _isLoading = true;
+        _isLoadingPhotos = true;
         _uploadedPhotos.clear();
       }
       _photoCurrentPage = 1;
@@ -84,9 +118,15 @@ class UploadProvider with ChangeNotifier {
           _photoTotalPages = data['total_pages'] ?? 1;
           _totalPhotoData = data['total_data'] ?? 0;
           final List<dynamic> listData = data['data'] ?? [];
-          newPhotos = listData.map((json) => StreetPhotoModel.fromJson(json)).toList();
+          newPhotos = listData
+              .map((json) => StreetPhotoModel.fromJson(json))
+              .toList();
         } else if (data is List) {
-          newPhotos = data.map((json) => StreetPhotoModel.fromJson(json)).toList();
+          newPhotos = data
+              .map((json) => StreetPhotoModel.fromJson(json))
+              .toList();
+          _totalPhotoData = newPhotos.length;
+          _photoTotalPages = 1;
         }
 
         if (isLoadMore) {
@@ -94,6 +134,7 @@ class UploadProvider with ChangeNotifier {
         } else {
           _uploadedPhotos = newPhotos;
         }
+        _hasFetchedPhotos = true;
       }
     } catch (e) {
       _errorMessage = 'Failed to load photos: $e';
@@ -104,7 +145,7 @@ class UploadProvider with ChangeNotifier {
       if (isLoadMore) {
         _isFetchingMorePhotos = false;
       } else {
-        _isLoading = false;
+        _isLoadingPhotos = false;
       }
       notifyListeners();
     }
@@ -199,7 +240,7 @@ class UploadProvider with ChangeNotifier {
           "captured_at": DateTime.now().toUtc().toIso8601String(),
           "source": "mobile_upload",
           "street_name": locationName,
-          "is_manual_capture": true
+          "is_manual_capture": true,
         });
       }
 
@@ -232,7 +273,8 @@ class UploadProvider with ChangeNotifier {
         } else if (data is Map && data.containsKey('message')) {
           _errorMessage = 'Bulk upload error: ${data['message']}';
         } else if (data != null) {
-          _errorMessage = 'Bulk upload error (${e.response?.statusCode}): $data';
+          _errorMessage =
+              'Bulk upload error (${e.response?.statusCode}): $data';
         } else {
           _errorMessage = 'Bulk upload error: ${e.message}';
         }
@@ -301,15 +343,19 @@ class UploadProvider with ChangeNotifier {
 
   // ===================== VIDEOS =====================
 
-  Future<void> fetchStreetVideos({bool isLoadMore = false, bool isRefresh = false}) async {
+  Future<void> fetchStreetVideos({
+    bool isLoadMore = false,
+    bool isRefresh = false,
+  }) async {
     if (isLoadMore) {
-      if (_videoCurrentPage >= _videoTotalPages || _isFetchingMoreVideos) return;
+      if (_videoCurrentPage >= _videoTotalPages || _isFetchingMoreVideos)
+        return;
       _isFetchingMoreVideos = true;
       _videoCurrentPage++;
       notifyListeners();
     } else {
       if (!isRefresh) {
-        _isLoading = true;
+        _isLoadingVideos = true;
         _uploadedVideos.clear();
       }
       _videoCurrentPage = 1;
@@ -330,9 +376,15 @@ class UploadProvider with ChangeNotifier {
           _videoTotalPages = data['total_pages'] ?? 1;
           _totalVideoData = data['total_data'] ?? 0;
           final List<dynamic> listData = data['data'] ?? [];
-          newVideos = listData.map((json) => StreetVideoModel.fromJson(json)).toList();
+          newVideos = listData
+              .map((json) => StreetVideoModel.fromJson(json))
+              .toList();
         } else if (data is List) {
-          newVideos = data.map((json) => StreetVideoModel.fromJson(json)).toList();
+          newVideos = data
+              .map((json) => StreetVideoModel.fromJson(json))
+              .toList();
+          _totalVideoData = newVideos.length;
+          _videoTotalPages = 1;
         }
 
         if (isLoadMore) {
@@ -340,6 +392,7 @@ class UploadProvider with ChangeNotifier {
         } else {
           _uploadedVideos = newVideos;
         }
+        _hasFetchedVideos = true;
       }
     } catch (e) {
       _errorMessage = 'Failed to load videos: $e';
@@ -350,7 +403,7 @@ class UploadProvider with ChangeNotifier {
       if (isLoadMore) {
         _isFetchingMoreVideos = false;
       } else {
-        _isLoading = false;
+        _isLoadingVideos = false;
       }
       notifyListeners();
     }
@@ -398,7 +451,8 @@ class UploadProvider with ChangeNotifier {
         } else if (data is Map && data.containsKey('message')) {
           _errorMessage = 'Upload video error: ${data['message']}';
         } else if (data != null) {
-          _errorMessage = 'Upload video error (${e.response?.statusCode}): $data';
+          _errorMessage =
+              'Upload video error (${e.response?.statusCode}): $data';
         } else {
           _errorMessage = 'Upload video error: ${e.message}';
         }
@@ -414,7 +468,7 @@ class UploadProvider with ChangeNotifier {
   }
 
   Future<bool> deleteVideo(String videoId) async {
-    _isLoading = true;
+    _isLoadingVideos = true;
     _errorMessage = null;
     notifyListeners();
 
@@ -448,7 +502,7 @@ class UploadProvider with ChangeNotifier {
       }
       return false;
     } finally {
-      _isLoading = false;
+      _isLoadingVideos = false;
       notifyListeners();
     }
   }

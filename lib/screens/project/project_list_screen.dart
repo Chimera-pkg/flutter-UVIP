@@ -5,7 +5,8 @@ import 'package:uvip/models/project_model.dart';
 import 'package:uvip/providers/project_provider.dart';
 import 'package:uvip/widgets/project_card.dart';
 import 'package:uvip/screens/project/create_project_screen.dart';
-import 'package:uvip/screens/project/project_detail_screen.dart';
+import 'package:uvip/providers/upload_provider.dart';
+import 'package:uvip/screens/upload/upload_screen.dart';
 
 class ProjectListScreen extends StatefulWidget {
   const ProjectListScreen({super.key});
@@ -125,10 +126,17 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
   }
 
   void _openProject(ProjectModel project) {
+    final uploadProvider = Provider.of<UploadProvider>(context, listen: false);
+    uploadProvider.setCurrentProjectId(project.id);
+
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => ProjectDetailScreen(project: project),
+        builder: (context) => UploadScreen(
+          projectId: project.id,
+          project: project,
+          initialTab: 0,
+        ),
       ),
     );
   }
