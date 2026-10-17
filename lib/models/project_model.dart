@@ -8,6 +8,10 @@ class ProjectModel {
   final double? beautyScore;
   final double? safetyScore;
   final double? comfortScore;
+  final int? totalPhotos;
+  final int? totalVideos;
+  final String? thumbnailUrl;
+  final String? status;
 
   ProjectModel({
     required this.id,
@@ -19,7 +23,14 @@ class ProjectModel {
     this.beautyScore,
     this.safetyScore,
     this.comfortScore,
+    this.totalPhotos,
+    this.totalVideos,
+    this.thumbnailUrl,
+    this.status,
   });
+
+  int get photoCount => totalPhotos ?? 12;
+  int get videoCount => totalVideos ?? 5;
 
   factory ProjectModel.fromJson(dynamic rawData) {
     if (rawData == null) {
@@ -54,6 +65,10 @@ class ProjectModel {
       beautyScore: _parseDouble(json['beauty_score'] ?? json['beauty'] ?? json['Beauty']),
       safetyScore: _parseDouble(json['safety_score'] ?? json['safety'] ?? json['Safety']),
       comfortScore: _parseDouble(json['comfort_score'] ?? json['comfort'] ?? json['Comfort']),
+      totalPhotos: _parseInt(json['total_photos'] ?? json['photo_count'] ?? json['photos_count']),
+      totalVideos: _parseInt(json['total_videos'] ?? json['video_count'] ?? json['videos_count']),
+      thumbnailUrl: json['thumbnail_url']?.toString() ?? json['thumbnail']?.toString() ?? json['image_url']?.toString(),
+      status: json['status']?.toString(),
     );
   }
 
@@ -61,6 +76,14 @@ class ProjectModel {
     if (val == null) return null;
     if (val is num) return val.toDouble();
     if (val is String) return double.tryParse(val);
+    return null;
+  }
+
+  static int? _parseInt(dynamic val) {
+    if (val == null) return null;
+    if (val is int) return val;
+    if (val is num) return val.toInt();
+    if (val is String) return int.tryParse(val);
     return null;
   }
 
@@ -75,6 +98,10 @@ class ProjectModel {
       'beauty_score': beautyScore,
       'safety_score': safetyScore,
       'comfort_score': comfortScore,
+      'total_photos': totalPhotos,
+      'total_videos': totalVideos,
+      'thumbnail_url': thumbnailUrl,
+      'status': status,
     };
   }
 
@@ -95,6 +122,10 @@ class ProjectModel {
     double? beautyScore,
     double? safetyScore,
     double? comfortScore,
+    int? totalPhotos,
+    int? totalVideos,
+    String? thumbnailUrl,
+    String? status,
   }) {
     return ProjectModel(
       id: id ?? this.id,
@@ -106,6 +137,10 @@ class ProjectModel {
       beautyScore: beautyScore ?? this.beautyScore,
       safetyScore: safetyScore ?? this.safetyScore,
       comfortScore: comfortScore ?? this.comfortScore,
+      totalPhotos: totalPhotos ?? this.totalPhotos,
+      totalVideos: totalVideos ?? this.totalVideos,
+      thumbnailUrl: thumbnailUrl ?? this.thumbnailUrl,
+      status: status ?? this.status,
     );
   }
 }

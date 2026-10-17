@@ -3,8 +3,8 @@ import 'package:google_fonts/google_fonts.dart';
 
 class AppTheme {
   // Colors defined from the design
-  static const Color primaryColor = Color(0xFF31A09F); // Teal
-  static const Color secondaryColor = Color(0xFF2D4B7A); // Navy Blue
+  static const Color primaryColor = Color(0xFF02BDDB); // Teal
+  static const Color secondaryColor = Color(0xFF03182C); // Navy Blue
   static const Color backgroundColor = Color(0xFFFFFFFF); // White
   static const Color darkGray = Color(0xFF333333); // Dark text
   static const Color lightGray = Color(0xFF888888); // Subtitle text
@@ -20,12 +20,30 @@ class AppTheme {
         surface: backgroundColor,
       ),
       textTheme: GoogleFonts.montserratTextTheme().copyWith(
-        displayLarge: GoogleFonts.montserrat(color: darkGray, fontWeight: FontWeight.bold),
-        displayMedium: GoogleFonts.montserrat(color: darkGray, fontWeight: FontWeight.bold),
-        displaySmall: GoogleFonts.montserrat(color: darkGray, fontWeight: FontWeight.bold),
-        headlineMedium: GoogleFonts.montserrat(color: darkGray, fontWeight: FontWeight.w600),
-        headlineSmall: GoogleFonts.montserrat(color: darkGray, fontWeight: FontWeight.w600),
-        titleLarge: GoogleFonts.montserrat(color: darkGray, fontWeight: FontWeight.w600),
+        displayLarge: GoogleFonts.montserrat(
+          color: darkGray,
+          fontWeight: FontWeight.bold,
+        ),
+        displayMedium: GoogleFonts.montserrat(
+          color: darkGray,
+          fontWeight: FontWeight.bold,
+        ),
+        displaySmall: GoogleFonts.montserrat(
+          color: darkGray,
+          fontWeight: FontWeight.bold,
+        ),
+        headlineMedium: GoogleFonts.montserrat(
+          color: darkGray,
+          fontWeight: FontWeight.w600,
+        ),
+        headlineSmall: GoogleFonts.montserrat(
+          color: darkGray,
+          fontWeight: FontWeight.w600,
+        ),
+        titleLarge: GoogleFonts.montserrat(
+          color: darkGray,
+          fontWeight: FontWeight.w600,
+        ),
         bodyLarge: GoogleFonts.montserrat(color: darkGray),
         bodyMedium: GoogleFonts.montserrat(color: darkGray),
         bodySmall: GoogleFonts.montserrat(color: lightGray),
@@ -34,7 +52,11 @@ class AppTheme {
         backgroundColor: backgroundColor,
         elevation: 0,
         iconTheme: IconThemeData(color: darkGray),
-        titleTextStyle: TextStyle(color: darkGray, fontSize: 18, fontWeight: FontWeight.bold),
+        titleTextStyle: TextStyle(
+          color: darkGray,
+          fontSize: 18,
+          fontWeight: FontWeight.bold,
+        ),
       ),
       bottomNavigationBarTheme: const BottomNavigationBarThemeData(
         backgroundColor: backgroundColor,
@@ -45,9 +67,7 @@ class AppTheme {
         style: ElevatedButton.styleFrom(
           backgroundColor: secondaryColor,
           foregroundColor: Colors.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 24),
         ),
       ),

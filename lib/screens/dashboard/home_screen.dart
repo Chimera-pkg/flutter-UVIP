@@ -63,7 +63,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   children: [
                     // Custom Header
                     _buildHeader(context),
-                    const SizedBox(height: 16),
+                    // const SizedBox(height: 16),
 
                     // Welcome Texts
                     Padding(
@@ -160,45 +160,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                     const SizedBox(height: 32),
 
-                    // Survei Terbaru Section
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                      child: SectionHeader(
-                        title: 'Survei Terbaru',
-                        actionText: 'Lihat Semua',
-                        onActionPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const ProjectListScreen(),
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-
-                    // Survei List
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                      child: ListView.builder(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        itemCount: provider.recentSurveys.length,
-                        itemBuilder: (context, index) {
-                          final survey = provider.recentSurveys[index];
-                          return SurveyItemTile(
-                            title: survey.title,
-                            subtitle: survey.subtitle,
-                            uviScore: survey.uviScore,
-                            time: survey.time,
-                          );
-                        },
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-
-                    // Bottom Banner
+                    // lanjutkat misi banner
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 24.0),
                       child: Consumer<ProjectProvider>(
@@ -216,7 +178,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 const Text(
-                                  'Lanjutkan Misi Scanner',
+                                  'Lanjutkan Misi Upload',
                                   style: TextStyle(
                                     color: Colors.white,
                                     fontSize: 16,
@@ -228,9 +190,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                   children: [
                                     Expanded(
                                       child: Text(
-                                        lastProject != null
-                                            ? lastProject.name
-                                            : 'Belum ada project',
+                                        'Unggah Foto dan Video Kota',
                                         style: const TextStyle(
                                           color: Colors.white70,
                                           fontSize: 12,
@@ -264,17 +224,51 @@ class _HomeScreenState extends State<HomeScreen> {
                                           vertical: 10,
                                         ),
                                       ),
-                                      child: const Text(
-                                        'Lanjutkan',
-                                        style: TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
+                                      child: const Icon(Icons.arrow_forward),
                                     ),
                                   ],
                                 ),
                               ],
                             ),
+                          );
+                        },
+                      ),
+                    ),
+
+                    const SizedBox(height: 24),
+
+                    // Survei Terbaru Section
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                      child: SectionHeader(
+                        title: 'Hasil Survei Terbaru',
+                        actionText: 'Lihat Semua',
+                        onActionPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const ProjectListScreen(),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+
+                    // Survei List
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                      child: ListView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemCount: provider.recentSurveys.length,
+                        itemBuilder: (context, index) {
+                          final survey = provider.recentSurveys[index];
+                          return SurveyItemTile(
+                            title: survey.title,
+                            subtitle: survey.subtitle,
+                            uviScore: survey.uviScore,
+                            time: survey.time,
                           );
                         },
                       ),
@@ -293,42 +287,11 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildHeader(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Row(
-            children: [
-              const Icon(
-                Icons.hexagon_outlined,
-                size: 40,
-                color: AppTheme.primaryColor,
-              ),
-              const SizedBox(width: 8),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'UVIP',
-                    style: TextStyle(
-                      color: AppTheme.primaryColor,
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      height: 1.0,
-                    ),
-                  ),
-                  Text(
-                    'Urban Visual Intelligence Platform',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Colors.black87,
-                      fontSize: 10,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ],
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      child: Image.asset(
+        'assets/icon/app_logo.png',
+        height: 100,
+        // fit: BoxFit.contain,
       ),
     );
   }
