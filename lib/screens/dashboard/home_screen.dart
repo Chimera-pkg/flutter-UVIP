@@ -100,7 +100,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         text: TextSpan(
                           style: Theme.of(context).textTheme.bodyMedium,
                           children: [
-                            const TextSpan(text: 'Rata-rata UVI  '),
+                            const TextSpan(text: 'Rata-rata PVI  '),
                             TextSpan(
                               text: provider.rataRataUvi,
                               style: const TextStyle(
