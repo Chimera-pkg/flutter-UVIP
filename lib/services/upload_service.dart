@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:dio/dio.dart';
 import 'package:uvip/core/network/dio_client.dart';
 
@@ -18,6 +20,7 @@ class UploadService {
         '/street-photos/',
         queryParameters: queryParams,
       );
+      log(response.toString());
       return response;
     } catch (e) {
       rethrow;

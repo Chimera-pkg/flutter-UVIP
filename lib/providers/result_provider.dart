@@ -6,8 +6,13 @@ import 'package:uvip/services/result_service.dart';
 class ShapFactor {
   final String name;
   final double value;
+  final IconData icon;
 
-  ShapFactor({required this.name, required this.value});
+  ShapFactor({
+    required this.name,
+    required this.value,
+    this.icon = Icons.circle,
+  });
 }
 
 class ResultProvider with ChangeNotifier {
@@ -78,53 +83,45 @@ class ResultProvider with ChangeNotifier {
     }
   }
 
-  // Fallback / Mock Data where API is lacking
-  // Map<String, dynamic> get predictionScores {
-  //   if (_segmentationResult != null || _videoSegmentationResult != null) {
-  //     return {
-  //       'UVI': Random().nextDouble(),
-  //       'Safety': Random().nextDouble(),
-  //       'Beauty': Random().nextDouble(),
-  //       'Comfort': Random().nextDouble(),
-  //       'GVI': Random().nextDouble(),
-  //     };
-  //   }
-  //   return {
-  //     'UVI': Random().nextDouble(),
-  //     'Safety': Random().nextDouble(),
-  //     'Beauty': Random().nextDouble(),
-  //     'Comfort': Random().nextDouble(),
-  //     'GVI': Random().nextDouble(),
-  //   };
-  // }
-
   List<ShapFactor> get positiveFactors => [
     ShapFactor(
       name: 'Cakupan Vegetasi',
-      value: currentSegmentation?.greenCoveragePct?.toDouble() ?? 0,
+      value: currentSegmentation?.greenCoveragePct?.toDouble() ??
+          currentSegmentation?.vegetationPct?.toDouble() ??
+          0,
+      icon: Icons.eco_outlined,
+    ),
+    ShapFactor(
+      name: 'Kepadatan Bangunan',
+      value: currentSegmentation?.buildingCoveragePct?.toDouble() ??
+          currentSegmentation?.buildingPct?.toDouble() ??
+          0,
+      icon: Icons.apartment,
     ),
     ShapFactor(
       name: 'Lebar Trotoar',
       value: currentSegmentation?.sidewalkPct?.toDouble() ?? 0,
+      icon: Icons.alt_route,
     ),
     ShapFactor(
-      name: 'Keterbukaan Langit',
-      value: currentSegmentation?.skyVisibilityPct?.toDouble() ?? 0,
+      name: 'Kondisi Langit Terbuka',
+      value: currentSegmentation?.skyVisibilityPct?.toDouble() ??
+          currentSegmentation?.skyPct?.toDouble() ??
+          0,
+      icon: Icons.wb_sunny_outlined,
     ),
   ];
 
   List<ShapFactor> get negativeFactors => [
     ShapFactor(
       name: 'Kepadatan Reklame',
-      value: -(currentSegmentation?.signagePct?.toDouble() ?? 0),
+      value: currentSegmentation?.signagePct?.toDouble() ?? 0,
+      icon: Icons.ad_units_outlined,
     ),
     ShapFactor(
       name: 'Kepadatan Kendaraan',
-      value: -(currentSegmentation?.vehiclePct?.toDouble() ?? 0),
-    ),
-    ShapFactor(
-      name: 'Bangunan Tinggi',
-      value: -(currentSegmentation?.buildingCoveragePct?.toDouble() ?? 0),
+      value: currentSegmentation?.vehiclePct?.toDouble() ?? 0,
+      icon: Icons.directions_car_outlined,
     ),
   ];
 
@@ -155,7 +152,7 @@ class ResultProvider with ChangeNotifier {
             '${dateTime.day} ${months[dateTime.month - 1]} ${dateTime.year}';
         final hour = dateTime.hour.toString().padLeft(2, '0');
         final minute = dateTime.minute.toString().padLeft(2, '0');
-        timeStr = '$hour:$minute';
+        timeStr = '$hour:$minute WIB';
       } catch (_) {
         dateStr = createdAt;
       }
@@ -164,8 +161,8 @@ class ResultProvider with ChangeNotifier {
     return {
       'address': 'Jl. Ijen',
       'city': 'Klojen, Malang',
-      'date': dateStr,
-      'time': timeStr,
+      'date': dateStr.isNotEmpty ? dateStr : '5 Oktober 2024',
+      'time': timeStr.isNotEmpty ? timeStr : '18:27 WIB',
       'coordinates': '-7.9792, 112.6301',
       'accuracy': 'Akurasi GPS: 4.2 m',
     };

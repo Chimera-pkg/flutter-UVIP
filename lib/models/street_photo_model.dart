@@ -8,6 +8,7 @@ class StreetPhotoModel {
   final num fileSizeKb;
   final num latitude;
   final num longitude;
+  final String streetnName;
   final num gpsAccuracyM;
   final num compassAzimuth;
   final String exifTimestamp;
@@ -30,6 +31,7 @@ class StreetPhotoModel {
     required this.fileSizeKb,
     required this.latitude,
     required this.longitude,
+    required this.streetnName,
     required this.gpsAccuracyM,
     required this.compassAzimuth,
     required this.exifTimestamp,
@@ -54,6 +56,7 @@ class StreetPhotoModel {
       fileSizeKb: json['file_size_kb'] ?? 0,
       latitude: json['latitude'] ?? 0,
       longitude: json['longitude'] ?? 0,
+      streetnName: json['street_name'] ?? '',
       gpsAccuracyM: json['gps_accuracy_m'] ?? 0,
       compassAzimuth: json['compass_azimuth'] ?? 0,
       exifTimestamp: json['exif_timestamp'] ?? '',

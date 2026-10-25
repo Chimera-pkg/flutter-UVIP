@@ -11,6 +11,7 @@ class ResultService {
       final response = await _dio.get(
         '/segmentation-results/by-photo/$photoId',
       );
+      log(response.toString());
       return response;
     } catch (e) {
       rethrow;

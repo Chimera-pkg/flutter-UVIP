@@ -1119,9 +1119,9 @@ class _UploadScreenState extends State<UploadScreen> {
             const SizedBox(height: 8),
 
             // UVI Score
-            const Center(
+            Center(
               child: Text(
-                'UVI 1',
+                photo.streetnName,
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.bold,
@@ -1132,35 +1132,62 @@ class _UploadScreenState extends State<UploadScreen> {
             const SizedBox(height: 8),
 
             // "Lihat Detail" Button
-            SizedBox(
-              width: double.infinity,
-              height: 34,
-              child: OutlinedButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => ResultScreen(photo: photo),
+            if (photo.processingStatus.toLowerCase() == 'completed')
+              SizedBox(
+                width: double.infinity,
+                height: 34,
+                child: OutlinedButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => ResultScreen(photo: photo),
+                      ),
+                    );
+                  },
+                  style: OutlinedButton.styleFrom(
+                    side: const BorderSide(
+                      color: Color(0xFF02BDDB),
+                      width: 1.2,
                     ),
-                  );
-                },
-                style: OutlinedButton.styleFrom(
-                  side: const BorderSide(color: Color(0xFF02BDDB), width: 1.2),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    padding: EdgeInsets.zero,
                   ),
-                  padding: EdgeInsets.zero,
-                ),
-                child: const Text(
-                  'Lihat Detail',
-                  style: TextStyle(
-                    color: Color(0xFF02BDDB),
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
+                  child: const Text(
+                    'Lihat Detail',
+                    style: TextStyle(
+                      color: Color(0xFF02BDDB),
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
               ),
-            ),
+            if (photo.processingStatus.toLowerCase() != 'completed')
+              SizedBox(
+                width: double.infinity,
+                height: 34,
+                child: OutlinedButton(
+                  onPressed: () {},
+                  style: OutlinedButton.styleFrom(
+                    side: BorderSide(color: Colors.grey.shade200, width: 1.2),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    padding: EdgeInsets.zero,
+                  ),
+                  child: Text(
+                    photo.processingStatus,
+                    style: TextStyle(
+                      color: Colors.grey[200],
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
           ],
         );
       },

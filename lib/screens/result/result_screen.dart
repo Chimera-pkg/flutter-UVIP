@@ -18,7 +18,12 @@ class ResultScreen extends StatefulWidget {
   final StreetVideoModel? video;
   final bool isVideo;
 
-  const ResultScreen({super.key, this.photo, this.video, this.isVideo = false});
+  const ResultScreen({
+    super.key,
+    this.photo,
+    this.video,
+    this.isVideo = false,
+  });
 
   @override
   State<ResultScreen> createState() => _ResultScreenState();
@@ -58,9 +63,19 @@ class _ResultScreenState extends State<ResultScreen> {
           style: TextStyle(
             color: Colors.black87,
             fontWeight: FontWeight.bold,
-            fontSize: 20,
+            fontSize: 18,
           ),
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.ios_share_outlined, color: Colors.black87),
+            onPressed: _downloadReport,
+          ),
+          IconButton(
+            icon: const Icon(Icons.more_vert, color: Colors.black87),
+            onPressed: () {},
+          ),
+        ],
       ),
       body: Consumer<ResultProvider>(
         builder: (context, provider, child) {
@@ -102,7 +117,7 @@ class _ResultScreenState extends State<ResultScreen> {
                 : widget.photo!.filePath;
           }
           if (fullImageUrl.isNotEmpty && !fullImageUrl.startsWith('http')) {
-            final baseUrl = 'http://80.241.214.39';
+            const baseUrl = 'https://auctions-chemicals-latitude-typing.trycloudflare.com';
             fullImageUrl =
                 '$baseUrl/${fullImageUrl.startsWith('/') ? fullImageUrl.substring(1) : fullImageUrl}';
           }
@@ -113,7 +128,7 @@ class _ResultScreenState extends State<ResultScreen> {
                 : widget.photo!.filePath;
           }
           if (originalUrl.isNotEmpty && !originalUrl.startsWith('http')) {
-            final baseUrl = 'http://80.241.214.39';
+            const baseUrl = 'https://auctions-chemicals-latitude-typing.trycloudflare.com';
             originalUrl =
                 '$baseUrl/${originalUrl.startsWith('/') ? originalUrl.substring(1) : originalUrl}';
           }
@@ -156,9 +171,7 @@ class _ResultScreenState extends State<ResultScreen> {
                                         padding: const EdgeInsets.all(8),
                                         decoration: BoxDecoration(
                                           color: Colors.teal.shade50,
-                                          borderRadius: BorderRadius.circular(
-                                            8,
-                                          ),
+                                          borderRadius: BorderRadius.circular(8),
                                         ),
                                         child: const Icon(
                                           Icons.folder_outlined,
@@ -173,7 +186,7 @@ class _ResultScreenState extends State<ResultScreen> {
                                               CrossAxisAlignment.start,
                                           children: [
                                             const Text(
-                                              'Project',
+                                              'Proyek',
                                               style: TextStyle(
                                                 color: Colors.black54,
                                                 fontSize: 12,
@@ -202,9 +215,7 @@ class _ResultScreenState extends State<ResultScreen> {
                                         padding: const EdgeInsets.all(8),
                                         decoration: BoxDecoration(
                                           color: Colors.teal.shade50,
-                                          borderRadius: BorderRadius.circular(
-                                            8,
-                                          ),
+                                          borderRadius: BorderRadius.circular(8),
                                         ),
                                         child: const Icon(
                                           Icons.image_outlined,
@@ -385,6 +396,7 @@ class _ResultScreenState extends State<ResultScreen> {
                     ),
                     const SizedBox(height: 32),
 
+                    // Urban Visual Index Section
                     _buildUrbanVisualIndexSection(provider),
                     const SizedBox(height: 32),
 
@@ -397,34 +409,44 @@ class _ResultScreenState extends State<ResultScreen> {
                           const SectionHeader(title: 'Skor Prediksi'),
                           const SizedBox(height: 16),
                           Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                             children: [
-                              ScoreBox(
-                                title: 'Beauty',
-                                score:
-                                    provider.currentPrediction?.beautyScore
-                                        ?.toString() ??
-                                    "-",
-                                bgColor: Colors.teal.shade400,
-                                textColor: Colors.white,
+                              Expanded(
+                                child: ScoreBox(
+                                  title: 'Beauty',
+                                  icon: Icons.auto_awesome,
+                                  score:
+                                      provider.currentPrediction?.beautyScore
+                                          ?.toStringAsFixed(1) ??
+                                      "10.0",
+                                  bgColor: const Color(0xFFFF3B70),
+                                  textColor: Colors.white,
+                                ),
                               ),
-                              ScoreBox(
-                                title: 'Safety',
-                                score:
-                                    provider.currentPrediction?.safetyScore
-                                        ?.toString() ??
-                                    "-",
-                                bgColor: Colors.teal.shade400,
-                                textColor: Colors.white,
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: ScoreBox(
+                                  title: 'Safety',
+                                  icon: Icons.shield_outlined,
+                                  score:
+                                      provider.currentPrediction?.safetyScore
+                                          ?.toStringAsFixed(1) ??
+                                      "10.0",
+                                  bgColor: const Color(0xFF00CBA9),
+                                  textColor: Colors.white,
+                                ),
                               ),
-                              ScoreBox(
-                                title: 'Comfort',
-                                score:
-                                    provider.currentPrediction?.comfortScore
-                                        ?.toString() ??
-                                    "-",
-                                bgColor: Colors.teal.shade400,
-                                textColor: Colors.white,
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: ScoreBox(
+                                  title: 'Comfort',
+                                  icon: Icons.weekend_outlined,
+                                  score:
+                                      provider.currentPrediction?.comfortScore
+                                          ?.toStringAsFixed(1) ??
+                                      "10.0",
+                                  bgColor: const Color(0xFFFF9E1B),
+                                  textColor: Colors.white,
+                                ),
                               ),
                             ],
                           ),
@@ -433,13 +455,21 @@ class _ResultScreenState extends State<ResultScreen> {
                     ),
                     const SizedBox(height: 32),
 
-                    // Faktor Pengaruh (SHAP)
+                    // Faktor Pengaruh UVI Section
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 24.0),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const SectionHeader(title: 'Faktor Pengaruh (SHAP)'),
+                          const SectionHeader(title: 'Faktor Pengaruh UVI'),
+                          const SizedBox(height: 4),
+                          const Text(
+                            'Kombinasi faktor positif dan negatif berikut membentuk nilai Urban Visual Index.',
+                            style: TextStyle(
+                              color: Colors.black54,
+                              fontSize: 12,
+                            ),
+                          ),
                           const SizedBox(height: 16),
                           ShapCard(
                             isPositive: true,
@@ -454,43 +484,54 @@ class _ResultScreenState extends State<ResultScreen> {
                     ),
                     const SizedBox(height: 16),
 
+                    // Visual Environment Indicators Section
                     _buildVisualEnvironmentIndicators(provider),
                     const SizedBox(height: 32),
+
+                    // Rekomendasi AI Section (Foto Only)
+                    if (!widget.isVideo) ...[
+                      _buildRekomendasiAiSection(context, provider),
+                      const SizedBox(height: 32),
+                    ],
 
                     // Bottom Buttons
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 24.0),
                       child: Column(
                         children: [
-                          OutlinedButton(
+                          ElevatedButton(
                             onPressed: _downloadReport,
-                            style: OutlinedButton.styleFrom(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppTheme.primaryColor,
+                              foregroundColor: Colors.white,
                               minimumSize: const Size(double.infinity, 50),
-                              side: const BorderSide(
-                                color: AppTheme.primaryColor,
-                              ),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(25),
                               ),
+                              elevation: 0,
                             ),
                             child: const Text(
                               'Unduh Laporan',
                               style: TextStyle(
-                                color: AppTheme.primaryColor,
+                                fontSize: 15,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
                           ),
-                          const SizedBox(height: 16),
-                          ElevatedButton(
+                          const SizedBox(height: 12),
+                          OutlinedButton(
                             onPressed: () {
                               Navigator.popUntil(
                                 context,
                                 (route) => route.isFirst,
                               );
                             },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppTheme.primaryColor,
+                            style: OutlinedButton.styleFrom(
+                              side: const BorderSide(
+                                color: AppTheme.primaryColor,
+                                width: 1.5,
+                              ),
+                              foregroundColor: AppTheme.primaryColor,
                               minimumSize: const Size(double.infinity, 50),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(25),
@@ -499,7 +540,7 @@ class _ResultScreenState extends State<ResultScreen> {
                             child: const Text(
                               'Kembali ke Beranda',
                               style: TextStyle(
-                                color: Colors.white,
+                                fontSize: 15,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
@@ -507,7 +548,7 @@ class _ResultScreenState extends State<ResultScreen> {
                         ],
                       ),
                     ),
-                    const SizedBox(height: 48), // Bottom Padding
+                    const SizedBox(height: 48),
                   ],
                 ),
               ),
@@ -550,24 +591,25 @@ class _ResultScreenState extends State<ResultScreen> {
   }
 
   Widget _buildUrbanVisualIndexSection(ResultProvider provider) {
-    final uviScore = provider.currentPrediction?.uviScore ?? 0;
-    String uviText = 'Kurang Baik';
-    Color uviColor = Colors.red;
-    IconData uviIcon = Icons.thumb_down;
+    final num? rawScore = provider.currentPrediction?.uviScore;
+    final double uviScore = rawScore?.toDouble() ?? 0.0;
 
-    if (uviScore >= 6) {
-      uviText = 'Sangat Tinggi';
-      uviColor = Colors.green;
-      uviIcon = Icons.thumb_up;
-    } else if (uviScore >= 3) {
-      uviText = 'Cukup';
-      uviColor = Colors.orange;
-      uviIcon = Icons.thumbs_up_down;
-    } else {
-      uviText = 'Kurang Baik';
-      uviColor = Colors.red;
-      uviIcon = Icons.thumb_down;
+    String uviDisplay = "1";
+    if (rawScore != null) {
+      if (uviScore % 1 == 0) {
+        uviDisplay = uviScore.toInt().toString();
+      } else {
+        uviDisplay = uviScore.toString();
+      }
     }
+
+    // Sentence taken from prediction->llm_generate_response->suggestions[0]
+    final suggestions =
+        provider.currentPrediction?.llmGenerateResponse?.suggestions;
+    final String suggestionText =
+        (suggestions != null && suggestions.isNotEmpty)
+            ? suggestions.first
+            : "Urban Visual Index adalah tingkat visual ruang suatu kota yang memberikan gambaran kualitas visual dari suatu lokasi, nilai ini diperoleh dari pemrosesan gambar jalan menggunakan AI.";
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24.0),
@@ -582,25 +624,26 @@ class _ResultScreenState extends State<ResultScreen> {
               borderRadius: BorderRadius.circular(16),
               border: Border.all(color: Colors.grey.shade200),
             ),
-            padding: const EdgeInsets.all(24),
+            padding: const EdgeInsets.all(20),
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Container(
-                      width: 80,
-                      height: 80,
+                      width: 84,
+                      height: 84,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         border: Border.all(
                           color: AppTheme.primaryColor,
-                          width: 6,
+                          width: 8,
                         ),
                       ),
                       alignment: Alignment.center,
                       child: Text(
-                        provider.currentPrediction?.uviScore?.toString() ?? "-",
+                        uviDisplay,
                         style: const TextStyle(
                           fontSize: 32,
                           fontWeight: FontWeight.bold,
@@ -608,19 +651,23 @@ class _ResultScreenState extends State<ResultScreen> {
                         ),
                       ),
                     ),
-                    const SizedBox(width: 24),
+                    const SizedBox(width: 20),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Row(
-                            children: [
-                              Icon(uviIcon, color: uviColor, size: 20),
-                              const SizedBox(width: 8),
+                            children: const [
+                              Icon(
+                                Icons.star,
+                                color: AppTheme.primaryColor,
+                                size: 20,
+                              ),
+                              SizedBox(width: 6),
                               Text(
-                                uviText,
+                                "Very Good",
                                 style: TextStyle(
-                                  color: uviColor,
+                                  color: AppTheme.primaryColor,
                                   fontWeight: FontWeight.bold,
                                   fontSize: 16,
                                 ),
@@ -628,11 +675,12 @@ class _ResultScreenState extends State<ResultScreen> {
                             ],
                           ),
                           const SizedBox(height: 8),
-                          const Text(
-                            "Urban Visual Index adalah tingkat visual ruang suatu kota yang memberikan gambaran kualitas visual dari suatu lokasi, nilai ini diperoleh dari pemrosesan gambar jalan menggunakan AI.",
-                            style: TextStyle(
+                          Text(
+                            suggestionText,
+                            style: const TextStyle(
                               fontSize: 12,
-                              color: Colors.black54,
+                              color: Colors.black87,
+                              height: 1.45,
                             ),
                           ),
                         ],
@@ -640,28 +688,37 @@ class _ResultScreenState extends State<ResultScreen> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 24),
-                const Divider(height: 1, color: Colors.grey),
-                const SizedBox(height: 24),
-                // Informasi Lokasi
+                const SizedBox(height: 20),
+                const Divider(height: 1, color: Colors.black12),
+                const SizedBox(height: 16),
+                const Text(
+                  'Informasi Lokasi',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                    color: Colors.black87,
+                  ),
+                ),
+                const SizedBox(height: 14),
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Expanded(
                       child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
                           const Icon(
                             Icons.location_on_outlined,
                             color: AppTheme.primaryColor,
+                            size: 20,
                           ),
-                          const SizedBox(height: 8),
+                          const SizedBox(height: 6),
                           Text(
                             "${provider.locationInfo['address']}\n${provider.locationInfo['city']}",
                             textAlign: TextAlign.center,
                             style: const TextStyle(
-                              fontSize: 10,
+                              fontSize: 11,
                               color: Colors.black87,
+                              height: 1.3,
                             ),
                           ),
                         ],
@@ -669,19 +726,20 @@ class _ResultScreenState extends State<ResultScreen> {
                     ),
                     Expanded(
                       child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
                           const Icon(
                             Icons.calendar_today_outlined,
                             color: AppTheme.primaryColor,
+                            size: 18,
                           ),
-                          const SizedBox(height: 8),
+                          const SizedBox(height: 6),
                           Text(
                             "${provider.locationInfo['date']}\n${provider.locationInfo['time']}",
                             textAlign: TextAlign.center,
                             style: const TextStyle(
-                              fontSize: 10,
+                              fontSize: 11,
                               color: Colors.black87,
+                              height: 1.3,
                             ),
                           ),
                         ],
@@ -689,19 +747,20 @@ class _ResultScreenState extends State<ResultScreen> {
                     ),
                     Expanded(
                       child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
                           const Icon(
-                            Icons.map_outlined,
+                            Icons.explore_outlined,
                             color: AppTheme.primaryColor,
+                            size: 20,
                           ),
-                          const SizedBox(height: 8),
+                          const SizedBox(height: 6),
                           Text(
                             "Lat/Long\n${provider.locationInfo['coordinates']}",
                             textAlign: TextAlign.center,
                             style: const TextStyle(
-                              fontSize: 10,
+                              fontSize: 11,
                               color: Colors.black87,
+                              height: 1.3,
                             ),
                           ),
                         ],
@@ -721,6 +780,27 @@ class _ResultScreenState extends State<ResultScreen> {
     final segResult = provider.currentSegmentation;
     if (segResult == null) return const SizedBox.shrink();
 
+    final double buildingPct =
+        (segResult.buildingCoveragePct ?? segResult.buildingPct)?.toDouble() ??
+        87.4;
+    final double vegetationPct =
+        (segResult.greenCoveragePct ?? segResult.vegetationPct)?.toDouble() ??
+        76.4;
+    final double skyPct =
+        (segResult.skyVisibilityPct ?? segResult.skyPct)?.toDouble() ?? 12.0;
+
+    double walkabilityPct = 45.7;
+    if (segResult.walkabilityRatio != null) {
+      final double ratio = segResult.walkabilityRatio!.toDouble();
+      walkabilityPct = ratio <= 1.0 ? ratio * 100 : ratio;
+    }
+
+    final double commercialPct =
+        (segResult.signagePct?.toDouble() ?? 0.0) > 0
+            ? (segResult.signagePct!.toDouble() +
+                (segResult.streetFurniturePct?.toDouble() ?? 0.0))
+            : 39.8;
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24.0),
       child: Column(
@@ -737,31 +817,38 @@ class _ResultScreenState extends State<ResultScreen> {
             child: Column(
               children: [
                 _buildIndicatorRow(
-                  icon: Icons.business,
+                  icon: Icons.apartment,
                   title: 'Indeks Visibilitas Bangunan',
-                  subtitle: 'Mempengaruhi tingkat keamanan ruang',
-                  percentage: segResult.buildingPct?.toDouble() ?? 0.0,
+                  subtitle: 'Tingkat dominasi bangunan terhadap lanskap',
+                  percentage: buildingPct,
                 ),
                 const Divider(height: 1, color: Colors.black12),
                 _buildIndicatorRow(
-                  icon: Icons.park,
+                  icon: Icons.park_outlined,
                   title: 'Indeks Tutupan Vegetasi',
-                  subtitle: 'Menunjukkan tingkat kenyamanan visual',
-                  percentage: segResult.vegetationPct?.toDouble() ?? 0.0,
+                  subtitle: 'Proporsi area hijau seperti pohon dan taman',
+                  percentage: vegetationPct,
                 ),
                 const Divider(height: 1, color: Colors.black12),
                 _buildIndicatorRow(
-                  icon: Icons.cloud_outlined,
+                  icon: Icons.wb_sunny_outlined,
                   title: 'Indeks Keterbukaan Langit',
-                  subtitle: 'Tingkat pandangan visual pada langit',
-                  percentage: segResult.skyVisibilityPct?.toDouble() ?? 0.0,
+                  subtitle: 'Tingkat keterbukaan ruang langit',
+                  percentage: skyPct,
                 ),
                 const Divider(height: 1, color: Colors.black12),
                 _buildIndicatorRow(
                   icon: Icons.directions_walk,
                   title: 'Indeks Aksesibilitas Area',
-                  subtitle: 'Menunjukkan tingkat kemudahan akses',
-                  percentage: segResult.walkabilityRatio?.toDouble() ?? 0.0,
+                  subtitle: 'Tingkat kemudahan akses bagi pejalan kaki',
+                  percentage: walkabilityPct,
+                ),
+                const Divider(height: 1, color: Colors.black12),
+                _buildIndicatorRow(
+                  icon: Icons.storefront_outlined,
+                  title: 'Indeks Komersial Kawasan',
+                  subtitle: 'Tingkat aktivitas komersial di area sekitar',
+                  percentage: commercialPct,
                 ),
               ],
             ),
@@ -787,9 +874,9 @@ class _ResultScreenState extends State<ResultScreen> {
               color: Colors.blue.shade50,
               borderRadius: BorderRadius.circular(8),
             ),
-            child: Icon(icon, color: Colors.blue, size: 24),
+            child: Icon(icon, color: const Color(0xFF1E3A5F), size: 24),
           ),
-          const SizedBox(width: 16),
+          const SizedBox(width: 14),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -798,20 +885,21 @@ class _ResultScreenState extends State<ResultScreen> {
                   title,
                   style: const TextStyle(
                     fontWeight: FontWeight.bold,
-                    fontSize: 12,
+                    fontSize: 13,
+                    color: Colors.black87,
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   subtitle,
-                  style: const TextStyle(color: Colors.black54, fontSize: 10),
+                  style: const TextStyle(color: Colors.black54, fontSize: 11),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
               ],
             ),
           ),
-          const SizedBox(width: 16),
+          const SizedBox(width: 12),
           SizedBox(
             width: 48,
             height: 48,
@@ -819,9 +907,9 @@ class _ResultScreenState extends State<ResultScreen> {
               alignment: Alignment.center,
               children: [
                 CircularProgressIndicator(
-                  value: percentage / 100, // Assuming 0-100
+                  value: (percentage / 100).clamp(0.0, 1.0),
                   backgroundColor: Colors.grey.shade200,
-                  color: Colors.blue,
+                  color: const Color(0xFF1E3A5F),
                   strokeWidth: 4,
                 ),
                 Text(
@@ -829,6 +917,7 @@ class _ResultScreenState extends State<ResultScreen> {
                   style: const TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 10,
+                    color: Colors.black87,
                   ),
                 ),
               ],
@@ -836,6 +925,420 @@ class _ResultScreenState extends State<ResultScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildRekomendasiAiSection(
+    BuildContext context,
+    ResultProvider provider,
+  ) {
+    // Sentence taken from prediction->llm_generate_response->suggestions[0]
+    final suggestions =
+        provider.currentPrediction?.llmGenerateResponse?.suggestions;
+    final String suggestionText =
+        (suggestions != null && suggestions.isNotEmpty)
+            ? suggestions.first
+            : "Tingkatkan tutupan vegetasi dari 2.3% dengan menambah pohon peneduh dan tanaman perdu di sepanjang koridor serta selasar bangunan.";
+
+    // Image URL taken from prediction->llm_generate_response->generated_image_url
+    final String? rawGeneratedPath =
+        provider.currentPrediction?.llmGenerateResponse?.generatedImageUrl;
+    String fullGeneratedUrl = '';
+    if (rawGeneratedPath != null && rawGeneratedPath.isNotEmpty) {
+      if (rawGeneratedPath.startsWith('http')) {
+        fullGeneratedUrl = rawGeneratedPath;
+      } else {
+        final cleanPath =
+            rawGeneratedPath.startsWith('/')
+                ? rawGeneratedPath.substring(1)
+                : rawGeneratedPath;
+        fullGeneratedUrl =
+            'https://auctions-chemicals-latitude-typing.trycloudflare.com/$cleanPath';
+      }
+    }
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SectionHeader(title: 'Rekomendasi AI'),
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: Colors.grey.shade200),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Suggestion row with icon
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Icon(
+                      Icons.push_pin,
+                      color: AppTheme.primaryColor,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        suggestionText,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Colors.black87,
+                          height: 1.45,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 18),
+
+                // Visualisasi prediktif berbasis AI title
+                const Text(
+                  'Visualisasi prediktif berbasis AI',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13,
+                    color: Colors.black87,
+                  ),
+                ),
+                const SizedBox(height: 10),
+
+                // Generated Image
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: fullGeneratedUrl.isNotEmpty
+                      ? Image.network(
+                          fullGeneratedUrl,
+                          height: 200,
+                          width: double.infinity,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) =>
+                              Container(
+                                height: 200,
+                                width: double.infinity,
+                                color: Colors.grey.shade200,
+                                child: const Center(
+                                  child: Icon(
+                                    Icons.image_not_supported_outlined,
+                                    size: 48,
+                                    color: Colors.grey,
+                                  ),
+                                ),
+                              ),
+                        )
+                      : Container(
+                          height: 200,
+                          width: double.infinity,
+                          color: Colors.grey.shade200,
+                          child: const Center(
+                            child: Icon(
+                              Icons.image_outlined,
+                              size: 48,
+                              color: Colors.grey,
+                            ),
+                          ),
+                        ),
+                ),
+                const SizedBox(height: 8),
+
+                // Image caption
+                const Text(
+                  'Simulasi perbaikan koridor jalan dengan penambahan pohon peneduh dan pelebaran trotoar ramah pejalan kaki.',
+                  style: TextStyle(
+                    color: Colors.black54,
+                    fontSize: 10,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 16),
+
+                // Button "Lihat Rekomendasi AI"
+                OutlinedButton(
+                  onPressed: () => _showAdviceModal(context, provider),
+                  style: OutlinedButton.styleFrom(
+                    minimumSize: const Size(double.infinity, 44),
+                    side: BorderSide(color: Colors.grey.shade400),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(24),
+                    ),
+                  ),
+                  child: const Text(
+                    'Lihat Rekomendasi AI',
+                    style: TextStyle(
+                      color: Colors.black87,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 13,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showAdviceModal(BuildContext context, ResultProvider provider) {
+    final advice = provider.currentSegmentation?.llmAdviceResponse?.advice;
+    final suggestions =
+        provider.currentPrediction?.llmGenerateResponse?.suggestions ?? [];
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return DraggableScrollableSheet(
+          initialChildSize: 0.75,
+          minChildSize: 0.5,
+          maxChildSize: 0.95,
+          expand: false,
+          builder: (context, scrollController) {
+            return SingleChildScrollView(
+              controller: scrollController,
+              padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade300,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: const [
+                      Icon(
+                        Icons.auto_awesome,
+                        color: AppTheme.primaryColor,
+                        size: 24,
+                      ),
+                      SizedBox(width: 8),
+                      Text(
+                        'Rekomendasi & Analisis AI',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black87,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+
+                  if (advice?.diagnosis != null &&
+                      advice!.diagnosis!.isNotEmpty) ...[
+                    const Text(
+                      'Diagnosis',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                        color: Colors.black87,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      advice.diagnosis!,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        color: Colors.black87,
+                        height: 1.45,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    const Divider(),
+                    const SizedBox(height: 12),
+                  ],
+
+                  if (advice != null && advice.rekomendasi.isNotEmpty) ...[
+                    const Text(
+                      'Tindakan Rekomendasi',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                        color: Colors.black87,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    ...advice.rekomendasi.map((item) {
+                      return Container(
+                        margin: const EdgeInsets.only(bottom: 12),
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.teal.shade50.withValues(alpha: 0.4),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.teal.shade100),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 2,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: AppTheme.primaryColor,
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Text(
+                                    item.peran.replaceAll('_', ' ').toUpperCase(),
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                                const Spacer(),
+                                if (item.prioritas != null)
+                                  Text(
+                                    'Prioritas ${item.prioritas}',
+                                    style: TextStyle(
+                                      color: Colors.grey.shade700,
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              item.tindakan,
+                              style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.black87,
+                              ),
+                            ),
+                            if (item.dampak != null &&
+                                item.dampak!.isNotEmpty) ...[
+                              const SizedBox(height: 4),
+                              Text(
+                                'Dampak: ${item.dampak}',
+                                style: const TextStyle(
+                                  fontSize: 11,
+                                  color: Colors.teal,
+                                ),
+                              ),
+                            ],
+                            if (item.standar != null &&
+                                item.standar!.isNotEmpty) ...[
+                              const SizedBox(height: 2),
+                              Text(
+                                'Standar: ${item.standar}',
+                                style: const TextStyle(
+                                  fontSize: 10,
+                                  color: Colors.black54,
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      );
+                    }),
+                    const SizedBox(height: 12),
+                    const Divider(),
+                    const SizedBox(height: 12),
+                  ],
+
+                  if (suggestions.isNotEmpty) ...[
+                    const Text(
+                      'Saran Perbaikan Visual',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                        color: Colors.black87,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    ...suggestions.map((sug) {
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 4.0),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              '• ',
+                              style: TextStyle(
+                                color: AppTheme.primaryColor,
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            Expanded(
+                              child: Text(
+                                sug,
+                                style: const TextStyle(
+                                  fontSize: 13,
+                                  color: Colors.black87,
+                                  height: 1.4,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }),
+                    const SizedBox(height: 12),
+                  ],
+
+                  if (advice?.caveat != null &&
+                      advice!.caveat!.isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.amber.shade50,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: Colors.amber.shade200),
+                      ),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Icon(
+                            Icons.info_outline,
+                            size: 18,
+                            color: Colors.amber.shade900,
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              advice.caveat!,
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: Colors.amber.shade900,
+                                height: 1.35,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            );
+          },
+        );
+      },
     );
   }
 
@@ -876,7 +1379,6 @@ class _InlineVideoPlayerState extends State<_InlineVideoPlayer> {
   @override
   void initState() {
     super.initState();
-    // Gunakan Uri.parse dan replace '\' dengan '/' untuk jaga-jaga URL Windows/lokal
     String cleanUrl = widget.videoUrl.replaceAll('\\', '/');
     _controller =
         VideoPlayerController.networkUrl(Uri.parse(Uri.encodeFull(cleanUrl)))
@@ -886,9 +1388,7 @@ class _InlineVideoPlayerState extends State<_InlineVideoPlayer> {
                   setState(() {
                     _isInitialized = true;
                   });
-                  _controller.setVolume(
-                    0.0,
-                  ); // Muted by default so it can autoplay reliably
+                  _controller.setVolume(0.0);
                   _controller.setLooping(true);
                   _controller.play();
                 }
@@ -954,7 +1454,6 @@ class _InlineVideoPlayerState extends State<_InlineVideoPlayer> {
                   size: 48,
                 ),
               ),
-            // Unmute / Mute indicator
             Positioned(
               bottom: 8,
               right: 8,
