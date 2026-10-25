@@ -18,12 +18,7 @@ class ResultScreen extends StatefulWidget {
   final StreetVideoModel? video;
   final bool isVideo;
 
-  const ResultScreen({
-    super.key,
-    this.photo,
-    this.video,
-    this.isVideo = false,
-  });
+  const ResultScreen({super.key, this.photo, this.video, this.isVideo = false});
 
   @override
   State<ResultScreen> createState() => _ResultScreenState();
@@ -117,7 +112,8 @@ class _ResultScreenState extends State<ResultScreen> {
                 : widget.photo!.filePath;
           }
           if (fullImageUrl.isNotEmpty && !fullImageUrl.startsWith('http')) {
-            const baseUrl = 'https://auctions-chemicals-latitude-typing.trycloudflare.com';
+            const baseUrl =
+                'https://auctions-chemicals-latitude-typing.trycloudflare.com';
             fullImageUrl =
                 '$baseUrl/${fullImageUrl.startsWith('/') ? fullImageUrl.substring(1) : fullImageUrl}';
           }
@@ -128,7 +124,8 @@ class _ResultScreenState extends State<ResultScreen> {
                 : widget.photo!.filePath;
           }
           if (originalUrl.isNotEmpty && !originalUrl.startsWith('http')) {
-            const baseUrl = 'https://auctions-chemicals-latitude-typing.trycloudflare.com';
+            const baseUrl =
+                'https://auctions-chemicals-latitude-typing.trycloudflare.com';
             originalUrl =
                 '$baseUrl/${originalUrl.startsWith('/') ? originalUrl.substring(1) : originalUrl}';
           }
@@ -171,7 +168,9 @@ class _ResultScreenState extends State<ResultScreen> {
                                         padding: const EdgeInsets.all(8),
                                         decoration: BoxDecoration(
                                           color: Colors.teal.shade50,
-                                          borderRadius: BorderRadius.circular(8),
+                                          borderRadius: BorderRadius.circular(
+                                            8,
+                                          ),
                                         ),
                                         child: const Icon(
                                           Icons.folder_outlined,
@@ -215,7 +214,9 @@ class _ResultScreenState extends State<ResultScreen> {
                                         padding: const EdgeInsets.all(8),
                                         decoration: BoxDecoration(
                                           color: Colors.teal.shade50,
-                                          borderRadius: BorderRadius.circular(8),
+                                          borderRadius: BorderRadius.circular(
+                                            8,
+                                          ),
                                         ),
                                         child: const Icon(
                                           Icons.image_outlined,
@@ -603,13 +604,39 @@ class _ResultScreenState extends State<ResultScreen> {
       }
     }
 
+    String uviCategory = "Sangat rendah";
+    Color uviColor = const Color(0xFFC62828);
+
+    if (rawScore == null || uviScore < 0.0) {
+      uviCategory = "Sangat rendah";
+      uviColor = const Color(0xFFC62828);
+    } else if (uviScore < 0.0492) {
+      uviCategory = "Rendah";
+      uviColor = const Color(0xFFE53935);
+    } else if (uviScore < 0.1704) {
+      uviCategory = "Cenderung rendah";
+      uviColor = const Color(0xFFFF7043);
+    } else if (uviScore < 0.2917) {
+      uviCategory = "Sedang";
+      uviColor = const Color(0xFFFFA000);
+    } else if (uviScore < 0.4130) {
+      uviCategory = "Cenderung tinggi";
+      uviColor = const Color(0xFF4CAF50);
+    } else if (uviScore < 0.5343) {
+      uviCategory = "Tinggi";
+      uviColor = const Color(0xFF00BFA5);
+    } else {
+      uviCategory = "Sangat tinggi";
+      uviColor = AppTheme.primaryColor;
+    }
+
     // Sentence taken from prediction->llm_generate_response->suggestions[0]
     final suggestions =
         provider.currentPrediction?.llmGenerateResponse?.suggestions;
     final String suggestionText =
         (suggestions != null && suggestions.isNotEmpty)
-            ? suggestions.first
-            : "Urban Visual Index adalah tingkat visual ruang suatu kota yang memberikan gambaran kualitas visual dari suatu lokasi, nilai ini diperoleh dari pemrosesan gambar jalan menggunakan AI.";
+        ? suggestions.first
+        : "Urban Visual Index adalah tingkat visual ruang suatu kota yang memberikan gambaran kualitas visual dari suatu lokasi, nilai ini diperoleh dari pemrosesan gambar jalan menggunakan AI.";
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24.0),
@@ -636,18 +663,15 @@ class _ResultScreenState extends State<ResultScreen> {
                       height: 84,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        border: Border.all(
-                          color: AppTheme.primaryColor,
-                          width: 8,
-                        ),
+                        border: Border.all(color: uviColor, width: 6),
                       ),
                       alignment: Alignment.center,
                       child: Text(
                         uviDisplay,
-                        style: const TextStyle(
-                          fontSize: 32,
+                        style: TextStyle(
+                          fontSize: 24,
                           fontWeight: FontWeight.bold,
-                          color: AppTheme.primaryColor,
+                          color: uviColor,
                         ),
                       ),
                     ),
@@ -657,17 +681,13 @@ class _ResultScreenState extends State<ResultScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Row(
-                            children: const [
-                              Icon(
-                                Icons.star,
-                                color: AppTheme.primaryColor,
-                                size: 20,
-                              ),
-                              SizedBox(width: 6),
+                            children: [
+                              Icon(Icons.star, color: uviColor, size: 20),
+                              const SizedBox(width: 6),
                               Text(
-                                "Very Good",
+                                uviCategory,
                                 style: TextStyle(
-                                  color: AppTheme.primaryColor,
+                                  color: uviColor,
                                   fontWeight: FontWeight.bold,
                                   fontSize: 16,
                                 ),
@@ -795,11 +815,10 @@ class _ResultScreenState extends State<ResultScreen> {
       walkabilityPct = ratio <= 1.0 ? ratio * 100 : ratio;
     }
 
-    final double commercialPct =
-        (segResult.signagePct?.toDouble() ?? 0.0) > 0
-            ? (segResult.signagePct!.toDouble() +
-                (segResult.streetFurniturePct?.toDouble() ?? 0.0))
-            : 39.8;
+    final double commercialPct = (segResult.signagePct?.toDouble() ?? 0.0) > 0
+        ? (segResult.signagePct!.toDouble() +
+              (segResult.streetFurniturePct?.toDouble() ?? 0.0))
+        : 39.8;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24.0),
@@ -937,8 +956,8 @@ class _ResultScreenState extends State<ResultScreen> {
         provider.currentPrediction?.llmGenerateResponse?.suggestions;
     final String suggestionText =
         (suggestions != null && suggestions.isNotEmpty)
-            ? suggestions.first
-            : "Tingkatkan tutupan vegetasi dari 2.3% dengan menambah pohon peneduh dan tanaman perdu di sepanjang koridor serta selasar bangunan.";
+        ? suggestions.first
+        : "-";
 
     // Image URL taken from prediction->llm_generate_response->generated_image_url
     final String? rawGeneratedPath =
@@ -948,10 +967,9 @@ class _ResultScreenState extends State<ResultScreen> {
       if (rawGeneratedPath.startsWith('http')) {
         fullGeneratedUrl = rawGeneratedPath;
       } else {
-        final cleanPath =
-            rawGeneratedPath.startsWith('/')
-                ? rawGeneratedPath.substring(1)
-                : rawGeneratedPath;
+        final cleanPath = rawGeneratedPath.startsWith('/')
+            ? rawGeneratedPath.substring(1)
+            : rawGeneratedPath;
         fullGeneratedUrl =
             'https://auctions-chemicals-latitude-typing.trycloudflare.com/$cleanPath';
       }
@@ -1050,10 +1068,7 @@ class _ResultScreenState extends State<ResultScreen> {
                 // Image caption
                 const Text(
                   'Simulasi perbaikan koridor jalan dengan penambahan pohon peneduh dan pelebaran trotoar ramah pejalan kaki.',
-                  style: TextStyle(
-                    color: Colors.black54,
-                    fontSize: 10,
-                  ),
+                  style: TextStyle(color: Colors.black54, fontSize: 10),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 16),
@@ -1199,7 +1214,9 @@ class _ResultScreenState extends State<ResultScreen> {
                                     borderRadius: BorderRadius.circular(12),
                                   ),
                                   child: Text(
-                                    item.peran.replaceAll('_', ' ').toUpperCase(),
+                                    item.peran
+                                        .replaceAll('_', ' ')
+                                        .toUpperCase(),
                                     style: const TextStyle(
                                       color: Colors.white,
                                       fontSize: 10,
@@ -1300,8 +1317,7 @@ class _ResultScreenState extends State<ResultScreen> {
                     const SizedBox(height: 12),
                   ],
 
-                  if (advice?.caveat != null &&
-                      advice!.caveat!.isNotEmpty) ...[
+                  if (advice?.caveat != null && advice!.caveat!.isNotEmpty) ...[
                     const SizedBox(height: 8),
                     Container(
                       padding: const EdgeInsets.all(12),
