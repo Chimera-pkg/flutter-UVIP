@@ -259,34 +259,42 @@ class _MapAnalysisScreenState extends State<MapAnalysisScreen> {
                       const SizedBox(height: 16),
                       // Summary Cards Row
                       Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          SummaryCard(
-                            icon: Icons.verified_user_rounded, // Shield approx
-                            iconColor: Colors.white,
-                            iconBgColor: Colors.lightGreen,
-                            title: 'Safety Score',
-                            score: homeProvider.safetyScore,
-                            status: homeProvider.safetyStatus,
-                            statusColor: homeProvider.safetyStatusColor,
+                          Expanded(
+                            child: SummaryCard(
+                              icon:
+                                  Icons.verified_user_rounded, // Shield approx
+                              iconColor: Colors.white,
+                              iconBgColor: Colors.lightGreen,
+                              title: 'Safety Score',
+                              score: homeProvider.safetyScore,
+                              status: homeProvider.safetyStatus,
+                              statusColor: homeProvider.safetyStatusColor,
+                            ),
                           ),
-                          SummaryCard(
-                            icon: Icons.star_rounded, // Star approx
-                            iconColor: Colors.white,
-                            iconBgColor: Colors.pinkAccent.shade100,
-                            title: 'Beauty Score',
-                            score: homeProvider.beautyScore,
-                            status: homeProvider.beautyStatus,
-                            statusColor: homeProvider.beautyStatusColor,
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: SummaryCard(
+                              icon: Icons.star_rounded, // Star approx
+                              iconColor: Colors.white,
+                              iconBgColor: Colors.pinkAccent.shade100,
+                              title: 'Beauty Score',
+                              score: homeProvider.beautyScore,
+                              status: homeProvider.beautyStatus,
+                              statusColor: homeProvider.beautyStatusColor,
+                            ),
                           ),
-                          SummaryCard(
-                            icon: Icons.cloud_rounded, // Cloud approx
-                            iconColor: Colors.white,
-                            iconBgColor: Colors.orange.shade300,
-                            title: 'Comfort Score',
-                            score: homeProvider.comfortScore,
-                            status: homeProvider.comfortStatus,
-                            statusColor: homeProvider.comfortStatusColor,
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: SummaryCard(
+                              icon: Icons.cloud_rounded, // Cloud approx
+                              iconColor: Colors.white,
+                              iconBgColor: Colors.orange.shade300,
+                              title: 'Comfort Score',
+                              score: homeProvider.comfortScore,
+                              status: homeProvider.comfortStatus,
+                              statusColor: homeProvider.comfortStatusColor,
+                            ),
                           ),
                         ],
                       ),

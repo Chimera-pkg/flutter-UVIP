@@ -171,21 +171,72 @@ class HomeProvider with ChangeNotifier {
     return "0.00";
   }
 
-  // Status Category Helper (1-4: Buruk, 5-6: Sedang, 7-10: Baik)
+  // Helper untuk normalisasi skor ke rentang 0.0 - 1.0 jika berada dalam skala 10 atau 100
+  static double? parseAndNormalizeScore(String? scoreStr) {
+    if (scoreStr == null) return null;
+    final double? rawScore = double.tryParse(scoreStr);
+    if (rawScore == null) return null;
+    if (rawScore < 0.0) return rawScore;
+    if (rawScore > 10.0) {
+      return rawScore / 100.0;
+    } else if (rawScore > 1.0) {
+      return rawScore / 10.0;
+    }
+    return rawScore;
+  }
+
+  // Parameter PVI Hasil Proyeksi:
+  // Level 1: Sangat rendah (Tidak terjangkau oleh prediksi model)
+  // Level 2: Rendah (0,0000 - < 0,0492)
+  // Level 3: Cenderung rendah (0,0492 - < 0,1704)
+  // Level 4: Sedang (0,1704 - < 0,2917)
+  // Level 5: Cenderung tinggi (0,2917 - < 0,4130)
+  // Level 6: Tinggi (0,4130 - < 0,5343)
+  // Level 7: Sangat tinggi (0,5343 - 1,0000)
   String getStatusLabel(String scoreStr) {
-    final double? score = double.tryParse(scoreStr);
-    if (score == null) return 'Baik';
-    if (score < 5.0) return 'Buruk';
-    if (score < 7.0) return 'Sedang';
-    return 'Baik';
+    final double? normScore = parseAndNormalizeScore(scoreStr);
+    if (normScore == null || normScore < 0.0) {
+      return 'Sangat rendah';
+    }
+    if (normScore < 0.0492) {
+      return 'Rendah';
+    }
+    if (normScore < 0.1704) {
+      return 'Cenderung rendah';
+    }
+    if (normScore < 0.2917) {
+      return 'Sedang';
+    }
+    if (normScore < 0.4130) {
+      return 'Cenderung tinggi';
+    }
+    if (normScore < 0.5343) {
+      return 'Tinggi';
+    }
+    return 'Sangat tinggi';
   }
 
   Color getStatusColor(String scoreStr) {
-    final double? score = double.tryParse(scoreStr);
-    if (score == null) return Colors.green;
-    if (score < 5.0) return Colors.red;
-    if (score < 7.0) return Colors.orange;
-    return Colors.green;
+    final double? normScore = parseAndNormalizeScore(scoreStr);
+    if (normScore == null || normScore < 0.0) {
+      return const Color(0xFFC62828); // Level 1: Sangat rendah
+    }
+    if (normScore < 0.0492) {
+      return const Color(0xFFE53935); // Level 2: Rendah
+    }
+    if (normScore < 0.1704) {
+      return const Color(0xFFFF7043); // Level 3: Cenderung rendah
+    }
+    if (normScore < 0.2917) {
+      return const Color(0xFFFFA000); // Level 4: Sedang
+    }
+    if (normScore < 0.4130) {
+      return const Color(0xFF4CAF50); // Level 5: Cenderung tinggi
+    }
+    if (normScore < 0.5343) {
+      return const Color(0xFF00BFA5); // Level 6: Tinggi
+    }
+    return const Color(0xFF02BDDB); // Level 7: Sangat tinggi
   }
 
   String get uviStatus => getStatusLabel(rataRataUvi);

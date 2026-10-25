@@ -105,24 +105,66 @@ class _HomeScreenState extends State<HomeScreen> {
 
                     // UVI Average Score below chart
                     Center(
-                      child: RichText(
-                        text: TextSpan(
-                          style: Theme.of(context).textTheme.bodyMedium,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16.0,
+                          vertical: 10.0,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(16.0),
+                          border: Border.all(color: Colors.grey.shade200),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.03),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
                           children: [
-                            const TextSpan(text: 'Rata-rata PVI  '),
-                            TextSpan(
-                              text: provider.rataRataUvi,
-                              style: const TextStyle(
-                                fontSize: 24,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.black,
+                            Text(
+                              'Rata-rata PVI',
+                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                color: Colors.black54,
+                                fontWeight: FontWeight.w500,
                               ),
                             ),
-                            TextSpan(
-                              text: '  ${provider.uviStatus}',
-                              style: TextStyle(
-                                color: provider.uviStatusColor,
+                            const SizedBox(width: 10),
+                            Text(
+                              provider.rataRataUvi,
+                              style: const TextStyle(
+                                fontSize: 22,
                                 fontWeight: FontWeight.bold,
+                                color: Colors.black87,
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: provider.uviStatusColor.withValues(
+                                  alpha: 0.12,
+                                ),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: provider.uviStatusColor.withValues(
+                                    alpha: 0.3,
+                                  ),
+                                ),
+                              ),
+                              child: Text(
+                                provider.uviStatus,
+                                style: TextStyle(
+                                  color: provider.uviStatusColor,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 12,
+                                ),
                               ),
                             ),
                           ],
@@ -135,34 +177,41 @@ class _HomeScreenState extends State<HomeScreen> {
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 24.0),
                       child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          SummaryCard(
-                            icon: Icons.verified_user_rounded, // Shield approx
-                            iconColor: Colors.white,
-                            iconBgColor: Colors.lightGreen,
-                            title: 'Safety Score',
-                            score: provider.safetyScore,
-                            status: provider.safetyStatus,
-                            statusColor: provider.safetyStatusColor,
+                          Expanded(
+                            child: SummaryCard(
+                              icon: Icons.verified_user_rounded, // Shield approx
+                              iconColor: Colors.white,
+                              iconBgColor: Colors.lightGreen,
+                              title: 'Safety Score',
+                              score: provider.safetyScore,
+                              status: provider.safetyStatus,
+                              statusColor: provider.safetyStatusColor,
+                            ),
                           ),
-                          SummaryCard(
-                            icon: Icons.star_rounded, // Star approx
-                            iconColor: Colors.white,
-                            iconBgColor: Colors.pinkAccent.shade100,
-                            title: 'Beauty Score',
-                            score: provider.beautyScore,
-                            status: provider.beautyStatus,
-                            statusColor: provider.beautyStatusColor,
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: SummaryCard(
+                              icon: Icons.star_rounded, // Star approx
+                              iconColor: Colors.white,
+                              iconBgColor: Colors.pinkAccent.shade100,
+                              title: 'Beauty Score',
+                              score: provider.beautyScore,
+                              status: provider.beautyStatus,
+                              statusColor: provider.beautyStatusColor,
+                            ),
                           ),
-                          SummaryCard(
-                            icon: Icons.cloud_rounded, // Cloud approx
-                            iconColor: Colors.white,
-                            iconBgColor: Colors.orange.shade300,
-                            title: 'Comfort Score',
-                            score: provider.comfortScore,
-                            status: provider.comfortStatus,
-                            statusColor: provider.comfortStatusColor,
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: SummaryCard(
+                              icon: Icons.cloud_rounded, // Cloud approx
+                              iconColor: Colors.white,
+                              iconBgColor: Colors.orange.shade300,
+                              title: 'Comfort Score',
+                              score: provider.comfortScore,
+                              status: provider.comfortStatus,
+                              statusColor: provider.comfortStatusColor,
+                            ),
                           ),
                         ],
                       ),
