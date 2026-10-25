@@ -1121,8 +1121,11 @@ class _UploadScreenState extends State<UploadScreen> {
             // UVI Score
             Center(
               child: Text(
-                photo.streetnName,
-                style: TextStyle(
+                (photo.streetName != null &&
+                        photo.streetName!.trim().isNotEmpty)
+                    ? photo.streetName!
+                    : "-",
+                style: const TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.bold,
                   color: Color(0xFF0F172A),
@@ -1249,9 +1252,15 @@ class _UploadScreenState extends State<UploadScreen> {
                       overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 4),
-                    const Text(
-                      'UVI 1',
-                      style: TextStyle(fontSize: 12, color: Color(0xFF6B7280)),
+                    Text(
+                      (photo.streetName != null &&
+                              photo.streetName!.trim().isNotEmpty)
+                          ? photo.streetName!
+                          : "-",
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: Color(0xFF6B7280),
+                      ),
                     ),
                   ],
                 ),
@@ -1385,10 +1394,13 @@ class _UploadScreenState extends State<UploadScreen> {
             const SizedBox(height: 8),
 
             // UVI Score
-            const Center(
+            Center(
               child: Text(
-                'UVI 1',
-                style: TextStyle(
+                (video.streetName != null &&
+                        video.streetName!.trim().isNotEmpty)
+                    ? video.streetName!
+                    : "-",
+                style: const TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.bold,
                   color: Color(0xFF0F172A),
@@ -1489,9 +1501,15 @@ class _UploadScreenState extends State<UploadScreen> {
                       overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 4),
-                    const Text(
-                      'UVI 1',
-                      style: TextStyle(fontSize: 12, color: Color(0xFF6B7280)),
+                    Text(
+                      (video.streetName != null &&
+                              video.streetName!.trim().isNotEmpty)
+                          ? video.streetName!
+                          : "-",
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: Color(0xFF6B7280),
+                      ),
                     ),
                   ],
                 ),

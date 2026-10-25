@@ -5,6 +5,7 @@ import 'package:uvip/core/theme/app_theme.dart';
 import 'package:uvip/providers/home_provider.dart';
 import 'package:uvip/providers/auth_provider.dart';
 import 'package:uvip/providers/project_provider.dart';
+import 'package:uvip/providers/map_provider.dart';
 import 'package:uvip/screens/project/project_list_screen.dart';
 import 'package:uvip/widgets/summary_card.dart';
 import 'package:uvip/widgets/survey_item_tile.dart';
@@ -30,6 +31,7 @@ class _HomeScreenState extends State<HomeScreen> {
         listen: false,
       );
       final homeProvider = Provider.of<HomeProvider>(context, listen: false);
+      final mapProvider = Provider.of<MapProvider>(context, listen: false);
 
       // Set the project provider reference in home provider
       homeProvider.setProjectProvider(projectProvider);
@@ -39,6 +41,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
       // Fetch home dashboard summary scores
       homeProvider.fetchHomeDashboard();
+
+      // Ambil lokasi terkini saat membuka HomeScreen
+      mapProvider.determinePosition();
     });
   }
 
@@ -54,6 +59,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 await Future.wait([
                   provider.fetchHomeDashboard(),
                   projectProvider.fetchProjects(),
+                  Provider.of<MapProvider>(
+                    context,
+                    listen: false,
+                  ).determinePosition(),
                 ]);
               },
               child: SingleChildScrollView(
@@ -72,7 +81,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Selamat pagi, ${authProvider.user?.name ?? 'User'}',
+                            'Selamat datang, ${authProvider.user?.name ?? 'User'}',
                             style: Theme.of(context).textTheme.headlineMedium
                                 ?.copyWith(
                                   fontWeight: FontWeight.bold,

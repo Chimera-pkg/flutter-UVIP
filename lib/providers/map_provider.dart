@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:geocoding/geocoding.dart';
 
 /// [MapProvider] mengelola state untuk MapAnalysisScreen.
 /// Menyimpan informasi:
@@ -14,6 +16,8 @@ class MapProvider with ChangeNotifier {
   double latitude = -7.9786;
   double longitude = 112.6316;
   String locationName = 'Klojen, Malang';
+  bool isLocationLoaded = false;
+  bool isLoadingLocation = false;
 
   // Selected Area Summary Data
   final String rataRataUvi = "7.68";
@@ -38,6 +42,73 @@ class MapProvider with ChangeNotifier {
     if (locName != null) {
       locationName = locName;
     }
+    isLocationLoaded = true;
     notifyListeners();
+  }
+
+  Future<void> determinePosition() async {
+    if (isLoadingLocation) return;
+    isLoadingLocation = true;
+
+    try {
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        isLoadingLocation = false;
+        return;
+      }
+
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          isLoadingLocation = false;
+          return;
+        }
+      }
+
+      if (permission == LocationPermission.deniedForever) {
+        isLoadingLocation = false;
+        return;
+      }
+
+      final position = await Geolocator.getCurrentPosition();
+      latitude = position.latitude;
+      longitude = position.longitude;
+
+      try {
+        List<Placemark> placemarks = await Geocoding().placemarkFromCoordinates(
+          position.latitude,
+          position.longitude,
+        );
+        if (placemarks.isNotEmpty) {
+          Placemark place = placemarks.first;
+          String locality = place.subLocality?.isNotEmpty == true
+              ? place.subLocality!
+              : (place.locality ?? '');
+          String city = place.subAdministrativeArea?.isNotEmpty == true
+              ? place.subAdministrativeArea!
+              : (place.administrativeArea ?? '');
+
+          if (locality.isNotEmpty && city.isNotEmpty) {
+            locationName = '$locality, $city';
+          } else if (locality.isNotEmpty) {
+            locationName = locality;
+          } else if (city.isNotEmpty) {
+            locationName = city;
+          } else {
+            locationName = place.country ?? 'Unknown Location';
+          }
+        }
+      } catch (e) {
+        debugPrint('Error reverse geocoding: $e');
+      }
+
+      isLocationLoaded = true;
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error determinePosition: $e');
+    } finally {
+      isLoadingLocation = false;
+    }
   }
 }

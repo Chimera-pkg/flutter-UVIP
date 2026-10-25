@@ -208,8 +208,8 @@ class HomeProvider with ChangeNotifier {
         title: project.name,
         subtitle: project.location,
         uviScore: project.averageUVI != null
-            ? "UVI ${project.averageUVI!.toStringAsFixed(0)}"
-            : "UVI 0",
+            ? "PVI ${project.averageUVI!.toStringAsFixed(0)}"
+            : "PVI 0",
         time: _formatTime(project.lastOpenedAt ?? project.createdAt),
       );
     }).toList();

@@ -292,7 +292,6 @@ class _AiCamScreenState extends State<AiCamScreen> with WidgetsBindingObserver {
 
       // Buka modal preview foto tangkapan
       _showRecordedPhotoPreview(photo);
-
     } catch (e) {
       debugPrint("Error taking picture: $e");
       if (mounted) {
@@ -866,7 +865,7 @@ class _AiCamScreenState extends State<AiCamScreen> with WidgetsBindingObserver {
                             ),
                             const SizedBox(height: 12),
                             _buildLiveScoreItem(
-                              'UVI',
+                              'PVI',
                               provider.liveUvi,
                               Colors.blue,
                             ),

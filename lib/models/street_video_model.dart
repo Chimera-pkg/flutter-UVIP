@@ -9,6 +9,7 @@ class StreetVideoModel {
   final num durationSeconds;
   final num latitude;
   final num longitude;
+  final String? streetName;
   final num gpsAccuracyM;
   final num compassAzimuth;
   final bool isManualCapture;
@@ -31,6 +32,7 @@ class StreetVideoModel {
     this.durationSeconds = 0,
     required this.latitude,
     required this.longitude,
+    required this.streetName,
     required this.gpsAccuracyM,
     required this.compassAzimuth,
     required this.isManualCapture,
@@ -55,6 +57,9 @@ class StreetVideoModel {
       durationSeconds: json['duration_seconds'] ?? json['duration'] ?? 0,
       latitude: json['latitude'] ?? 0,
       longitude: json['longitude'] ?? 0,
+      streetName: json['street_name'] != null && json['street_name'].toString().trim().isNotEmpty
+          ? json['street_name'].toString()
+          : null,
       gpsAccuracyM: json['gps_accuracy_m'] ?? 0,
       compassAzimuth: json['compass_azimuth'] ?? 0,
       isManualCapture: json['is_manual_capture'] ?? false,

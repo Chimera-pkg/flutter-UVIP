@@ -3,8 +3,6 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:provider/provider.dart';
-import 'package:geolocator/geolocator.dart';
-import 'package:geocoding/geocoding.dart';
 import 'package:uvip/core/theme/app_theme.dart';
 import 'package:uvip/providers/map_provider.dart';
 import 'package:uvip/providers/home_provider.dart';
@@ -26,72 +24,30 @@ class _MapAnalysisScreenState extends State<MapAnalysisScreen> {
   @override
   void initState() {
     super.initState();
-    _determinePosition();
-  }
-
-  Future<void> _determinePosition() async {
-    bool serviceEnabled;
-    LocationPermission permission;
-
-    serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) {
-      return;
-    }
-
-    permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-      if (permission == LocationPermission.denied) {
-        return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final mapProvider = Provider.of<MapProvider>(context, listen: false);
+      if (mapProvider.isLocationLoaded) {
+        setState(() {
+          _currentLocation = LatLng(
+            mapProvider.latitude,
+            mapProvider.longitude,
+          );
+        });
+        _mapController.move(_currentLocation!, 15.0);
+      } else {
+        mapProvider.determinePosition().then((_) {
+          if (mounted && mapProvider.isLocationLoaded) {
+            setState(() {
+              _currentLocation = LatLng(
+                mapProvider.latitude,
+                mapProvider.longitude,
+              );
+            });
+            _mapController.move(_currentLocation!, 15.0);
+          }
+        });
       }
-    }
-
-    if (permission == LocationPermission.deniedForever) {
-      return;
-    }
-
-    final position = await Geolocator.getCurrentPosition();
-
-    String? locationName;
-    try {
-      List<Placemark> placemarks = await Geocoding().placemarkFromCoordinates(
-        position.latitude,
-        position.longitude,
-      );
-      if (placemarks.isNotEmpty) {
-        Placemark place = placemarks.first;
-        String locality = place.subLocality?.isNotEmpty == true
-            ? place.subLocality!
-            : (place.locality ?? '');
-        String city = place.subAdministrativeArea?.isNotEmpty == true
-            ? place.subAdministrativeArea!
-            : (place.administrativeArea ?? '');
-
-        if (locality.isNotEmpty && city.isNotEmpty) {
-          locationName = '$locality, $city';
-        } else if (locality.isNotEmpty) {
-          locationName = locality;
-        } else if (city.isNotEmpty) {
-          locationName = city;
-        } else {
-          locationName = place.country ?? 'Unknown Location';
-        }
-      }
-    } catch (e) {
-      debugPrint('Error reverse geocoding: $e');
-    }
-
-    if (mounted) {
-      setState(() {
-        _currentLocation = LatLng(position.latitude, position.longitude);
-      });
-      Provider.of<MapProvider>(context, listen: false).updateCoordinates(
-        position.latitude,
-        position.longitude,
-        locName: locationName,
-      );
-      _mapController.move(_currentLocation!, 15.0);
-    }
+    });
   }
 
   @override
@@ -131,7 +87,9 @@ class _MapAnalysisScreenState extends State<MapAnalysisScreen> {
                                 provider.latitude,
                                 provider.longitude,
                               ),
-                              initialZoom: 13.0,
+                              initialZoom: provider.isLocationLoaded
+                                  ? 15.0
+                                  : 13.0,
                               interactionOptions: const InteractionOptions(
                                 flags:
                                     InteractiveFlag.all &
@@ -144,11 +102,17 @@ class _MapAnalysisScreenState extends State<MapAnalysisScreen> {
                                     'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                                 userAgentPackageName: 'com.example.uvip',
                               ),
-                              if (_currentLocation != null)
+                              if (_currentLocation != null ||
+                                  provider.isLocationLoaded)
                                 MarkerLayer(
                                   markers: [
                                     Marker(
-                                      point: _currentLocation!,
+                                      point:
+                                          _currentLocation ??
+                                          LatLng(
+                                            provider.latitude,
+                                            provider.longitude,
+                                          ),
                                       width: 40,
                                       height: 40,
                                       child: const Icon(
@@ -171,20 +135,36 @@ class _MapAnalysisScreenState extends State<MapAnalysisScreen> {
                                 const SizedBox(height: 8),
                                 GestureDetector(
                                   onTap: () {
-                                    if (_currentLocation != null) {
+                                    final mapProvider =
+                                        Provider.of<MapProvider>(
+                                          context,
+                                          listen: false,
+                                        );
+                                    if (mapProvider.isLocationLoaded) {
+                                      _currentLocation = LatLng(
+                                        mapProvider.latitude,
+                                        mapProvider.longitude,
+                                      );
                                       _mapController.move(
                                         _currentLocation!,
                                         15.0,
                                       );
                                     } else {
-                                      _mapController.move(
-                                        LatLng(
-                                          provider.latitude,
-                                          provider.longitude,
-                                        ),
-                                        13.0,
-                                      );
-                                      _determinePosition();
+                                      mapProvider.determinePosition().then((_) {
+                                        if (mounted &&
+                                            mapProvider.isLocationLoaded) {
+                                          setState(() {
+                                            _currentLocation = LatLng(
+                                              mapProvider.latitude,
+                                              mapProvider.longitude,
+                                            );
+                                          });
+                                          _mapController.move(
+                                            _currentLocation!,
+                                            15.0,
+                                          );
+                                        }
+                                      });
                                     }
                                   },
                                   child: _buildFloatingMapButton(
@@ -227,14 +207,14 @@ class _MapAnalysisScreenState extends State<MapAnalysisScreen> {
                                         MainAxisAlignment.spaceBetween,
                                     children: const [
                                       Text(
-                                        'UVI Tinggi',
+                                        'PVI Tinggi',
                                         style: TextStyle(
                                           fontSize: 10,
                                           color: Colors.black54,
                                         ),
                                       ),
                                       Text(
-                                        'UVI Rendah',
+                                        'PVI Rendah',
                                         style: TextStyle(
                                           fontSize: 10,
                                           color: Colors.black54,
