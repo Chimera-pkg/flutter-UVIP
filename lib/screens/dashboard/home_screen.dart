@@ -7,11 +7,11 @@ import 'package:uvip/providers/auth_provider.dart';
 import 'package:uvip/providers/project_provider.dart';
 import 'package:uvip/providers/map_provider.dart';
 import 'package:uvip/screens/project/project_list_screen.dart';
+import 'package:uvip/screens/upload/upload_screen.dart';
 import 'package:uvip/widgets/summary_card.dart';
 import 'package:uvip/widgets/survey_item_tile.dart';
 import 'package:uvip/widgets/common/section_header.dart';
 import 'package:uvip/widgets/common/time_filter_dropdown.dart';
-import 'package:uvip/screens/project/project_detail_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -127,10 +127,11 @@ class _HomeScreenState extends State<HomeScreen> {
                           children: [
                             Text(
                               'Rata-rata PVI',
-                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                color: Colors.black54,
-                                fontWeight: FontWeight.w500,
-                              ),
+                              style: Theme.of(context).textTheme.bodyMedium
+                                  ?.copyWith(
+                                    color: Colors.black54,
+                                    fontWeight: FontWeight.w500,
+                                  ),
                             ),
                             const SizedBox(width: 10),
                             Text(
@@ -180,7 +181,8 @@ class _HomeScreenState extends State<HomeScreen> {
                         children: [
                           Expanded(
                             child: SummaryCard(
-                              icon: Icons.verified_user_rounded, // Shield approx
+                              icon:
+                                  Icons.verified_user_rounded, // Shield approx
                               iconColor: Colors.white,
                               iconBgColor: Colors.lightGreen,
                               title: 'Safety Score',
@@ -262,8 +264,10 @@ class _HomeScreenState extends State<HomeScreen> {
                                                 context,
                                                 MaterialPageRoute(
                                                   builder: (context) =>
-                                                      ProjectDetailScreen(
-                                                        project: lastProject,
+                                                      UploadScreen(
+                                                        // project: lastProject,
+                                                        projectId:
+                                                            lastProject.id,
                                                       ),
                                                 ),
                                               );

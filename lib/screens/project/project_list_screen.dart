@@ -3,28 +3,16 @@ import 'package:provider/provider.dart';
 import 'package:uvip/core/theme/app_theme.dart';
 import 'package:uvip/models/project_model.dart';
 import 'package:uvip/providers/project_provider.dart';
-import 'package:uvip/widgets/project_card.dart';
-import 'package:uvip/screens/project/create_project_screen.dart';
 import 'package:uvip/providers/upload_provider.dart';
+import 'package:uvip/screens/project/create_project_bottom_sheet.dart';
 import 'package:uvip/screens/upload/upload_screen.dart';
+import 'package:uvip/widgets/project_card.dart';
 
 class ProjectListScreen extends StatefulWidget {
   const ProjectListScreen({super.key});
 
   @override
   State<ProjectListScreen> createState() => _ProjectListScreenState();
-}
-
-class _ProjectDateGroup {
-  final String dateHeader;
-  final DateTime? date;
-  final List<ProjectModel> projects;
-
-  _ProjectDateGroup({
-    required this.dateHeader,
-    this.date,
-    required this.projects,
-  });
 }
 
 class _CustomMenuDivider extends PopupMenuEntry<Never> {
@@ -49,6 +37,8 @@ class _CustomMenuDividerState extends State<_CustomMenuDivider> {
 
 class _ProjectListScreenState extends State<ProjectListScreen> {
   final ScrollController _scrollController = ScrollController();
+  bool _isGridView = false;
+  bool _isAscending = false;
 
   @override
   void initState() {
@@ -77,11 +67,7 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
   }
 
   Future<void> _createProject() async {
-    final result = await Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => const CreateProjectScreen()),
-    );
-
+    final result = await showCreateProjectBottomSheet(context);
     if (result != null && mounted) {
       final provider = Provider.of<ProjectProvider>(context, listen: false);
       await provider.fetchProjects();
@@ -244,70 +230,14 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
     }
   }
 
-  DateTime? _parseDateTime(String? dateStr) {
-    if (dateStr == null || dateStr.trim().isEmpty) return null;
-    try {
-      return DateTime.parse(dateStr);
-    } catch (_) {
-      try {
-        final parts = dateStr.split(RegExp(r'[-/]'));
-        if (parts.length == 3) {
-          if (parts[0].length == 4) {
-            return DateTime(
-              int.parse(parts[0]),
-              int.parse(parts[1]),
-              int.parse(parts[2]),
-            );
-          } else if (parts[2].length == 4) {
-            return DateTime(
-              int.parse(parts[2]),
-              int.parse(parts[1]),
-              int.parse(parts[0]),
-            );
-          }
-        }
-      } catch (_) {}
-      return null;
-    }
-  }
-
-  String _formatIndonesianDate(DateTime date) {
-    const months = [
-      '',
-      'Januari',
-      'Februari',
-      'Maret',
-      'April',
-      'Mei',
-      'Juni',
-      'Juli',
-      'Agustus',
-      'September',
-      'Oktober',
-      'November',
-      'Desember',
-    ];
-    return '${date.day} ${months[date.month]} ${date.year}';
-  }
-
-  List<_ProjectDateGroup> _groupProjectsByDate(List<ProjectModel> projects) {
-    final Map<String, _ProjectDateGroup> groupMap = {};
-
-    for (final project in projects) {
-      final parsed = _parseDateTime(project.createdAt);
-      final header = parsed != null ? _formatIndonesianDate(parsed) : 'Lainnya';
-
-      if (!groupMap.containsKey(header)) {
-        groupMap[header] = _ProjectDateGroup(
-          dateHeader: header,
-          date: parsed,
-          projects: [],
-        );
-      }
-      groupMap[header]!.projects.add(project);
-    }
-
-    return groupMap.values.toList();
+  List<ProjectModel> _getSortedProjects(List<ProjectModel> projects) {
+    final list = List<ProjectModel>.from(projects);
+    list.sort((a, b) {
+      final dateA = DateTime.tryParse(a.createdAt) ?? DateTime(1970);
+      final dateB = DateTime.tryParse(b.createdAt) ?? DateTime(1970);
+      return _isAscending ? dateA.compareTo(dateB) : dateB.compareTo(dateA);
+    });
+    return list;
   }
 
   @override
@@ -319,10 +249,22 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
         surfaceTintColor: Colors.transparent,
         scrolledUnderElevation: 0,
         elevation: 0,
+        leading: IconButton(
+          icon: const Icon(
+            Icons.arrow_back_ios_new_rounded,
+            color: Color(0xFF0F172A),
+            size: 20,
+          ),
+          onPressed: () {
+            if (Navigator.canPop(context)) {
+              Navigator.pop(context);
+            }
+          },
+        ),
         title: const Text(
-          'Proyek Saya',
+          'Projects',
           style: TextStyle(
-            color: Colors.black,
+            color: Color(0xFF0F172A),
             fontSize: 18,
             fontWeight: FontWeight.bold,
           ),
@@ -398,93 +340,294 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
             );
           }
 
-          final groups = _groupProjectsByDate(provider.projects);
+          final sortedProjects = _getSortedProjects(provider.projects);
 
           return RefreshIndicator(
             onRefresh: () => provider.fetchProjects(isRefresh: true),
-            child: ListView.builder(
-              controller: _scrollController,
-              physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-              itemCount: groups.length + (provider.isFetchingMore ? 1 : 0),
-              itemBuilder: (context, groupIndex) {
-                if (groupIndex == groups.length) {
-                  return const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 16.0),
-                    child: Center(child: CircularProgressIndicator()),
-                  );
-                }
-
-                final group = groups[groupIndex];
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 20.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+            child: Column(
+              children: [
+                // Subheader: "Latest" sort indicator & Grid/List view toggle
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 8,
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Padding(
-                        padding: const EdgeInsets.only(top: 4.0, bottom: 12.0),
-                        child: Text(
-                          group.dateHeader,
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w400,
-                            color: Colors.grey[600],
+                      // Latest sort button
+                      InkWell(
+                        onTap: () {
+                          setState(() {
+                            _isAscending = !_isAscending;
+                          });
+                        },
+                        borderRadius: BorderRadius.circular(20),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                            vertical: 4,
+                            horizontal: 2,
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Text(
+                                'Latest',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                  color: Color(0xFF0F172A),
+                                ),
+                              ),
+                              const SizedBox(width: 6),
+                              Container(
+                                width: 20,
+                                height: 20,
+                                decoration: const BoxDecoration(
+                                  color: Color(0xFF0F172A),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Icon(
+                                  _isAscending
+                                      ? Icons.arrow_downward_rounded
+                                      : Icons.arrow_upward_rounded,
+                                  color: Colors.white,
+                                  size: 13,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ),
-                      ...group.projects.map((project) {
-                        return Padding(
-                          padding: const EdgeInsets.only(bottom: 14.0),
-                          child: ProjectCard(
-                            project: project,
-                            onTap: () => _openProject(project),
-                            onDelete: () =>
-                                _deleteProject(project.id, project.name),
-                            onMorePressed: (btnContext) =>
-                                _showProjectDropdown(btnContext, project),
+
+                      // Grid / List toggle button
+                      Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF8FAFC),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: const Color(0xFFE2E8F0)),
+                        ),
+                        child: IconButton(
+                          padding: EdgeInsets.zero,
+                          splashRadius: 20,
+                          icon: Icon(
+                            _isGridView
+                                ? Icons.view_list_rounded
+                                : Icons.grid_view_outlined,
+                            size: 20,
+                            color: const Color(0xFF334155),
                           ),
-                        );
-                      }),
+                          onPressed: () {
+                            setState(() {
+                              _isGridView = !_isGridView;
+                            });
+                          },
+                        ),
+                      ),
                     ],
                   ),
-                );
-              },
+                ),
+
+                // Projects Content (List or Grid)
+                Expanded(
+                  child: _isGridView
+                      ? _buildGridView(sortedProjects, provider.isFetchingMore)
+                      : _buildListView(sortedProjects, provider.isFetchingMore),
+                ),
+              ],
             ),
           );
         },
       ),
-      bottomNavigationBar: Container(
-        color: Colors.white,
-        padding: EdgeInsets.fromLTRB(
-          20,
-          12,
-          20,
-          MediaQuery.of(context).padding.bottom > 0
-              ? MediaQuery.of(context).padding.bottom + 8
-              : 20,
-        ),
-        child: SizedBox(
-          width: double.infinity,
-          height: 52,
-          child: ElevatedButton(
-            onPressed: _createProject,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF071526),
-              foregroundColor: Colors.white,
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-            ),
-            child: const Text(
-              'Buat Proyek Baru',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
-            ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: _createProject,
+        backgroundColor: AppTheme.primaryColor,
+        elevation: 3,
+        highlightElevation: 5,
+        shape: const StadiumBorder(),
+        icon: const Icon(Icons.add, color: Colors.white, size: 22),
+        label: const Text(
+          'Project',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildListView(List<ProjectModel> projects, bool isFetchingMore) {
+    return ListView.builder(
+      controller: _scrollController,
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: const EdgeInsets.fromLTRB(20, 8, 20, 80),
+      itemCount: projects.length + (isFetchingMore ? 1 : 0),
+      itemBuilder: (context, index) {
+        if (index == projects.length) {
+          return const Padding(
+            padding: EdgeInsets.symmetric(vertical: 16.0),
+            child: Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        final project = projects[index];
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 12.0),
+          child: ProjectCard(
+            project: project,
+            onTap: () => _openProject(project),
+            onDelete: () => _deleteProject(project.id, project.name),
+            onMorePressed: (btnContext) =>
+                _showProjectDropdown(btnContext, project),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildGridView(List<ProjectModel> projects, bool isFetchingMore) {
+    return GridView.builder(
+      controller: _scrollController,
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: const EdgeInsets.fromLTRB(20, 8, 20, 80),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        crossAxisSpacing: 14,
+        mainAxisSpacing: 14,
+        childAspectRatio: 0.82,
+      ),
+      itemCount: projects.length + (isFetchingMore ? 1 : 0),
+      itemBuilder: (context, index) {
+        if (index == projects.length) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        final project = projects[index];
+        return _buildGridCard(project);
+      },
+    );
+  }
+
+  Widget _buildGridCard(ProjectModel project) {
+    final fileCount = project.photoCount + project.videoCount;
+
+    return Material(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(16),
+      child: InkWell(
+        onTap: () => _openProject(project),
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: const Color(0xFFF1F5F9)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.03),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Thumbnail
+              Expanded(
+                child: ClipRRect(
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(15),
+                  ),
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: _buildGridThumbnail(project),
+                  ),
+                ),
+              ),
+              // Info
+              Padding(
+                padding: const EdgeInsets.fromLTRB(10, 8, 4, 8),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            project.name,
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFF0F172A),
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            '$fileCount files',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: Color(0xFF64748B),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Builder(
+                      builder: (btnContext) {
+                        return IconButton(
+                          icon: const Icon(Icons.more_horiz),
+                          color: const Color(0xFF334155),
+                          iconSize: 20,
+                          splashRadius: 18,
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(),
+                          onPressed: () =>
+                              _showProjectDropdown(btnContext, project),
+                        );
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildGridThumbnail(ProjectModel project) {
+    final url = project.thumbnailUrl;
+    if (url != null && url.isNotEmpty) {
+      String fullUrl = url.replaceAll('\\', '/');
+      if (!fullUrl.startsWith('http')) {
+        const baseUrl = 'http://80.241.214.39';
+        fullUrl =
+            '$baseUrl/${fullUrl.startsWith('/') ? fullUrl.substring(1) : fullUrl}';
+      }
+      return Image.network(
+        fullUrl,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) => _fallbackGridThumbnail(),
+      );
+    }
+    return _fallbackGridThumbnail();
+  }
+
+  Widget _fallbackGridThumbnail() {
+    return Image.network(
+      'https://images.unsplash.com/photo-1519501025264-65ba15a82390?w=150&auto=format&fit=crop&q=80',
+      fit: BoxFit.cover,
+      errorBuilder: (context, error, stackTrace) => Container(
+        color: const Color(0xFFE2E8F0),
+        child: const Center(
+          child: Icon(Icons.streetview, color: Color(0xFF64748B), size: 26),
         ),
       ),
     );

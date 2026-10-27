@@ -167,7 +167,7 @@ class _MainScreenState extends State<MainScreen> {
                         _buildTabItem(
                           index: 3,
                           icon: Icons.cloud_upload_outlined,
-                          label: 'Upload',
+                          label: 'Projects',
                         ),
                         _buildTabItem(
                           index: 4,

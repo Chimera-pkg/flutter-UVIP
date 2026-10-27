@@ -15,80 +15,120 @@ class ProjectCard extends StatelessWidget {
     this.onMorePressed,
   });
 
+  String _formatDate(String? dateStr) {
+    if (dateStr == null || dateStr.trim().isEmpty) return '';
+    try {
+      final date = DateTime.parse(dateStr);
+      final day = date.day.toString().padLeft(2, '0');
+      final month = date.month.toString().padLeft(2, '0');
+      return '$day/$month/${date.year}';
+    } catch (_) {
+      try {
+        final parts = dateStr.split(RegExp(r'[-/]'));
+        if (parts.length == 3) {
+          if (parts[0].length == 4) {
+            final day = parts[2].padLeft(2, '0');
+            final month = parts[1].padLeft(2, '0');
+            return '$day/$month/${parts[0]}';
+          } else if (parts[2].length == 4) {
+            final day = parts[0].padLeft(2, '0');
+            final month = parts[1].padLeft(2, '0');
+            return '$day/$month/${parts[2]}';
+          }
+        }
+      } catch (_) {}
+      return dateStr;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(10),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 4.0),
-        child: Row(
-          children: [
-            // Thumbnail image with rounded corners
-            ClipRRect(
-              borderRadius: BorderRadius.circular(10),
-              child: SizedBox(width: 54, height: 54, child: _buildThumbnail()),
-            ),
-            const SizedBox(width: 14),
+    final fileCount = project.photoCount + project.videoCount;
+    final formattedDate = _formatDate(project.createdAt);
+    final subtitleText = formattedDate.isNotEmpty
+        ? '$fileCount files ; $formattedDate'
+        : '$fileCount files';
 
-            // Title and media counts
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    project.name,
-                    style: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w700,
-                      color: Color(0xFF0F172A),
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    '${project.photoCount} Foto, ${project.videoCount} Video',
-                    style: const TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.normal,
-                      color: Color(0xFF6B7280),
-                    ),
-                  ),
-                ],
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(14),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 6.0, horizontal: 4.0),
+          child: Row(
+            children: [
+              // Thumbnail image with rounded corners
+              ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: SizedBox(
+                  width: 58,
+                  height: 58,
+                  child: _buildThumbnail(),
+                ),
               ),
-            ),
+              const SizedBox(width: 14),
 
-            // More options button (3 horizontal dots)
-            Builder(
-              builder: (buttonContext) {
-                return IconButton(
-                  icon: const Icon(Icons.more_horiz),
-                  color: const Color(0xFF334155),
-                  iconSize: 22,
-                  splashRadius: 20,
-                  onPressed: () {
-                    if (onMorePressed != null) {
-                      if (onMorePressed is void Function(BuildContext)) {
-                        onMorePressed(buttonContext);
-                      } else if (onMorePressed is VoidCallback) {
-                        onMorePressed();
-                      } else {
-                        try {
-                          (onMorePressed as dynamic)(buttonContext);
-                        } catch (_) {
-                          (onMorePressed as dynamic)();
+              // Title and media count / date
+              // Sesuai permintaan: status TIDAK ditampilkan di halaman project list
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      project.name,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF0F172A),
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 5),
+                    Text(
+                      subtitleText,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.normal,
+                        color: Color(0xFF64748B),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              // More options button (3 horizontal dots)
+              Builder(
+                builder: (buttonContext) {
+                  return IconButton(
+                    icon: const Icon(Icons.more_horiz),
+                    color: const Color(0xFF334155),
+                    iconSize: 22,
+                    splashRadius: 20,
+                    onPressed: () {
+                      if (onMorePressed != null) {
+                        if (onMorePressed is void Function(BuildContext)) {
+                          onMorePressed(buttonContext);
+                        } else if (onMorePressed is VoidCallback) {
+                          onMorePressed();
+                        } else {
+                          try {
+                            (onMorePressed as dynamic)(buttonContext);
+                          } catch (_) {
+                            (onMorePressed as dynamic)();
+                          }
                         }
+                      } else if (onDelete != null) {
+                        onDelete!();
                       }
-                    } else if (onDelete != null) {
-                      onDelete!();
-                    }
-                  },
-                );
-              },
-            ),
-          ],
+                    },
+                  );
+                },
+              ),
+            ],
+          ),
         ),
       ),
     );
