@@ -65,6 +65,11 @@ class _UploadScreenState extends State<UploadScreen> {
         }
       }
 
+      final mapProvider = Provider.of<MapProvider>(context, listen: false);
+      if (!mapProvider.isLocationLoaded) {
+        mapProvider.determinePosition();
+      }
+
       uploadProvider.fetchStreetPhotos();
       uploadProvider.fetchStreetVideos();
     });
@@ -128,17 +133,38 @@ class _UploadScreenState extends State<UploadScreen> {
       final List<XFile> images = await picker.pickMultiImage();
       if (images.isNotEmpty && context.mounted) {
         final mapProvider = Provider.of<MapProvider>(context, listen: false);
-        await provider.uploadPhotosBulk(
-          images,
-          latitude: mapProvider.latitude,
-          longitude: mapProvider.longitude,
-          locationName: mapProvider.locationName,
-        );
+        if (!mapProvider.isLocationLoaded) {
+          await mapProvider.determinePosition();
+        }
+        if (images.length == 1) {
+          await provider.uploadPhoto(
+            images.first,
+            latitude: mapProvider.latitude,
+            longitude: mapProvider.longitude,
+            locationName: mapProvider.locationName,
+          );
+        } else {
+          await provider.uploadPhotosBulk(
+            images,
+            latitude: mapProvider.latitude,
+            longitude: mapProvider.longitude,
+            locationName: mapProvider.locationName,
+          );
+        }
       }
     } else {
       final XFile? video = await picker.pickVideo(source: ImageSource.gallery);
       if (video != null && context.mounted) {
-        await provider.uploadVideo(video);
+        final mapProvider = Provider.of<MapProvider>(context, listen: false);
+        if (!mapProvider.isLocationLoaded) {
+          await mapProvider.determinePosition();
+        }
+        await provider.uploadVideo(
+          video,
+          latitude: mapProvider.latitude,
+          longitude: mapProvider.longitude,
+          locationName: mapProvider.locationName,
+        );
       }
     }
   }
@@ -195,17 +221,49 @@ class _UploadScreenState extends State<UploadScreen> {
       ),
     );
 
-    if (confirmed == true && context.mounted) {
+    if (confirmed == true && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Row(
+            children: [
+              SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                ),
+              ),
+              SizedBox(width: 12),
+              Text('Menghapus foto...'),
+            ],
+          ),
+          duration: Duration(seconds: 1),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+
       final provider = Provider.of<UploadProvider>(context, listen: false);
       final success = await provider.deletePhoto(photo.id);
-      if (context.mounted && success) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Foto berhasil dihapus'),
-            backgroundColor: Colors.green,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+      if (mounted) {
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        if (success) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Foto berhasil dihapus'),
+              backgroundColor: Colors.green,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(provider.errorMessage ?? 'Gagal menghapus foto'),
+              backgroundColor: Colors.red,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
       }
     }
   }
@@ -262,17 +320,49 @@ class _UploadScreenState extends State<UploadScreen> {
       ),
     );
 
-    if (confirmed == true && context.mounted) {
+    if (confirmed == true && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Row(
+            children: [
+              SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                ),
+              ),
+              SizedBox(width: 12),
+              Text('Menghapus video...'),
+            ],
+          ),
+          duration: Duration(seconds: 1),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+
       final provider = Provider.of<UploadProvider>(context, listen: false);
       final success = await provider.deleteVideo(video.id);
-      if (context.mounted && success) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Video berhasil dihapus'),
-            backgroundColor: Colors.green,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+      if (mounted) {
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        if (success) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Video berhasil dihapus'),
+              backgroundColor: Colors.green,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(provider.errorMessage ?? 'Gagal menghapus video'),
+              backgroundColor: Colors.red,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
       }
     }
   }
@@ -335,7 +425,7 @@ class _UploadScreenState extends State<UploadScreen> {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (context) {
+      builder: (sheetContext) {
         return SafeArea(
           child: Padding(
             padding: const EdgeInsets.symmetric(vertical: 16.0),
@@ -377,7 +467,7 @@ class _UploadScreenState extends State<UploadScreen> {
                     child: ListView.builder(
                       shrinkWrap: true,
                       itemCount: projects.length,
-                      itemBuilder: (context, index) {
+                      itemBuilder: (itemCtx, index) {
                         final p = projects[index];
                         final isSelected = _currentProject?.id == p.id;
                         return ListTile(
@@ -399,6 +489,8 @@ class _UploadScreenState extends State<UploadScreen> {
                                   ? AppTheme.primaryColor
                                   : Colors.black87,
                             ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
                           subtitle: Text(
                             '${p.photoCount} Foto, ${p.videoCount} Video',
@@ -406,9 +498,11 @@ class _UploadScreenState extends State<UploadScreen> {
                               fontSize: 12,
                               color: Colors.grey.shade600,
                             ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
                           onTap: () {
-                            Navigator.pop(context);
+                            Navigator.pop(sheetContext);
                             if (_currentProject?.id != p.id) {
                               setState(() {
                                 _currentProject = p;
@@ -435,14 +529,17 @@ class _UploadScreenState extends State<UploadScreen> {
     );
   }
 
-  void _showPhotoOptions(BuildContext context, StreetPhotoModel photo) {
-    showModalBottomSheet(
+  Future<void> _showPhotoOptions(
+    BuildContext context,
+    StreetPhotoModel photo,
+  ) async {
+    final action = await showModalBottomSheet<String>(
       context: context,
       backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (context) {
+      builder: (modalContext) {
         return SafeArea(
           child: Padding(
             padding: const EdgeInsets.symmetric(vertical: 16.0),
@@ -491,15 +588,7 @@ class _UploadScreenState extends State<UploadScreen> {
                     'Lihat Detail Analisis',
                     style: TextStyle(fontWeight: FontWeight.w500),
                   ),
-                  onTap: () {
-                    Navigator.pop(context);
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => ResultScreen(photo: photo),
-                      ),
-                    );
-                  },
+                  onTap: () => Navigator.pop(modalContext, 'detail'),
                 ),
                 ListTile(
                   leading: const Icon(
@@ -510,10 +599,7 @@ class _UploadScreenState extends State<UploadScreen> {
                     'Pratinjau Foto',
                     style: TextStyle(fontWeight: FontWeight.w500),
                   ),
-                  onTap: () {
-                    Navigator.pop(context);
-                    _showImagePreview(context, _resolveUrl(photo.filePath));
-                  },
+                  onTap: () => Navigator.pop(modalContext, 'preview'),
                 ),
                 ListTile(
                   leading: const Icon(Icons.delete_outline, color: Colors.red),
@@ -524,10 +610,7 @@ class _UploadScreenState extends State<UploadScreen> {
                       fontWeight: FontWeight.w500,
                     ),
                   ),
-                  onTap: () {
-                    Navigator.pop(context);
-                    _confirmAndDeletePhoto(context, photo);
-                  },
+                  onTap: () => Navigator.pop(modalContext, 'delete'),
                 ),
               ],
             ),
@@ -535,16 +618,32 @@ class _UploadScreenState extends State<UploadScreen> {
         );
       },
     );
+
+    if (!mounted || action == null) return;
+
+    if (action == 'detail') {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => ResultScreen(photo: photo)),
+      );
+    } else if (action == 'preview') {
+      _showImagePreview(context, _resolveUrl(photo.filePath));
+    } else if (action == 'delete') {
+      _confirmAndDeletePhoto(context, photo);
+    }
   }
 
-  void _showVideoOptions(BuildContext context, StreetVideoModel video) {
-    showModalBottomSheet(
+  Future<void> _showVideoOptions(
+    BuildContext context,
+    StreetVideoModel video,
+  ) async {
+    final action = await showModalBottomSheet<String>(
       context: context,
       backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (context) {
+      builder: (modalContext) {
         return SafeArea(
           child: Padding(
             padding: const EdgeInsets.symmetric(vertical: 16.0),
@@ -593,16 +692,7 @@ class _UploadScreenState extends State<UploadScreen> {
                     'Lihat Detail Analisis',
                     style: TextStyle(fontWeight: FontWeight.w500),
                   ),
-                  onTap: () {
-                    Navigator.pop(context);
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) =>
-                            ResultScreen(video: video, isVideo: true),
-                      ),
-                    );
-                  },
+                  onTap: () => Navigator.pop(modalContext, 'detail'),
                 ),
                 ListTile(
                   leading: const Icon(
@@ -613,14 +703,7 @@ class _UploadScreenState extends State<UploadScreen> {
                     'Putar Video',
                     style: TextStyle(fontWeight: FontWeight.w500),
                   ),
-                  onTap: () {
-                    Navigator.pop(context);
-                    _showVideoPreview(
-                      context,
-                      _resolveUrl(video.filePath),
-                      video.originalFilename,
-                    );
-                  },
+                  onTap: () => Navigator.pop(modalContext, 'preview'),
                 ),
                 ListTile(
                   leading: const Icon(Icons.delete_outline, color: Colors.red),
@@ -631,10 +714,7 @@ class _UploadScreenState extends State<UploadScreen> {
                       fontWeight: FontWeight.w500,
                     ),
                   ),
-                  onTap: () {
-                    Navigator.pop(context);
-                    _confirmAndDeleteVideo(context, video);
-                  },
+                  onTap: () => Navigator.pop(modalContext, 'delete'),
                 ),
               ],
             ),
@@ -642,6 +722,25 @@ class _UploadScreenState extends State<UploadScreen> {
         );
       },
     );
+
+    if (!mounted || action == null) return;
+
+    if (action == 'detail') {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => ResultScreen(video: video, isVideo: true),
+        ),
+      );
+    } else if (action == 'preview') {
+      _showVideoPreview(
+        context,
+        _resolveUrl(video.filePath),
+        video.originalFilename,
+      );
+    } else if (action == 'delete') {
+      _confirmAndDeleteVideo(context, video);
+    }
   }
 
   String _resolveUrl(String path) {
@@ -793,12 +892,16 @@ class _UploadScreenState extends State<UploadScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
-                        '$photoCount Foto, $videoCount Video',
-                        style: const TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.normal,
-                          color: Color(0xFF6B7280),
+                      Expanded(
+                        child: Text(
+                          '$photoCount Foto, $videoCount Video',
+                          style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.normal,
+                            color: Color(0xFF6B7280),
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
                     ],
@@ -897,6 +1000,8 @@ class _UploadScreenState extends State<UploadScreen> {
                                     fontWeight: FontWeight.bold,
                                     fontSize: 13,
                                   ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                 ),
                                 const SizedBox(height: 6),
                                 ClipRRect(
@@ -1130,6 +1235,9 @@ class _UploadScreenState extends State<UploadScreen> {
                   fontWeight: FontWeight.bold,
                   color: Color(0xFF0F172A),
                 ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
               ),
             ),
             const SizedBox(height: 8),
@@ -1165,6 +1273,8 @@ class _UploadScreenState extends State<UploadScreen> {
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
                     ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
               ),
@@ -1188,6 +1298,8 @@ class _UploadScreenState extends State<UploadScreen> {
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
                     ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
               ),
@@ -1261,32 +1373,69 @@ class _UploadScreenState extends State<UploadScreen> {
                         fontSize: 12,
                         color: Color(0xFF6B7280),
                       ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ],
                 ),
               ),
-              OutlinedButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => ResultScreen(photo: photo),
+              if (photo.processingStatus.toLowerCase() == 'completed')
+                OutlinedButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => ResultScreen(photo: photo),
+                      ),
+                    );
+                  },
+                  style: OutlinedButton.styleFrom(
+                    side: const BorderSide(color: Color(0xFF02BDDB)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
                     ),
-                  );
-                },
-                style: OutlinedButton.styleFrom(
-                  side: const BorderSide(color: Color(0xFF02BDDB)),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
                   ),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
+                  child: const Text(
+                    'Lihat Detail',
+                    style: TextStyle(color: Color(0xFF02BDDB), fontSize: 12),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
-                child: const Text(
-                  'Lihat Detail',
-                  style: TextStyle(color: Color(0xFF02BDDB), fontSize: 12),
+              if (photo.processingStatus.toLowerCase() != 'completed')
+                OutlinedButton(
+                  onPressed: () {},
+                  style: OutlinedButton.styleFrom(
+                    side: BorderSide(color: Colors.grey.shade200, width: 1.2),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    padding: EdgeInsets.zero,
+                  ),
+                  child: Text(
+                    photo.processingStatus,
+                    style: TextStyle(
+                      color: Colors.grey[200],
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              GestureDetector(
+                onTap: () => _showPhotoOptions(context, photo),
+                child: const Padding(
+                  padding: EdgeInsets.only(left: 6.0),
+                  child: Icon(
+                    Icons.more_vert,
+                    size: 20,
+                    color: Color(0xFF64748B),
+                  ),
                 ),
               ),
             ],
@@ -1405,41 +1554,74 @@ class _UploadScreenState extends State<UploadScreen> {
                   fontWeight: FontWeight.bold,
                   color: Color(0xFF0F172A),
                 ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
               ),
             ),
             const SizedBox(height: 8),
 
             // "Lihat Detail" Button
-            SizedBox(
-              width: double.infinity,
-              height: 34,
-              child: OutlinedButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) =>
-                          ResultScreen(video: video, isVideo: true),
+            if (video.processingStatus.toLowerCase() == 'completed')
+              SizedBox(
+                width: double.infinity,
+                height: 34,
+                child: OutlinedButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => ResultScreen(video: video),
+                      ),
+                    );
+                  },
+                  style: OutlinedButton.styleFrom(
+                    side: const BorderSide(
+                      color: Color(0xFF02BDDB),
+                      width: 1.2,
                     ),
-                  );
-                },
-                style: OutlinedButton.styleFrom(
-                  side: const BorderSide(color: Color(0xFF02BDDB), width: 1.2),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    padding: EdgeInsets.zero,
                   ),
-                  padding: EdgeInsets.zero,
-                ),
-                child: const Text(
-                  'Lihat Detail',
-                  style: TextStyle(
-                    color: Color(0xFF02BDDB),
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
+                  child: const Text(
+                    'Lihat Detail',
+                    style: TextStyle(
+                      color: Color(0xFF02BDDB),
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
               ),
-            ),
+            if (video.processingStatus.toLowerCase() != 'completed')
+              SizedBox(
+                width: double.infinity,
+                height: 34,
+                child: OutlinedButton(
+                  onPressed: () {},
+                  style: OutlinedButton.styleFrom(
+                    side: BorderSide(color: Colors.grey.shade200, width: 1.2),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    padding: EdgeInsets.zero,
+                  ),
+                  child: Text(
+                    video.processingStatus,
+                    style: TextStyle(
+                      color: Colors.grey[200],
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ),
           ],
         );
       },
@@ -1510,33 +1692,70 @@ class _UploadScreenState extends State<UploadScreen> {
                         fontSize: 12,
                         color: Color(0xFF6B7280),
                       ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ],
                 ),
               ),
-              OutlinedButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) =>
-                          ResultScreen(video: video, isVideo: true),
+              if (video.processingStatus.toLowerCase() == 'completed')
+                OutlinedButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) =>
+                            ResultScreen(video: video, isVideo: true),
+                      ),
+                    );
+                  },
+                  style: OutlinedButton.styleFrom(
+                    side: const BorderSide(color: Color(0xFF02BDDB)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
                     ),
-                  );
-                },
-                style: OutlinedButton.styleFrom(
-                  side: const BorderSide(color: Color(0xFF02BDDB)),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
                   ),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
+                  child: const Text(
+                    'Lihat Detail',
+                    style: TextStyle(color: Color(0xFF02BDDB), fontSize: 12),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
-                child: const Text(
-                  'Lihat Detail',
-                  style: TextStyle(color: Color(0xFF02BDDB), fontSize: 12),
+              if (video.processingStatus.toLowerCase() != 'completed')
+                OutlinedButton(
+                  onPressed: () {},
+                  style: OutlinedButton.styleFrom(
+                    side: BorderSide(color: Colors.grey.shade200, width: 1.2),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    padding: EdgeInsets.zero,
+                  ),
+                  child: Text(
+                    video.processingStatus,
+                    style: TextStyle(
+                      color: Colors.grey[200],
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              GestureDetector(
+                onTap: () => _showVideoOptions(context, video),
+                child: const Padding(
+                  padding: EdgeInsets.only(left: 6.0),
+                  child: Icon(
+                    Icons.more_vert,
+                    size: 20,
+                    color: Color(0xFF64748B),
+                  ),
                 ),
               ),
             ],

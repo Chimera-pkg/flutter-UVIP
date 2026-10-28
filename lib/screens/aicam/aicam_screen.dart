@@ -7,6 +7,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 import 'package:uvip/core/theme/app_theme.dart';
 import 'package:uvip/providers/aicam_provider.dart';
+import 'package:uvip/providers/map_provider.dart';
 import 'package:uvip/providers/upload_provider.dart';
 import 'package:uvip/screens/upload/upload_screen.dart';
 import 'package:uvip/widgets/object_detector_box.dart';
@@ -344,8 +345,17 @@ class _AiCamScreenState extends State<AiCamScreen> with WidgetsBindingObserver {
               context,
               listen: false,
             );
+            final mapProvider = Provider.of<MapProvider>(
+              context,
+              listen: false,
+            );
             uploadProvider.setCurrentProjectId(projectId);
-            uploadProvider.uploadPhoto(photoFile);
+            uploadProvider.uploadPhoto(
+              photoFile,
+              latitude: mapProvider.latitude,
+              longitude: mapProvider.longitude,
+              locationName: mapProvider.locationName,
+            );
 
             // 3. Switch ke tab Upload (Tab 0: Foto)
             if (widget.onSwitchToUpload != null) {
@@ -511,8 +521,17 @@ class _AiCamScreenState extends State<AiCamScreen> with WidgetsBindingObserver {
               context,
               listen: false,
             );
+            final mapProvider = Provider.of<MapProvider>(
+              context,
+              listen: false,
+            );
             uploadProvider.setCurrentProjectId(projectId);
-            uploadProvider.uploadVideo(videoFile);
+            uploadProvider.uploadVideo(
+              videoFile,
+              latitude: mapProvider.latitude,
+              longitude: mapProvider.longitude,
+              locationName: mapProvider.locationName,
+            );
 
             // 3. Switch ke tab Upload (Tab 1: Video)
             if (widget.onSwitchToUpload != null) {

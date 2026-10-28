@@ -26,6 +26,9 @@ class UploadService {
 
   Future<Response> uploadStreetPhoto(
     MultipartFile file, {
+    double? latitude,
+    double? longitude,
+    String? streetName,
     String? projectId,
     void Function(int, int)? onSendProgress,
   }) async {
@@ -33,8 +36,10 @@ class UploadService {
       final formData = FormData.fromMap({
         'file': file,
         'source': 'mobile_upload',
-        'latitude': 0.0,
-        'longitude': 0.0,
+        'latitude': latitude ?? 0.0,
+        'longitude': longitude ?? 0.0,
+        if (streetName != null && streetName.trim().isNotEmpty)
+          'street_name': streetName.trim(),
         'captured_at': DateTime.now().toUtc().toIso8601String(),
         'is_manual_capture': true,
         'is_offline_sync': false,
@@ -107,6 +112,9 @@ class UploadService {
 
   Future<Response> uploadStreetVideo(
     MultipartFile file, {
+    double? latitude,
+    double? longitude,
+    String? streetName,
     String? projectId,
     void Function(int, int)? onSendProgress,
   }) async {
@@ -114,8 +122,10 @@ class UploadService {
       final formData = FormData.fromMap({
         'file': file,
         'source': 'mobile_upload',
-        'latitude': 0.0,
-        'longitude': 0.0,
+        'latitude': latitude ?? 0.0,
+        'longitude': longitude ?? 0.0,
+        if (streetName != null && streetName.trim().isNotEmpty)
+          'street_name': streetName.trim(),
         'captured_at': DateTime.now().toUtc().toIso8601String(),
         'is_manual_capture': true,
         'is_offline_sync': false,

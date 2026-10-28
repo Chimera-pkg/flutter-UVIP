@@ -151,7 +151,12 @@ class UploadProvider with ChangeNotifier {
     }
   }
 
-  Future<bool> uploadPhoto(XFile file) async {
+  Future<bool> uploadPhoto(
+    XFile file, {
+    double? latitude,
+    double? longitude,
+    String? locationName,
+  }) async {
     _isUploading = true;
     _uploadProgress = 0.0;
     _errorMessage = null;
@@ -170,6 +175,9 @@ class UploadProvider with ChangeNotifier {
 
       final response = await _uploadService.uploadStreetPhoto(
         multipartFile,
+        latitude: latitude,
+        longitude: longitude,
+        streetName: locationName,
         projectId: _currentProjectId,
         onSendProgress: (sent, total) {
           if (total > 0) {
@@ -409,7 +417,12 @@ class UploadProvider with ChangeNotifier {
     }
   }
 
-  Future<bool> uploadVideo(XFile file) async {
+  Future<bool> uploadVideo(
+    XFile file, {
+    double? latitude,
+    double? longitude,
+    String? locationName,
+  }) async {
     _isUploading = true;
     _uploadProgress = 0.0;
     _errorMessage = null;
@@ -428,6 +441,9 @@ class UploadProvider with ChangeNotifier {
 
       final response = await _uploadService.uploadStreetVideo(
         multipartFile,
+        latitude: latitude,
+        longitude: longitude,
+        streetName: locationName,
         projectId: _currentProjectId,
         onSendProgress: (sent, total) {
           if (total > 0) {

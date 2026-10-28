@@ -94,6 +94,8 @@ class ProjectCard extends StatelessWidget {
                         fontWeight: FontWeight.normal,
                         color: Color(0xFF64748B),
                       ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ],
                 ),

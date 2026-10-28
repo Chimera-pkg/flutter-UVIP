@@ -185,12 +185,16 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
                 size: 22,
               ),
               const SizedBox(width: 14),
-              const Text(
-                'Buka proyek',
-                style: TextStyle(
-                  color: Color(0xFF03182C),
-                  fontSize: 15,
-                  fontWeight: FontWeight.w500,
+              const Expanded(
+                child: Text(
+                  'Buka proyek',
+                  style: TextStyle(
+                    color: Color(0xFF03182C),
+                    fontSize: 15,
+                    fontWeight: FontWeight.w500,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
             ],
@@ -209,12 +213,16 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
                 size: 22,
               ),
               const SizedBox(width: 14),
-              const Text(
-                'Hapus proyek',
-                style: TextStyle(
-                  color: Color(0xFFE53935),
-                  fontSize: 15,
-                  fontWeight: FontWeight.w500,
+              const Expanded(
+                child: Text(
+                  'Hapus proyek',
+                  style: TextStyle(
+                    color: Color(0xFFE53935),
+                    fontSize: 15,
+                    fontWeight: FontWeight.w500,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
             ],
@@ -574,6 +582,8 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
                               fontSize: 12,
                               color: Color(0xFF64748B),
                             ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ],
                       ),
