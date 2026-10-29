@@ -27,15 +27,22 @@ class ResultScreen extends StatefulWidget {
 class _ResultScreenState extends State<ResultScreen> {
   final ScreenshotController _screenshotController = ScreenshotController();
 
+  bool get _isVideo => widget.isVideo || widget.video != null;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final id = widget.isVideo ? widget.video!.id : widget.photo!.id;
-      Provider.of<ResultProvider>(
-        context,
-        listen: false,
-      ).fetchSegmentationResult(id, isVideo: widget.isVideo);
+      final isVideo = _isVideo;
+      final id = isVideo
+          ? (widget.video?.id ?? widget.photo?.id ?? '')
+          : (widget.photo?.id ?? widget.video?.id ?? '');
+      if (id.isNotEmpty) {
+        Provider.of<ResultProvider>(
+          context,
+          listen: false,
+        ).fetchSegmentationResult(id, isVideo: isVideo);
+      }
     });
   }
 
@@ -63,12 +70,11 @@ class _ResultScreenState extends State<ResultScreen> {
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.ios_share_outlined, color: Colors.black87),
+            icon: const Icon(
+              Icons.download_rounded,
+              color: AppTheme.primaryColor,
+            ),
             onPressed: _downloadReport,
-          ),
-          IconButton(
-            icon: const Icon(Icons.more_vert, color: Colors.black87),
-            onPressed: () {},
           ),
         ],
       ),
@@ -98,18 +104,18 @@ class _ResultScreenState extends State<ResultScreen> {
 
           String? fullImageUrl;
           String? originalUrl;
-          if (widget.isVideo) {
+          if (_isVideo) {
             fullImageUrl = provider.videoSegmentationResult?.videoUrl;
-            originalUrl = widget.video!.filePath;
+            originalUrl = widget.video?.filePath ?? '';
           } else {
             fullImageUrl = provider.segmentationResult?.segmentationOverlayUrl;
             originalUrl = provider.segmentationResult?.privacyMaskedUrl;
           }
 
           if (fullImageUrl == null || fullImageUrl.isEmpty) {
-            fullImageUrl = widget.isVideo
-                ? widget.video!.filePath
-                : widget.photo!.filePath;
+            fullImageUrl = _isVideo
+                ? (widget.video?.filePath ?? '')
+                : (widget.photo?.filePath ?? '');
           }
           if (fullImageUrl.isNotEmpty && !fullImageUrl.startsWith('http')) {
             const baseUrl =
@@ -119,9 +125,9 @@ class _ResultScreenState extends State<ResultScreen> {
           }
 
           if (originalUrl == null || originalUrl.isEmpty) {
-            originalUrl = widget.isVideo
-                ? widget.video!.filePath
-                : widget.photo!.filePath;
+            originalUrl = _isVideo
+                ? (widget.video?.filePath ?? '')
+                : (widget.photo?.filePath ?? '');
           }
           if (originalUrl.isNotEmpty && !originalUrl.startsWith('http')) {
             const baseUrl =
@@ -130,11 +136,12 @@ class _ResultScreenState extends State<ResultScreen> {
                 '$baseUrl/${originalUrl.startsWith('/') ? originalUrl.substring(1) : originalUrl}';
           }
 
-          final String projectName = widget.isVideo
+          final String projectName = _isVideo
               ? (provider.videoSegmentationResult?.project?.name ?? '-')
               : (provider.segmentationResult?.project?.name ?? '-');
 
-          final bool isVideo =
+          final bool isVideoMedia =
+              _isVideo ||
               fullImageUrl.toLowerCase().endsWith('.mp4') ||
               fullImageUrl.toLowerCase().endsWith('.mov');
 
@@ -238,13 +245,21 @@ class _ResultScreenState extends State<ResultScreen> {
                                               ),
                                             ),
                                             Text(
-                                              widget.isVideo
-                                                  ? widget
-                                                        .video!
-                                                        .originalFilename
-                                                  : widget
-                                                        .photo!
-                                                        .originalFilename,
+                                              _isVideo
+                                                  ? (widget
+                                                            .video
+                                                            ?.originalFilename ??
+                                                        widget
+                                                            .photo
+                                                            ?.originalFilename ??
+                                                        'video.mp4')
+                                                  : (widget
+                                                            .photo
+                                                            ?.originalFilename ??
+                                                        widget
+                                                            .video
+                                                            ?.originalFilename ??
+                                                        'photo.jpg'),
                                               style: const TextStyle(
                                                 fontWeight: FontWeight.bold,
                                                 fontSize: 14,
@@ -264,7 +279,7 @@ class _ResultScreenState extends State<ResultScreen> {
                             ClipRRect(
                               borderRadius: BorderRadius.circular(12.0),
                               child: originalUrl.isNotEmpty
-                                  ? (isVideo
+                                  ? (isVideoMedia
                                         ? _InlineVideoPlayer(
                                             videoUrl: originalUrl,
                                           )
@@ -335,7 +350,7 @@ class _ResultScreenState extends State<ResultScreen> {
                             ClipRRect(
                               borderRadius: BorderRadius.circular(12.0),
                               child: fullImageUrl.isNotEmpty
-                                  ? (isVideo
+                                  ? (isVideoMedia
                                         ? _InlineVideoPlayer(
                                             videoUrl: fullImageUrl,
                                           )
@@ -397,7 +412,7 @@ class _ResultScreenState extends State<ResultScreen> {
                     ),
                     const SizedBox(height: 32),
 
-                    // Urban Visual Index Section
+                    // Proportional Vegetation Index Section
                     _buildUrbanVisualIndexSection(provider),
                     const SizedBox(height: 32),
 
@@ -405,16 +420,16 @@ class _ResultScreenState extends State<ResultScreen> {
                     _buildSkorPrediksiSection(provider),
                     const SizedBox(height: 32),
 
-                    // Faktor Pengaruh UVI Section
+                    // Faktor Pengaruh PVI Section
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 24.0),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const SectionHeader(title: 'Faktor Pengaruh UVI'),
+                          const SectionHeader(title: 'Faktor Pengaruh PVI'),
                           const SizedBox(height: 4),
                           const Text(
-                            'Kombinasi faktor positif dan negatif berikut membentuk nilai Urban Visual Index.',
+                            'Kombinasi faktor positif dan negatif berikut membentuk nilai Proportional Vegetation Index.',
                             style: TextStyle(
                               color: Colors.black54,
                               fontSize: 12,
@@ -439,7 +454,7 @@ class _ResultScreenState extends State<ResultScreen> {
                     const SizedBox(height: 32),
 
                     // Rekomendasi AI Section (Foto Only)
-                    if (!widget.isVideo) ...[
+                    if (!_isVideo) ...[
                       _buildRekomendasiAiSection(context, provider),
                       const SizedBox(height: 32),
                     ],
@@ -585,14 +600,26 @@ class _ResultScreenState extends State<ResultScreen> {
     final String suggestionText =
         (suggestions != null && suggestions.isNotEmpty)
         ? suggestions.first
-        : "Urban Visual Index adalah tingkat visual ruang suatu kota yang memberikan gambaran kualitas visual dari suatu lokasi, nilai ini diperoleh dari pemrosesan gambar jalan menggunakan AI.";
+        : "Proportional Vegetation Index adalah tingkat visual ruang suatu kota yang memberikan gambaran kualitas visual dari suatu lokasi, nilai ini diperoleh dari pemrosesan gambar jalan menggunakan AI.";
+
+    final lat =
+        provider.currentSegmentation?.latitude ??
+        widget.video?.latitude ??
+        widget.photo?.latitude;
+    final lng =
+        provider.currentSegmentation?.longitude ??
+        widget.video?.longitude ??
+        widget.photo?.longitude;
+    final String latLngDisplay = (lat != null && lng != null)
+        ? "${lat is double ? lat.toStringAsFixed(4) : lat}, ${lng is double ? lng.toStringAsFixed(4) : lng}"
+        : "-";
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SectionHeader(title: 'Urban Visual Index'),
+          const SectionHeader(title: 'Proportional Vegetation Index'),
           const SizedBox(height: 16),
           Container(
             decoration: BoxDecoration(
@@ -615,12 +642,19 @@ class _ResultScreenState extends State<ResultScreen> {
                         border: Border.all(color: uviColor, width: 6),
                       ),
                       alignment: Alignment.center,
-                      child: Text(
-                        uviDisplay,
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                          color: uviColor,
+                      child: Padding(
+                        padding: const EdgeInsets.all(6.0),
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Text(
+                            uviDisplay,
+                            style: TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                              color: uviColor,
+                            ),
+                            maxLines: 1,
+                          ),
                         ),
                       ),
                     ),
@@ -633,12 +667,16 @@ class _ResultScreenState extends State<ResultScreen> {
                             children: [
                               Icon(Icons.star, color: uviColor, size: 20),
                               const SizedBox(width: 6),
-                              Text(
-                                uviCategory,
-                                style: TextStyle(
-                                  color: uviColor,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 16,
+                              Expanded(
+                                child: Text(
+                                  uviCategory,
+                                  style: TextStyle(
+                                    color: uviColor,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                 ),
                               ),
                             ],
@@ -651,6 +689,8 @@ class _ResultScreenState extends State<ResultScreen> {
                               color: Colors.black87,
                               height: 1.45,
                             ),
+                            maxLines: 6,
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ],
                       ),
@@ -667,6 +707,8 @@ class _ResultScreenState extends State<ResultScreen> {
                     fontSize: 14,
                     color: Colors.black87,
                   ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 14),
                 Row(
@@ -682,13 +724,18 @@ class _ResultScreenState extends State<ResultScreen> {
                           ),
                           const SizedBox(height: 6),
                           Text(
-                            "${provider.locationInfo['address']}\n${provider.locationInfo['city']}",
+                            provider.currentSegmentation?.streetName ??
+                                widget.video?.streetName ??
+                                widget.photo?.streetName ??
+                                '-',
                             textAlign: TextAlign.center,
                             style: const TextStyle(
                               fontSize: 11,
                               color: Colors.black87,
                               height: 1.3,
                             ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ],
                       ),
@@ -703,13 +750,15 @@ class _ResultScreenState extends State<ResultScreen> {
                           ),
                           const SizedBox(height: 6),
                           Text(
-                            "${provider.locationInfo['date']}\n${provider.locationInfo['time']}",
+                            "${provider.locationInfo['date'] ?? '-'}\n${provider.locationInfo['time'] ?? '-'}",
                             textAlign: TextAlign.center,
                             style: const TextStyle(
                               fontSize: 11,
                               color: Colors.black87,
                               height: 1.3,
                             ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ],
                       ),
@@ -724,13 +773,15 @@ class _ResultScreenState extends State<ResultScreen> {
                           ),
                           const SizedBox(height: 6),
                           Text(
-                            "Lat/Long\n${provider.locationInfo['coordinates']}",
+                            "Lat/Long\n$latLngDisplay",
                             textAlign: TextAlign.center,
                             style: const TextStyle(
                               fontSize: 11,
                               color: Colors.black87,
                               height: 1.3,
                             ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ],
                       ),

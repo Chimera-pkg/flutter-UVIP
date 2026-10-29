@@ -1571,7 +1571,8 @@ class _UploadScreenState extends State<UploadScreen> {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => ResultScreen(video: video),
+                        builder: (context) =>
+                            ResultScreen(video: video, isVideo: true),
                       ),
                     );
                   },

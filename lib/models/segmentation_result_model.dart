@@ -131,7 +131,8 @@ class LlmAdviceModel {
       masalah:
           (json['masalah'] as List<dynamic>?)
               ?.map(
-                (e) => LlmAdviceMasalahModel.fromJson(e as Map<String, dynamic>),
+                (e) =>
+                    LlmAdviceMasalahModel.fromJson(e as Map<String, dynamic>),
               )
               .toList() ??
           [],
@@ -157,12 +158,7 @@ class LlmAdviceResponseModel {
   final LlmAdviceModel? advice;
   final String? answer;
 
-  LlmAdviceResponseModel({
-    this.id,
-    this.model,
-    this.advice,
-    this.answer,
-  });
+  LlmAdviceResponseModel({this.id, this.model, this.advice, this.answer});
 
   factory LlmAdviceResponseModel.fromJson(Map<String, dynamic> json) {
     return LlmAdviceResponseModel(
@@ -234,6 +230,7 @@ class SegmentationResultModel {
   final String id;
   final String photoId;
   final String modelName;
+  final String streetName;
   final num? vegetationPct;
   final num? buildingPct;
   final num? roadPct;
@@ -250,6 +247,8 @@ class SegmentationResultModel {
   final num? skyVisibilityPct;
   final num? walkabilityRatio;
   final num? visualClutterIndex;
+  final num? latitude;
+  final num? longitude;
   final String? maskFilePath;
   final String? segmentationUrl;
   final String? privacyMaskedUrl;
@@ -264,6 +263,9 @@ class SegmentationResultModel {
     required this.id,
     required this.photoId,
     required this.modelName,
+    required this.streetName,
+    this.latitude,
+    this.longitude,
     this.vegetationPct,
     this.buildingPct,
     this.roadPct,
@@ -296,6 +298,9 @@ class SegmentationResultModel {
       id: json['id'] ?? '',
       photoId: json['photo_id'] ?? '',
       modelName: json['model_name'] ?? '',
+      streetName: json['street_name'] ?? '',
+      latitude: json['latitude'],
+      longitude: json['longitude'],
       vegetationPct: json['vegetation_pct'],
       buildingPct: json['building_pct'],
       roadPct: json['road_pct'],
