@@ -6,6 +6,7 @@ class ScoreBox extends StatelessWidget {
   final Color bgColor;
   final Color textColor;
   final IconData? icon;
+  final String? category;
 
   const ScoreBox({
     super.key,
@@ -14,15 +15,16 @@ class ScoreBox extends StatelessWidget {
     required this.bgColor,
     required this.textColor,
     this.icon,
+    this.category,
   });
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 14.0, horizontal: 8.0),
+      padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 8.0),
       decoration: BoxDecoration(
         color: bgColor,
-        borderRadius: BorderRadius.circular(16.0),
+        borderRadius: BorderRadius.circular(20.0),
         boxShadow: [
           BoxShadow(
             color: bgColor.withValues(alpha: 0.25),
@@ -40,29 +42,54 @@ class ScoreBox extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               if (icon != null) ...[
-                Icon(icon, size: 14, color: textColor),
+                Icon(icon, size: 16, color: textColor),
                 const SizedBox(width: 4),
               ],
               Text(
                 title,
                 style: TextStyle(
                   color: textColor,
-                  fontSize: 12,
+                  fontSize: 13,
                   fontWeight: FontWeight.bold,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: 10),
           Text(
             score,
             style: TextStyle(
               color: textColor,
-              fontSize: 22,
+              fontSize: 24,
               fontWeight: FontWeight.bold,
               letterSpacing: 0.5,
             ),
           ),
+          if (category != null && category!.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Center(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    category!,
+                    maxLines: 1,
+                    style: TextStyle(
+                      color: bgColor,
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     );

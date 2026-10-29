@@ -402,58 +402,7 @@ class _ResultScreenState extends State<ResultScreen> {
                     const SizedBox(height: 32),
 
                     // Skor Prediksi Section
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const SectionHeader(title: 'Skor Prediksi'),
-                          const SizedBox(height: 16),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: ScoreBox(
-                                  title: 'Beauty',
-                                  icon: Icons.auto_awesome,
-                                  score:
-                                      provider.currentPrediction?.beautyScore
-                                          ?.toStringAsFixed(1) ??
-                                      "10.0",
-                                  bgColor: const Color(0xFFFF3B70),
-                                  textColor: Colors.white,
-                                ),
-                              ),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: ScoreBox(
-                                  title: 'Safety',
-                                  icon: Icons.shield_outlined,
-                                  score:
-                                      provider.currentPrediction?.safetyScore
-                                          ?.toStringAsFixed(1) ??
-                                      "10.0",
-                                  bgColor: const Color(0xFF00CBA9),
-                                  textColor: Colors.white,
-                                ),
-                              ),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: ScoreBox(
-                                  title: 'Comfort',
-                                  icon: Icons.weekend_outlined,
-                                  score:
-                                      provider.currentPrediction?.comfortScore
-                                          ?.toStringAsFixed(1) ??
-                                      "10.0",
-                                  bgColor: const Color(0xFFFF9E1B),
-                                  textColor: Colors.white,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
+                    _buildSkorPrediksiSection(provider),
                     const SizedBox(height: 32),
 
                     // Faktor Pengaruh UVI Section
@@ -790,6 +739,100 @@ class _ResultScreenState extends State<ResultScreen> {
                 ),
               ],
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  double? _normalizePredictionScore(num? rawScore) {
+    if (rawScore == null) return null;
+    final double score = rawScore.toDouble();
+    if (score < 0.0) return score;
+    if (score > 10.0) {
+      return score / 100.0;
+    } else if (score > 1.0) {
+      return score / 10.0;
+    }
+    return score;
+  }
+
+  String _getPredictionCategory(num? rawScore) {
+    if (rawScore == null) return 'Sangat Tinggi';
+    final double? normScore = _normalizePredictionScore(rawScore);
+    if (normScore == null || normScore <= 0.0) {
+      return 'Sangat Rendah';
+    } else if (normScore < 0.0492) {
+      return 'Rendah';
+    } else if (normScore < 0.1704) {
+      return 'Cenderung Rendah';
+    } else if (normScore < 0.2917) {
+      return 'Sedang';
+    } else if (normScore < 0.4130) {
+      return 'Cenderung Tinggi';
+    } else if (normScore < 0.5343) {
+      return 'Tinggi';
+    } else {
+      return 'Sangat Tinggi';
+    }
+  }
+
+  String _formatPredictionScore(num? rawScore, {String fallback = "10.0"}) {
+    if (rawScore == null) return fallback;
+    final double val = rawScore.toDouble();
+    if (val <= 1.0) {
+      return val.toStringAsFixed(2);
+    }
+    return val.toStringAsFixed(1);
+  }
+
+  Widget _buildSkorPrediksiSection(ResultProvider provider) {
+    final beautyScore = provider.currentPrediction?.beautyScore;
+    final safetyScore = provider.currentPrediction?.safetyScore;
+    final comfortScore = provider.currentPrediction?.comfortScore;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SectionHeader(title: 'Skor Prediksi'),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: ScoreBox(
+                  title: 'Beauty',
+                  icon: Icons.star_rounded,
+                  score: _formatPredictionScore(beautyScore, fallback: "1.00"),
+                  category: _getPredictionCategory(beautyScore),
+                  bgColor: const Color(0xFFFF3B70),
+                  textColor: Colors.white,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: ScoreBox(
+                  title: 'Safety',
+                  icon: Icons.verified_user_rounded,
+                  score: _formatPredictionScore(safetyScore, fallback: "10.0"),
+                  category: _getPredictionCategory(safetyScore),
+                  bgColor: const Color(0xFF00CBA9),
+                  textColor: Colors.white,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: ScoreBox(
+                  title: 'Comfort',
+                  icon: Icons.cloud_rounded,
+                  score: _formatPredictionScore(comfortScore, fallback: "10.0"),
+                  category: _getPredictionCategory(comfortScore),
+                  bgColor: const Color(0xFFFF9E1B),
+                  textColor: Colors.white,
+                ),
+              ),
+            ],
           ),
         ],
       ),
