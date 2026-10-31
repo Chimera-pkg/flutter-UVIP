@@ -1,9 +1,14 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:provider/provider.dart';
 import 'package:uvip/core/theme/app_theme.dart';
+import 'package:uvip/models/street_photo_location_model.dart';
+import 'package:uvip/models/street_photo_model.dart';
+import 'package:uvip/models/street_video_model.dart';
+import 'package:uvip/screens/result/result_screen.dart';
 import 'package:uvip/providers/map_provider.dart';
 import 'package:uvip/providers/home_provider.dart';
 import 'package:uvip/widgets/summary_card.dart';
@@ -20,12 +25,26 @@ class MapAnalysisScreen extends StatefulWidget {
 class _MapAnalysisScreenState extends State<MapAnalysisScreen> {
   final MapController _mapController = MapController();
   LatLng? _currentLocation;
+  double _currentZoom = 15.0;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final mapProvider = Provider.of<MapProvider>(context, listen: false);
+
+      // Hit API street-photos/locations
+      mapProvider.fetchPhotoLocations().then((_) {
+        if (!mounted) return;
+        // Jika lokasi user belum ada dan terdapat titik foto, pusatkan ke titik foto pertama
+        if (!mapProvider.isLocationLoaded &&
+            _currentLocation == null &&
+            mapProvider.photoLocations.isNotEmpty) {
+          final first = mapProvider.photoLocations.first;
+          _mapController.move(LatLng(first.latitude, first.longitude), 14.0);
+        }
+      });
+
       if (mapProvider.isLocationLoaded) {
         setState(() {
           _currentLocation = LatLng(
@@ -90,6 +109,13 @@ class _MapAnalysisScreenState extends State<MapAnalysisScreen> {
                               initialZoom: provider.isLocationLoaded
                                   ? 15.0
                                   : 13.0,
+                              onPositionChanged: (camera, hasGesture) {
+                                if ((camera.zoom - _currentZoom).abs() > 0.05) {
+                                  setState(() {
+                                    _currentZoom = camera.zoom;
+                                  });
+                                }
+                              },
                               interactionOptions: const InteractionOptions(
                                 flags:
                                     InteractiveFlag.all &
@@ -102,10 +128,11 @@ class _MapAnalysisScreenState extends State<MapAnalysisScreen> {
                                     'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                                 userAgentPackageName: 'com.example.uvip',
                               ),
-                              if (_currentLocation != null ||
-                                  provider.isLocationLoaded)
-                                MarkerLayer(
-                                  markers: [
+                              MarkerLayer(
+                                markers: [
+                                  // User Current Location Marker
+                                  if (_currentLocation != null ||
+                                      provider.isLocationLoaded)
                                     Marker(
                                       point:
                                           _currentLocation ??
@@ -121,17 +148,100 @@ class _MapAnalysisScreenState extends State<MapAnalysisScreen> {
                                         size: 30,
                                       ),
                                     ),
-                                  ],
-                                ),
+                                  // Street Photo Location Markers (berjejer saat zoom)
+                                  ..._buildLocationMarkers(
+                                    provider.photoLocations,
+                                  ),
+                                ],
+                              ),
                             ],
                           ),
+                          // Loading indicator overlay (Top Left)
+                          if (provider.isLoadingLocations)
+                            Positioned(
+                              top: 16,
+                              left: 16,
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 6,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withValues(alpha: 0.9),
+                                  borderRadius: BorderRadius.circular(20),
+                                  boxShadow: const [
+                                    BoxShadow(
+                                      color: Colors.black12,
+                                      blurRadius: 4,
+                                      offset: Offset(0, 2),
+                                    ),
+                                  ],
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: const [
+                                    SizedBox(
+                                      width: 12,
+                                      height: 12,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color: AppTheme.primaryColor,
+                                      ),
+                                    ),
+                                    SizedBox(width: 6),
+                                    Text(
+                                      'Memuat titik...',
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
                           // Overlay Buttons (Top Right)
                           Positioned(
                             top: 16,
                             right: 16,
                             child: Column(
                               children: [
-                                _buildFloatingMapButton(Icons.layers_outlined),
+                                GestureDetector(
+                                  onTap: () {
+                                    final mapProvider =
+                                        Provider.of<MapProvider>(
+                                          context,
+                                          listen: false,
+                                        );
+                                    mapProvider.fetchPhotoLocations().then((_) {
+                                      if (mounted &&
+                                          mapProvider.photoLocations.isNotEmpty) {
+                                        final points = mapProvider.photoLocations
+                                            .map(
+                                              (e) => LatLng(
+                                                e.latitude,
+                                                e.longitude,
+                                              ),
+                                            )
+                                            .toList();
+                                        if (_currentLocation != null) {
+                                          points.add(_currentLocation!);
+                                        }
+                                        _mapController.fitCamera(
+                                          CameraFit.bounds(
+                                            bounds: LatLngBounds.fromPoints(
+                                              points,
+                                            ),
+                                            padding: const EdgeInsets.all(32),
+                                          ),
+                                        );
+                                      }
+                                    });
+                                  },
+                                  child: _buildFloatingMapButton(
+                                    Icons.refresh_rounded,
+                                  ),
+                                ),
                                 const SizedBox(height: 8),
                                 GestureDetector(
                                   onTap: () {
@@ -500,6 +610,333 @@ class _MapAnalysisScreenState extends State<MapAnalysisScreen> {
           );
         },
       ),
+    );
+  }
+
+  List<Marker> _buildLocationMarkers(List<StreetPhotoLocationModel> locations) {
+    if (locations.isEmpty) return [];
+
+    // Kelompokkan titik lokasi dengan koordinat yang sama persis atau sangat berdekatan (~1.1 meter)
+    final Map<String, List<StreetPhotoLocationModel>> groups = {};
+    for (final loc in locations) {
+      final key =
+          '${loc.latitude.toStringAsFixed(5)}_${loc.longitude.toStringAsFixed(5)}';
+      groups.putIfAbsent(key, () => []).add(loc);
+    }
+
+    // Faktor pelebaran berdasarkan tingkat zoom:
+    // Zoom < 15.0: tetap menyatu dalam 1 titik (spreadFactor = 0)
+    // Zoom 15.0 s/d 16.5: melebar secara halus dan berjejer (spreadFactor 0.0 -> 1.0)
+    double spreadFactor = 0.0;
+    if (_currentZoom >= 15.0) {
+      spreadFactor = ((_currentZoom - 15.0) / 1.5).clamp(0.0, 1.0);
+    }
+
+    // Konversi pixel jarak layar ke derajat bujur (longitude) pada tingkat zoom saat ini
+    final double degreesPerPixel = 360.0 / (256.0 * math.pow(2, _currentZoom));
+    const double spacingPixels = 30.0; // Jarak antar pusat titik (diameter 28px + gap 2px)
+
+    final List<Marker> markers = [];
+
+    for (final group in groups.values) {
+      final int count = group.length;
+
+      for (int i = 0; i < count; i++) {
+        final loc = group[i];
+
+        // Pergeseran horizontal simetris agar titik-titik berjejer rapi
+        double offsetPixels = 0.0;
+        if (count > 1) {
+          offsetPixels = (i - (count - 1) / 2.0) * spacingPixels;
+        }
+
+        final double deltaLng = (offsetPixels * spreadFactor) * degreesPerPixel;
+        final LatLng markerPoint = LatLng(
+          loc.latitude,
+          loc.longitude + deltaLng,
+        );
+        final Color markerColor = loc.markerColor;
+        final bool isStacked = count > 1 && spreadFactor < 0.3;
+
+        markers.add(
+          Marker(
+            point: markerPoint,
+            width: 28,
+            height: 28,
+            child: GestureDetector(
+              onTap: () {
+                if (isStacked) {
+                  // Jika masih menyatu saat di-tap, langsung zoom in agar berjejer
+                  _mapController.move(
+                    LatLng(loc.latitude, loc.longitude),
+                    16.5,
+                  );
+                } else {
+                  _showLocationDetail(loc);
+                }
+              },
+              child: Tooltip(
+                message:
+                    '${loc.originalFilename}\nUVI: ${loc.uviScore != null ? loc.uviScore!.toStringAsFixed(2) : "-"}${count > 1 && isStacked ? ' ($count data)' : ''}',
+                child: Container(
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: markerColor.withValues(alpha: 0.35),
+                  ),
+                  padding: const EdgeInsets.all(4),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: markerColor,
+                      border: Border.all(color: Colors.white, width: 2),
+                      boxShadow: const [
+                        BoxShadow(
+                          color: Colors.black26,
+                          blurRadius: 3,
+                          offset: Offset(0, 1),
+                        ),
+                      ],
+                    ),
+                    child: (isStacked && i == count - 1)
+                        ? Center(
+                            child: Text(
+                              '$count',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 9,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          )
+                        : null,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+      }
+    }
+
+    return markers;
+  }
+
+  void _showLocationDetail(StreetPhotoLocationModel loc) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(20.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade300,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: loc.markerColor.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(
+                        loc.isVideo
+                            ? Icons.videocam_rounded
+                            : Icons.photo_camera_rounded,
+                        color: loc.markerColor,
+                        size: 24,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            loc.originalFilename,
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            loc.streetName ??
+                                '${loc.latitude.toStringAsFixed(6)}, ${loc.longitude.toStringAsFixed(6)}',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey.shade600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: loc.markerColor,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        loc.uviCategory,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                const Divider(),
+                const SizedBox(height: 8),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'UVI Score:',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                      ),
+                    ),
+                    Text(
+                      loc.uviScore != null
+                          ? loc.uviScore!.toStringAsFixed(2)
+                          : 'N/A',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                        color: loc.markerColor,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'Koordinat:',
+                      style: TextStyle(fontSize: 13, color: Colors.grey),
+                    ),
+                    Text(
+                      '${loc.latitude.toStringAsFixed(6)}, ${loc.longitude.toStringAsFixed(6)}',
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 20),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.primaryColor,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                    onPressed: () {
+                      Navigator.pop(context);
+                      if (loc.isVideo) {
+                        final video = StreetVideoModel(
+                          id: loc.id,
+                          missionId: '',
+                          uploadedBy: '',
+                          source: '',
+                          originalFilename: loc.originalFilename,
+                          filePath: '',
+                          fileSizeKb: 0,
+                          latitude: loc.latitude,
+                          longitude: loc.longitude,
+                          streetName: loc.streetName,
+                          gpsAccuracyM: 0,
+                          compassAzimuth: 0,
+                          isManualCapture: false,
+                          isOfflineSync: false,
+                          privacyMasked: false,
+                          processingStatus: '',
+                          errorMessage: '',
+                          capturedAt: '',
+                          createdAt: '',
+                        );
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                ResultScreen(video: video, isVideo: true),
+                          ),
+                        );
+                      } else {
+                        final photo = StreetPhotoModel(
+                          id: loc.id,
+                          missionId: '',
+                          uploadedBy: '',
+                          source: '',
+                          originalFilename: loc.originalFilename,
+                          filePath: '',
+                          fileSizeKb: 0,
+                          latitude: loc.latitude,
+                          longitude: loc.longitude,
+                          streetName: loc.streetName,
+                          gpsAccuracyM: 0,
+                          compassAzimuth: 0,
+                          exifTimestamp: '',
+                          isManualCapture: false,
+                          isOfflineSync: false,
+                          privacyMasked: false,
+                          processingStatus: '',
+                          errorMessage: '',
+                          capturedAt: '',
+                          createdAt: '',
+                        );
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => ResultScreen(photo: photo),
+                          ),
+                        );
+                      }
+                    },
+                    child: const Text(
+                      'Lihat Analisis Detail',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 

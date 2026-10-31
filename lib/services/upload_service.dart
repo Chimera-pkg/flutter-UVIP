@@ -24,6 +24,22 @@ class UploadService {
     }
   }
 
+  Future<Response> getStreetPhotoLocations({String? projectId}) async {
+    try {
+      final queryParams = <String, dynamic>{};
+      if (projectId != null) {
+        queryParams['project_id'] = projectId;
+      }
+      final response = await _dio.get(
+        '/street-photos/locations',
+        queryParameters: queryParams.isNotEmpty ? queryParams : null,
+      );
+      return response;
+    } catch (e) {
+      rethrow;
+    }
+  }
+
   Future<Response> uploadStreetPhoto(
     MultipartFile file, {
     double? latitude,
