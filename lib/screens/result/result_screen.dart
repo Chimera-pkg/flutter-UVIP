@@ -130,8 +130,9 @@ class _ResultScreenState extends State<ResultScreen> {
                 : (widget.photo?.filePath ?? '');
           }
           if (originalUrl.isNotEmpty && !originalUrl.startsWith('http')) {
-            const baseUrl =
-                'https://auctions-chemicals-latitude-typing.trycloudflare.com';
+            final baseUrl = _isVideo
+                ? 'http://80.241.214.39'
+                : 'https://auctions-chemicals-latitude-typing.trycloudflare.com';
             originalUrl =
                 '$baseUrl/${originalUrl.startsWith('/') ? originalUrl.substring(1) : originalUrl}';
           }
