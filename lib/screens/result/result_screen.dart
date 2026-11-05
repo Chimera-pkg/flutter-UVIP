@@ -1070,6 +1070,36 @@ class _ResultScreenState extends State<ResultScreen> {
       }
     }
 
+    String? fullImageUrl;
+    String? originalUrl;
+    fullImageUrl = provider.segmentationResult?.segmentationOverlayUrl;
+    originalUrl = provider.segmentationResult?.privacyMaskedUrl;
+
+    if (fullImageUrl == null || fullImageUrl.isEmpty) {
+      fullImageUrl = _isVideo
+          ? (widget.video?.filePath ?? '')
+          : (widget.photo?.filePath ?? '');
+    }
+    if (fullImageUrl.isNotEmpty && !fullImageUrl.startsWith('http')) {
+      const baseUrl =
+          'https://auctions-chemicals-latitude-typing.trycloudflare.com';
+      fullImageUrl =
+          '$baseUrl/${fullImageUrl.startsWith('/') ? fullImageUrl.substring(1) : fullImageUrl}';
+    }
+
+    if (originalUrl == null || originalUrl.isEmpty) {
+      originalUrl = _isVideo
+          ? (widget.video?.filePath ?? '')
+          : (widget.photo?.filePath ?? '');
+    }
+    if (originalUrl.isNotEmpty && !originalUrl.startsWith('http')) {
+      final baseUrl = _isVideo
+          ? 'http://80.241.214.39'
+          : 'https://auctions-chemicals-latitude-typing.trycloudflare.com';
+      originalUrl =
+          '$baseUrl/${originalUrl.startsWith('/') ? originalUrl.substring(1) : originalUrl}';
+    }
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24.0),
       child: Column(
@@ -1155,6 +1185,51 @@ class _ResultScreenState extends State<ResultScreen> {
                               size: 48,
                               color: Colors.grey,
                             ),
+                          ),
+                        ),
+                ),
+                const SizedBox(height: 40),
+
+                // Gambar Mentah
+                const Text(
+                  'Gambar Mentah',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13,
+                    color: Colors.black87,
+                  ),
+                ),
+                const SizedBox(height: 10),
+
+                // Raw Image
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(12.0),
+                  child: originalUrl.isNotEmpty
+                      ? Image.network(
+                          originalUrl,
+                          height: 200,
+                          width: double.infinity,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) =>
+                              Container(
+                                height: 200,
+                                width: double.infinity,
+                                color: Colors.grey.shade300,
+                                child: const Icon(
+                                  Icons.broken_image,
+                                  size: 64,
+                                  color: Colors.grey,
+                                ),
+                              ),
+                        )
+                      : Container(
+                          height: 200,
+                          width: double.infinity,
+                          color: Colors.grey.shade300,
+                          child: const Icon(
+                            Icons.image,
+                            size: 64,
+                            color: Colors.grey,
                           ),
                         ),
                 ),
