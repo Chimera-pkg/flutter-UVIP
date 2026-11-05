@@ -215,8 +215,11 @@ class _MapAnalysisScreenState extends State<MapAnalysisScreen> {
                                         );
                                     mapProvider.fetchPhotoLocations().then((_) {
                                       if (mounted &&
-                                          mapProvider.photoLocations.isNotEmpty) {
-                                        final points = mapProvider.photoLocations
+                                          mapProvider
+                                              .photoLocations
+                                              .isNotEmpty) {
+                                        final points = mapProvider
+                                            .photoLocations
                                             .map(
                                               (e) => LatLng(
                                                 e.latitude,
@@ -317,14 +320,14 @@ class _MapAnalysisScreenState extends State<MapAnalysisScreen> {
                                         MainAxisAlignment.spaceBetween,
                                     children: const [
                                       Text(
-                                        'PVI Tinggi',
+                                        'UVI Tinggi',
                                         style: TextStyle(
                                           fontSize: 10,
                                           color: Colors.black54,
                                         ),
                                       ),
                                       Text(
-                                        'PVI Rendah',
+                                        'UVI Rendah',
                                         style: TextStyle(
                                           fontSize: 10,
                                           color: Colors.black54,
@@ -634,7 +637,8 @@ class _MapAnalysisScreenState extends State<MapAnalysisScreen> {
 
     // Konversi pixel jarak layar ke derajat bujur (longitude) pada tingkat zoom saat ini
     final double degreesPerPixel = 360.0 / (256.0 * math.pow(2, _currentZoom));
-    const double spacingPixels = 30.0; // Jarak antar pusat titik (diameter 28px + gap 2px)
+    const double spacingPixels =
+        30.0; // Jarak antar pusat titik (diameter 28px + gap 2px)
 
     final List<Marker> markers = [];
 

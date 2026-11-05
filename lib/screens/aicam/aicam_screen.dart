@@ -884,7 +884,7 @@ class _AiCamScreenState extends State<AiCamScreen> with WidgetsBindingObserver {
                             ),
                             const SizedBox(height: 12),
                             _buildLiveScoreItem(
-                              'PVI',
+                              'UVI',
                               provider.liveUvi,
                               Colors.blue,
                             ),

@@ -421,13 +421,13 @@ class _ResultScreenState extends State<ResultScreen> {
                     _buildSkorPrediksiSection(provider),
                     const SizedBox(height: 32),
 
-                    // Faktor Pengaruh PVI Section
+                    // Faktor Pengaruh UVI Section
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 24.0),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const SectionHeader(title: 'Faktor Pengaruh PVI'),
+                          const SectionHeader(title: 'Faktor Pengaruh UVI'),
                           const SizedBox(height: 4),
                           const Text(
                             'Kombinasi faktor positif dan negatif berikut membentuk nilai Proportional Vegetation Index.',
@@ -451,7 +451,7 @@ class _ResultScreenState extends State<ResultScreen> {
                     const SizedBox(height: 16),
 
                     // Visual Environment Indicators Section
-                    _buildVisualEnvironmentIndicators(provider),
+                    _buildVisualQualityIndex(provider),
                     const SizedBox(height: 32),
 
                     // Rekomendasi AI Section (Foto Only)
@@ -891,7 +891,7 @@ class _ResultScreenState extends State<ResultScreen> {
     );
   }
 
-  Widget _buildVisualEnvironmentIndicators(ResultProvider provider) {
+  Widget _buildVisualQualityIndex(ResultProvider provider) {
     final segResult = provider.currentSegmentation;
     if (segResult == null) return const SizedBox.shrink();
 
@@ -920,7 +920,7 @@ class _ResultScreenState extends State<ResultScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SectionHeader(title: 'Visual Environment Indicators'),
+          const SectionHeader(title: 'Visual Quality Index'),
           const SizedBox(height: 16),
           Container(
             decoration: BoxDecoration(
@@ -960,7 +960,7 @@ class _ResultScreenState extends State<ResultScreen> {
                 const Divider(height: 1, color: Colors.black12),
                 _buildIndicatorRow(
                   icon: Icons.storefront_outlined,
-                  title: 'Indeks Komersial Kawasan',
+                  title: 'Indeks Dominasi Visual',
                   subtitle: 'Tingkat aktivitas komersial di area sekitar',
                   percentage: commercialPct,
                 ),

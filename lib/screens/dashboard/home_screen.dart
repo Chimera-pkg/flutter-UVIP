@@ -82,10 +82,10 @@ class _HomeScreenState extends State<HomeScreen> {
                         children: [
                           Text(
                             'Selamat datang, ${authProvider.user?.name ?? 'User'}',
-                            style: Theme.of(context).textTheme.headlineMedium
+                            style: Theme.of(context).textTheme.headlineSmall
                                 ?.copyWith(
                                   fontWeight: FontWeight.bold,
-                                  color: Colors.black, // Dark color
+                                  color: Colors.black,
                                 ),
                           ),
                           const SizedBox(height: 4),
@@ -126,7 +126,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Text(
-                              'Rata-rata PVI',
+                              'Rata-rata UVI',
                               style: Theme.of(context).textTheme.bodyMedium
                                   ?.copyWith(
                                     color: Colors.black54,
