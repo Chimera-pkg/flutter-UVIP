@@ -20,7 +20,7 @@ class AuthService {
     String name,
     String email,
     String password, {
-    String role = 'admin',
+    String role = 'surveyor',
   }) async {
     try {
       final response = await _dio.post(

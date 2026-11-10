@@ -6,7 +6,7 @@ import 'package:flutter/material.dart';
 class ProfileProvider with ChangeNotifier {
   // Mock Data
   String _name = "Herry Tan";
-  String _role = "Admin";
+  String _role = "Surveyor";
   String _phone = "+629298298398";
   String _email = "herrytan@gmail.com";
   String _address = "Jalan Ijen Malang";

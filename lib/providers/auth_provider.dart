@@ -64,7 +64,7 @@ class AuthProvider with ChangeNotifier {
     String name,
     String email,
     String password, {
-    String role = 'admin',
+    String role = 'surveyor',
   }) async {
     _setLoading(true);
     _errorMessage = null;
