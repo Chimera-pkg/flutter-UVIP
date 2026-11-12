@@ -11,6 +11,7 @@ class ProjectModel {
   final int? totalPhotos;
   final int? totalVideos;
   final String? thumbnailUrl;
+  final String? projectAvatar;
   final String? status;
 
   ProjectModel({
@@ -26,6 +27,7 @@ class ProjectModel {
     this.totalPhotos,
     this.totalVideos,
     this.thumbnailUrl,
+    this.projectAvatar,
     this.status,
   });
 
@@ -67,7 +69,11 @@ class ProjectModel {
       comfortScore: _parseDouble(json['comfort_score'] ?? json['comfort'] ?? json['Comfort']),
       totalPhotos: _parseInt(json['total_photos'] ?? json['photo_count'] ?? json['photos_count']),
       totalVideos: _parseInt(json['total_videos'] ?? json['video_count'] ?? json['videos_count']),
-      thumbnailUrl: json['thumbnail_url']?.toString() ?? json['thumbnail']?.toString() ?? json['image_url']?.toString(),
+      projectAvatar: json['project_avatar']?.toString() ?? json['projectAvatar']?.toString(),
+      thumbnailUrl: json['project_avatar']?.toString() ??
+          json['thumbnail_url']?.toString() ??
+          json['thumbnail']?.toString() ??
+          json['image_url']?.toString(),
       status: json['status']?.toString(),
     );
   }
@@ -101,6 +107,7 @@ class ProjectModel {
       'total_photos': totalPhotos,
       'total_videos': totalVideos,
       'thumbnail_url': thumbnailUrl,
+      'project_avatar': projectAvatar,
       'status': status,
     };
   }
@@ -125,6 +132,7 @@ class ProjectModel {
     int? totalPhotos,
     int? totalVideos,
     String? thumbnailUrl,
+    String? projectAvatar,
     String? status,
   }) {
     return ProjectModel(
@@ -140,6 +148,7 @@ class ProjectModel {
       totalPhotos: totalPhotos ?? this.totalPhotos,
       totalVideos: totalVideos ?? this.totalVideos,
       thumbnailUrl: thumbnailUrl ?? this.thumbnailUrl,
+      projectAvatar: projectAvatar ?? this.projectAvatar,
       status: status ?? this.status,
     );
   }

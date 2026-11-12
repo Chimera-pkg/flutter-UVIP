@@ -6,6 +6,8 @@ class UserModel {
   final bool isActive;
   final String lastLoginAt;
   final String createAt;
+  final String? profileFilename;
+  final String? profileFilePath;
 
   UserModel({
     required this.id,
@@ -15,6 +17,8 @@ class UserModel {
     required this.isActive,
     required this.lastLoginAt,
     required this.createAt,
+    this.profileFilename,
+    this.profileFilePath,
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
@@ -25,7 +29,9 @@ class UserModel {
       role: json['role'] ?? '',
       isActive: json['is_active'] ?? true,
       lastLoginAt: json['last_login_at'] ?? '',
-      createAt: json['create_at'] ?? '',
+      createAt: json['created_at'] ?? json['create_at'] ?? '',
+      profileFilename: json['profile_filename']?.toString(),
+      profileFilePath: json['profile_file_path']?.toString(),
     );
   }
 
@@ -38,6 +44,9 @@ class UserModel {
       'is_active': isActive,
       'last_login_at': lastLoginAt,
       'create_at': createAt,
+      'created_at': createAt,
+      'profile_filename': profileFilename,
+      'profile_file_path': profileFilePath,
     };
   }
 }

@@ -137,7 +137,7 @@ class ProjectCard extends StatelessWidget {
   }
 
   Widget _buildThumbnail() {
-    final url = project.thumbnailUrl;
+    final url = project.projectAvatar ?? project.thumbnailUrl;
     if (url != null && url.isNotEmpty) {
       String fullUrl = url.replaceAll('\\', '/');
       if (!fullUrl.startsWith('http')) {
@@ -155,8 +155,8 @@ class ProjectCard extends StatelessWidget {
   }
 
   Widget _fallbackThumbnail() {
-    return Image.network(
-      'https://images.unsplash.com/photo-1519501025264-65ba15a82390?w=150&auto=format&fit=crop&q=80',
+    return Image.asset(
+      'assets/empty_project.png',
       fit: BoxFit.cover,
       errorBuilder: (context, error, stackTrace) => Container(
         color: const Color(0xFFE2E8F0),

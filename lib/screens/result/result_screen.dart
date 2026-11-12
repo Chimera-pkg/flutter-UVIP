@@ -397,13 +397,13 @@ class _ResultScreenState extends State<ResultScreen> {
                                   Colors.green.shade700,
                                   'Vegetation',
                                 ),
-                                _buildLegendItem(Colors.blue, 'Sky'),
+                                _buildLegendItem(Colors.yellow, 'Sky'),
                                 _buildLegendItem(
                                   Colors.red.shade600,
                                   'Vehicles',
                                 ),
                                 _buildLegendItem(Colors.purple, 'Building'),
-                                _buildLegendItem(Colors.amber, 'Sidewalk'),
+                                _buildLegendItem(Colors.pink, 'Sidewalk'),
                                 _buildLegendItem(Colors.grey.shade800, 'Road'),
                               ],
                             ),
@@ -430,7 +430,7 @@ class _ResultScreenState extends State<ResultScreen> {
                           const SectionHeader(title: 'Faktor Pengaruh UVI'),
                           const SizedBox(height: 4),
                           const Text(
-                            'Kombinasi faktor positif dan negatif berikut membentuk nilai Proportional Vegetation Index.',
+                            'Kombinasi faktor positif dan negatif berikut membentuk nilai UVI.',
                             style: TextStyle(
                               color: Colors.black54,
                               fontSize: 12,
@@ -601,7 +601,7 @@ class _ResultScreenState extends State<ResultScreen> {
     final String suggestionText =
         (suggestions != null && suggestions.isNotEmpty)
         ? suggestions.first
-        : "Proportional Vegetation Index adalah tingkat visual ruang suatu kota yang memberikan gambaran kualitas visual dari suatu lokasi, nilai ini diperoleh dari pemrosesan gambar jalan menggunakan AI.";
+        : "UVI adalah tingkat visual ruang suatu kota yang memberikan gambaran kualitas visual dari suatu lokasi, nilai ini diperoleh dari pemrosesan gambar jalan menggunakan AI.";
 
     final lat =
         provider.currentSegmentation?.latitude ??
@@ -620,7 +620,7 @@ class _ResultScreenState extends State<ResultScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SectionHeader(title: 'Proportional Vegetation Index'),
+          const SectionHeader(title: 'Urban Visual Indicator'),
           const SizedBox(height: 16),
           Container(
             decoration: BoxDecoration(

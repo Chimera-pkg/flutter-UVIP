@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:uvip/core/theme/app_theme.dart';
 import 'package:uvip/providers/auth_provider.dart';
+import 'package:uvip/providers/project_provider.dart';
 import 'package:uvip/screens/aicam/aicam_screen.dart';
 import 'package:uvip/screens/dashboard/home_screen.dart';
 import 'package:uvip/screens/map/map_analysis_screen.dart';
@@ -32,6 +33,10 @@ class _MainScreenState extends State<MainScreen> {
   }
 
   void _onItemTapped(int index) {
+    if (index == 3) {
+      final projectProvider = Provider.of<ProjectProvider>(context, listen: false);
+      projectProvider.fetchProjects(isRefresh: projectProvider.projects.isNotEmpty);
+    }
     setState(() {
       _visitedTabs.add(index);
       _selectedIndex = index;
@@ -39,6 +44,8 @@ class _MainScreenState extends State<MainScreen> {
   }
 
   void _switchToUpload([int subTab = 0]) {
+    final projectProvider = Provider.of<ProjectProvider>(context, listen: false);
+    projectProvider.fetchProjects(isRefresh: projectProvider.projects.isNotEmpty);
     setState(() {
       // _uploadInitialTab = subTab;
       _visitedTabs.add(3);
@@ -98,6 +105,7 @@ class _MainScreenState extends State<MainScreen> {
                 3,
                 ProjectListScreen(
                   key: const PageStorageKey('ProjectListScreen'),
+                  isActive: _selectedIndex == 3,
                 ),
               ),
               _buildTabChild(

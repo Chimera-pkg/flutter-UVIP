@@ -23,6 +23,9 @@ class AuthProvider with ChangeNotifier {
   bool _isFetchingMe = false;
   bool get isFetchingMe => _isFetchingMe;
 
+  bool _isUpdatingAvatar = false;
+  bool get isUpdatingAvatar => _isUpdatingAvatar;
+
   Future<bool> login(String email, String password) async {
     _setLoading(true);
     _errorMessage = null;
@@ -109,6 +112,33 @@ class AuthProvider with ChangeNotifier {
       print('Error fetching /auth/me: $e');
     } finally {
       _isFetchingMe = false;
+      notifyListeners();
+    }
+  }
+
+  Future<bool> updateAvatar(String filePath) async {
+    _isUpdatingAvatar = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      final response = await _authService.updateAvatar(filePath);
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        await fetchMe();
+        return true;
+      } else {
+        _errorMessage = 'Gagal memperbarui foto profil.';
+        return false;
+      }
+    } on DioException catch (e) {
+      _errorMessage =
+          e.response?.data?['detail'] ?? e.message ?? 'Gagal memperbarui foto profil';
+      return false;
+    } catch (e) {
+      _errorMessage = e.toString();
+      return false;
+    } finally {
+      _isUpdatingAvatar = false;
       notifyListeners();
     }
   }

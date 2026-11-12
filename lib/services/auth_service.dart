@@ -46,4 +46,40 @@ class AuthService {
       rethrow;
     }
   }
+
+  Future<Response> updateAvatar(String filePath) async {
+    try {
+      final fileName = filePath.split(RegExp(r'[/\\]')).last;
+      final formData = FormData.fromMap({
+        'file': await MultipartFile.fromFile(
+          filePath,
+          filename: fileName,
+        ),
+      });
+
+      try {
+        final response = await _dio.patch(
+          '/users/me/avatar',
+          data: formData,
+        );
+        return response;
+      } on DioException catch (e) {
+        if (e.response?.statusCode == 404) {
+          final fallbackFormData = FormData.fromMap({
+            'file': await MultipartFile.fromFile(
+              filePath,
+              filename: fileName,
+            ),
+          });
+          return await _dio.patch(
+            '/user/me/avatar',
+            data: fallbackFormData,
+          );
+        }
+        rethrow;
+      }
+    } catch (e) {
+      rethrow;
+    }
+  }
 }

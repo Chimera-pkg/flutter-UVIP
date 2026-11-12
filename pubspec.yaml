@@ -83,6 +83,7 @@ flutter_native_splash:
 flutter:
   uses-material-design: true
   assets:
+    - assets/
     - assets/icon/
 
   # An image asset can refer to one or more resolution-specific "variants", see

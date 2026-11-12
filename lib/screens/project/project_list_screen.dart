@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:uvip/core/theme/app_theme.dart';
+import 'package:uvip/main.dart';
 import 'package:uvip/models/project_model.dart';
 import 'package:uvip/providers/project_provider.dart';
 import 'package:uvip/providers/upload_provider.dart';
@@ -9,7 +10,12 @@ import 'package:uvip/screens/upload/upload_screen.dart';
 import 'package:uvip/widgets/project_card.dart';
 
 class ProjectListScreen extends StatefulWidget {
-  const ProjectListScreen({super.key});
+  final bool isActive;
+
+  const ProjectListScreen({
+    super.key,
+    this.isActive = true,
+  });
 
   @override
   State<ProjectListScreen> createState() => _ProjectListScreenState();
@@ -35,23 +41,59 @@ class _CustomMenuDividerState extends State<_CustomMenuDivider> {
   }
 }
 
-class _ProjectListScreenState extends State<ProjectListScreen> {
+class _ProjectListScreenState extends State<ProjectListScreen> with RouteAware {
   final ScrollController _scrollController = ScrollController();
   bool _isGridView = false;
   bool _isAscending = false;
+
+  void _getProjects() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        final provider = Provider.of<ProjectProvider>(context, listen: false);
+        provider.fetchProjects(isRefresh: provider.projects.isNotEmpty);
+      }
+    });
+  }
 
   @override
   void initState() {
     super.initState();
     _scrollController.addListener(_onScroll);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final provider = Provider.of<ProjectProvider>(context, listen: false);
-      provider.fetchProjects();
-    });
+    if (widget.isActive) {
+      _getProjects();
+    }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final route = ModalRoute.of(context);
+    if (route != null) {
+      routeObserver.subscribe(this, route);
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant ProjectListScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.isActive && !oldWidget.isActive) {
+      _getProjects();
+    }
+  }
+
+  @override
+  void didPush() {
+    _getProjects();
+  }
+
+  @override
+  void didPopNext() {
+    _getProjects();
   }
 
   @override
   void dispose() {
+    routeObserver.unsubscribe(this);
     _scrollController.dispose();
     super.dispose();
   }
@@ -111,11 +153,11 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
     }
   }
 
-  void _openProject(ProjectModel project) {
+  Future<void> _openProject(ProjectModel project) async {
     final uploadProvider = Provider.of<UploadProvider>(context, listen: false);
     uploadProvider.setCurrentProjectId(project.id);
 
-    Navigator.push(
+    await Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => UploadScreen(
@@ -125,6 +167,10 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
         ),
       ),
     );
+
+    if (mounted) {
+      _getProjects();
+    }
   }
 
   void _showProjectDropdown(
@@ -257,18 +303,6 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
         surfaceTintColor: Colors.transparent,
         scrolledUnderElevation: 0,
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(
-            Icons.arrow_back_ios_new_rounded,
-            color: Color(0xFF0F172A),
-            size: 20,
-          ),
-          onPressed: () {
-            if (Navigator.canPop(context)) {
-              Navigator.pop(context);
-            }
-          },
-        ),
         title: const Text(
           'Projects',
           style: TextStyle(
@@ -286,34 +320,48 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
           }
 
           if (provider.errorMessage != null && provider.projects.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
+            return RefreshIndicator(
+              onRefresh: () => provider.fetchProjects(isRefresh: true),
+              child: ListView(
+                physics: const AlwaysScrollableScrollPhysics(),
                 children: [
-                  const Icon(Icons.error_outline, size: 64, color: Colors.red),
-                  const SizedBox(height: 16),
-                  Text(
-                    provider.errorMessage!,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(color: Colors.red),
-                  ),
-                  const SizedBox(height: 16),
                   SizedBox(
-                    height: 50,
-                    child: ElevatedButton(
-                      onPressed: () => provider.fetchProjects(),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppTheme.primaryColor,
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      child: const Text(
-                        'Coba Lagi',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
+                    height: MediaQuery.of(context).size.height * 0.7,
+                    child: Center(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(Icons.error_outline, size: 64, color: Colors.red),
+                            const SizedBox(height: 16),
+                            Text(
+                              provider.errorMessage!,
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(color: Colors.red),
+                            ),
+                            const SizedBox(height: 16),
+                            SizedBox(
+                              height: 50,
+                              child: ElevatedButton(
+                                onPressed: () => provider.fetchProjects(),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppTheme.primaryColor,
+                                  foregroundColor: Colors.white,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                ),
+                                child: const Text(
+                                  'Coba Lagi',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ),
@@ -324,24 +372,35 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
           }
 
           if (provider.projects.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
+            return RefreshIndicator(
+              onRefresh: () => provider.fetchProjects(isRefresh: true),
+              child: ListView(
+                physics: const AlwaysScrollableScrollPhysics(),
                 children: [
-                  Icon(Icons.folder_open, size: 80, color: Colors.grey[400]),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Belum ada project',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.grey[600],
+                  SizedBox(
+                    height: MediaQuery.of(context).size.height * 0.7,
+                    child: Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.folder_open, size: 80, color: Colors.grey[400]),
+                          const SizedBox(height: 16),
+                          Text(
+                            'Belum ada project',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Mulai dengan membuat project baru',
+                            style: TextStyle(fontSize: 14, color: Colors.grey[500]),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Mulai dengan membuat project baru',
-                    style: TextStyle(fontSize: 14, color: Colors.grey[500]),
                   ),
                 ],
               ),
@@ -613,7 +672,7 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
   }
 
   Widget _buildGridThumbnail(ProjectModel project) {
-    final url = project.thumbnailUrl;
+    final url = project.projectAvatar ?? project.thumbnailUrl;
     if (url != null && url.isNotEmpty) {
       String fullUrl = url.replaceAll('\\', '/');
       if (!fullUrl.startsWith('http')) {
@@ -631,8 +690,8 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
   }
 
   Widget _fallbackGridThumbnail() {
-    return Image.network(
-      'https://images.unsplash.com/photo-1519501025264-65ba15a82390?w=150&auto=format&fit=crop&q=80',
+    return Image.asset(
+      'assets/empty_project.png',
       fit: BoxFit.cover,
       errorBuilder: (context, error, stackTrace) => Container(
         color: const Color(0xFFE2E8F0),
