@@ -6,11 +6,9 @@ import 'package:gal/gal.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 import 'package:uvip/core/theme/app_theme.dart';
-import 'package:uvip/providers/aicam_provider.dart';
 import 'package:uvip/providers/map_provider.dart';
 import 'package:uvip/providers/upload_provider.dart';
 import 'package:uvip/screens/upload/upload_screen.dart';
-import 'package:uvip/widgets/object_detector_box.dart';
 import 'package:uvip/widgets/recorded_video_preview_dialog.dart';
 import 'package:uvip/widgets/recorded_photo_preview_dialog.dart';
 
@@ -33,7 +31,6 @@ class _AiCamScreenState extends State<AiCamScreen> with WidgetsBindingObserver {
   List<CameraDescription>? _cameras;
 
   Timer? _timer;
-  int _liveSeconds = 15; // Starting from 15 as in mockup
   bool _isFlashOn = false;
   bool _permissionDenied = false;
   bool _isInitializing = false; // Guard agar tidak ada inisialisasi paralel
@@ -42,9 +39,7 @@ class _AiCamScreenState extends State<AiCamScreen> with WidgetsBindingObserver {
   // Video recording state
   CameraMode _mode = CameraMode.photo;
   bool _isRecording = false;
-  int _recordingSeconds = 0;
   Timer? _recordingTimer;
-  bool _isStreaming = false; // Guard untuk image stream ML Kit
 
   @override
   void initState() {
@@ -53,7 +48,6 @@ class _AiCamScreenState extends State<AiCamScreen> with WidgetsBindingObserver {
     // Hanya init kamera jika tab ini langsung aktif saat pertama kali dibuat
     if (widget.isActive) {
       _initializeCamera();
-      _startTimer();
     }
   }
 
@@ -64,10 +58,8 @@ class _AiCamScreenState extends State<AiCamScreen> with WidgetsBindingObserver {
     if (widget.isActive && !oldWidget.isActive) {
       // Tab baru saja jadi aktif → nyalakan kamera & timer
       _initializeCamera();
-      _startTimer();
     } else if (!widget.isActive && oldWidget.isActive) {
       // Tab baru saja jadi tidak aktif → matikan kamera & timer
-      _stopImageStream();
       _disposeCamera();
       _stopTimer();
       _stopRecordingTimer();
@@ -101,11 +93,6 @@ class _AiCamScreenState extends State<AiCamScreen> with WidgetsBindingObserver {
     if (_isRecording) {
       _stopRecordingTimer();
       _isRecording = false;
-    }
-    _stopImageStream();
-    // Bersihkan deteksi saat kamera mati
-    if (mounted) {
-      Provider.of<AiCamProvider>(context, listen: false).clearDetections();
     }
     final controllerToDispose = _controller;
     _controller = null;
@@ -153,15 +140,10 @@ class _AiCamScreenState extends State<AiCamScreen> with WidgetsBindingObserver {
 
       if (_cameras != null && _cameras!.isNotEmpty) {
         // Gunakan Medium resolution dan matikan audio (enableAudio: false)
-        // Jika enableAudio true (default), aplikasi akan force close karena tidak ada izin RECORD_AUDIO
-        // imageFormatGroup: nv21 WAJIB untuk ML Kit Object Detection di Android
         final controller = CameraController(
           _cameras![0],
           ResolutionPreset.medium,
           enableAudio: false,
-          imageFormatGroup: defaultTargetPlatform == TargetPlatform.android
-              ? ImageFormatGroup.nv21
-              : ImageFormatGroup.bgra8888,
         );
 
         // Cek lagi sebelum initialize — user mungkin sudah pindah tab
@@ -181,11 +163,6 @@ class _AiCamScreenState extends State<AiCamScreen> with WidgetsBindingObserver {
           return;
         }
 
-        // Init ML Kit ObjectDetector & start image stream
-        final provider = Provider.of<AiCamProvider>(context, listen: false);
-        provider.initDetector();
-        _startImageStream();
-
         setState(() {});
       }
     } catch (e) {
@@ -195,32 +172,9 @@ class _AiCamScreenState extends State<AiCamScreen> with WidgetsBindingObserver {
     }
   }
 
-  void _startTimer() {
-    _timer?.cancel(); // Cancel timer lama jika ada
-    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (mounted && widget.isActive) {
-        setState(() {
-          _liveSeconds++;
-        });
-      }
-    });
-  }
-
   void _stopTimer() {
     _timer?.cancel();
     _timer = null;
-  }
-
-  void _startRecordingTimer() {
-    _recordingSeconds = 0;
-    _recordingTimer?.cancel();
-    _recordingTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (mounted) {
-        setState(() {
-          _recordingSeconds++;
-        });
-      }
-    });
   }
 
   void _stopRecordingTimer() {
@@ -248,18 +202,6 @@ class _AiCamScreenState extends State<AiCamScreen> with WidgetsBindingObserver {
     }
   }
 
-  String get _formattedTime {
-    int m = _liveSeconds ~/ 60;
-    int s = _liveSeconds % 60;
-    return '${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
-  }
-
-  String get _formattedRecordingTime {
-    int m = _recordingSeconds ~/ 60;
-    int s = _recordingSeconds % 60;
-    return '${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
-  }
-
   /// Mengambil foto dan menampilkan modal preview sebelum upload
   Future<void> _takePictureAndUpload() async {
     if (_isCapturing) return;
@@ -280,14 +222,8 @@ class _AiCamScreenState extends State<AiCamScreen> with WidgetsBindingObserver {
     });
 
     try {
-      // WAJIB: stop image stream sebelum takePicture (tidak bisa berjalan bersamaan)
-      _stopImageStream();
-
       // 1. Ambil foto menggunakan controller kamera
       final XFile photo = await _controller!.takePicture();
-
-      // Restart image stream setelah capture selesai
-      _startImageStream();
 
       if (!mounted) return;
 
@@ -303,7 +239,6 @@ class _AiCamScreenState extends State<AiCamScreen> with WidgetsBindingObserver {
             behavior: SnackBarBehavior.floating,
           ),
         );
-        _startImageStream();
       }
     } finally {
       if (mounted) {
@@ -420,24 +355,10 @@ class _AiCamScreenState extends State<AiCamScreen> with WidgetsBindingObserver {
     if (_isRecording) return;
 
     try {
-      // WAJIB: stop image stream sebelum startVideoRecording
-      _stopImageStream();
-
-      final camera = _cameras![0];
-      final provider = Provider.of<AiCamProvider>(context, listen: false);
-
-      await _controller!.startVideoRecording(
-        onAvailable: (CameraImage image) {
-          if (!mounted || !widget.isActive) return;
-          final screenSize = MediaQuery.of(context).size;
-          provider.processFrame(image, camera, screenSize);
-        },
-      );
+      await _controller!.startVideoRecording();
       setState(() {
         _isRecording = true;
-        _isStreaming = true;
       });
-      _startRecordingTimer();
     } catch (e) {
       debugPrint("Error starting video recording: $e");
       if (mounted) {
@@ -463,11 +384,7 @@ class _AiCamScreenState extends State<AiCamScreen> with WidgetsBindingObserver {
       final XFile videoFile = await _controller!.stopVideoRecording();
       setState(() {
         _isRecording = false;
-        _isStreaming = false;
       });
-
-      // Restart image stream setelah recording selesai
-      _startImageStream();
 
       if (!mounted) return;
 
@@ -580,41 +497,11 @@ class _AiCamScreenState extends State<AiCamScreen> with WidgetsBindingObserver {
     );
   }
 
-  /// Start streaming frame kamera ke ML Kit untuk object detection.
-  void _startImageStream() {
-    if (_isStreaming) return;
-    final controller = _controller;
-    if (controller == null || !controller.value.isInitialized) return;
-
-    final camera = _cameras![0];
-    final provider = Provider.of<AiCamProvider>(context, listen: false);
-
-    controller.startImageStream((CameraImage image) {
-      // Gunakan ukuran layar saat ini sebagai target mapping
-      if (!mounted || !widget.isActive) return;
-      final screenSize = MediaQuery.of(context).size;
-      provider.processFrame(image, camera, screenSize);
-    });
-    _isStreaming = true;
-  }
-
-  /// Stop image stream.
-  void _stopImageStream() {
-    if (!_isStreaming) return;
-    try {
-      _controller?.stopImageStream();
-    } catch (e) {
-      debugPrint('Error stopping image stream: $e');
-    }
-    _isStreaming = false;
-  }
-
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _timer?.cancel();
     _stopRecordingTimer();
-    _stopImageStream();
     _controller?.dispose();
     _controller = null;
     super.dispose();
@@ -699,23 +586,6 @@ class _AiCamScreenState extends State<AiCamScreen> with WidgetsBindingObserver {
                   ),
           ),
 
-          // ─── Bounding Box Overlay (ML Kit Object Detection) ───
-          if (_controller != null && _controller!.value.isInitialized)
-            Consumer<AiCamProvider>(
-              builder: (context, provider, child) {
-                return Stack(
-                  children: provider.detectedObjects.map((obj) {
-                    return ObjectDetectorBox(
-                      rect: obj.rect,
-                      label: obj.label,
-                      score: obj.score,
-                      color: obj.color,
-                    );
-                  }).toList(),
-                );
-              },
-            ),
-
           // Safe Area for UI Overlays
           SafeArea(
             child: Padding(
@@ -730,14 +600,7 @@ class _AiCamScreenState extends State<AiCamScreen> with WidgetsBindingObserver {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      IconButton(
-                        icon: const Icon(
-                          Icons.close,
-                          color: Colors.white,
-                          size: 28,
-                        ),
-                        onPressed: () {},
-                      ),
+                      const SizedBox(),
                       const Text(
                         'AI Cam',
                         style: TextStyle(
@@ -759,155 +622,6 @@ class _AiCamScreenState extends State<AiCamScreen> with WidgetsBindingObserver {
                     ],
                   ),
                   const SizedBox(height: 8),
-
-                  // Sub-top Row (Live timer & Location / Recording Badge)
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      // Recording Badge or Live Badge
-                      if (_isRecording)
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 14.0,
-                            vertical: 6.0,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.redAccent.withValues(alpha: 0.9),
-                            borderRadius: BorderRadius.circular(16.0),
-                          ),
-                          child: Row(
-                            children: [
-                              Container(
-                                width: 10,
-                                height: 10,
-                                decoration: const BoxDecoration(
-                                  color: Colors.white,
-                                  shape: BoxShape.circle,
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                'REC $_formattedRecordingTime',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 13,
-                                ),
-                              ),
-                            ],
-                          ),
-                        )
-                      else
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12.0,
-                            vertical: 6.0,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.black45,
-                            borderRadius: BorderRadius.circular(16.0),
-                          ),
-                          child: Row(
-                            children: [
-                              Container(
-                                width: 8,
-                                height: 8,
-                                decoration: const BoxDecoration(
-                                  color: Colors.redAccent,
-                                  shape: BoxShape.circle,
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                'Live $_formattedTime',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-
-                      // Location Chip
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12.0,
-                          vertical: 6.0,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(16.0),
-                        ),
-                        child: const Row(
-                          children: [
-                            Icon(
-                              Icons.location_on,
-                              color: AppTheme.primaryColor,
-                              size: 16,
-                            ),
-                            SizedBox(width: 4),
-                            Text(
-                              'Jl. Ijen',
-                              style: TextStyle(
-                                color: AppTheme.primaryColor,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 24),
-
-                  // Left Floating Score Panel
-                  Container(
-                    width: 140,
-                    padding: const EdgeInsets.all(12.0),
-                    decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha: 0.6),
-                      borderRadius: BorderRadius.circular(12.0),
-                    ),
-                    child: Consumer<AiCamProvider>(
-                      builder: (context, provider, child) {
-                        return Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              'Live Score',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 14,
-                              ),
-                            ),
-                            const SizedBox(height: 12),
-                            _buildLiveScoreItem(
-                              'UVI',
-                              provider.liveUvi,
-                              Colors.blue,
-                            ),
-                            _buildLiveScoreItem(
-                              'Beauty',
-                              provider.liveBeauty,
-                              Colors.pink,
-                            ),
-                            _buildLiveScoreItem(
-                              'Comfort',
-                              provider.liveComfort,
-                              Colors.orange,
-                            ),
-                            _buildLiveScoreItem(
-                              'Safety',
-                              provider.liveSafety,
-                              Colors.green,
-                            ),
-                          ],
-                        );
-                      },
-                    ),
-                  ),
 
                   const Spacer(),
 
@@ -1095,39 +809,6 @@ class _AiCamScreenState extends State<AiCamScreen> with WidgetsBindingObserver {
                   ),
                 ],
               ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildLiveScoreItem(String label, double score, Color bulletColor) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8.0),
-      child: Row(
-        children: [
-          Container(
-            width: 8,
-            height: 8,
-            decoration: BoxDecoration(
-              color: bulletColor,
-              shape: BoxShape.circle,
-            ),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              label,
-              style: const TextStyle(color: Colors.white70, fontSize: 12),
-            ),
-          ),
-          Text(
-            score.toStringAsFixed(1),
-            style: const TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-              fontSize: 12,
             ),
           ),
         ],
