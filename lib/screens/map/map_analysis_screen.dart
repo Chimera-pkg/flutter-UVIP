@@ -26,6 +26,7 @@ class _MapAnalysisScreenState extends State<MapAnalysisScreen> {
   final MapController _mapController = MapController();
   LatLng? _currentLocation;
   double _currentZoom = 15.0;
+  bool _isSatellite = false;
 
   @override
   void initState() {
@@ -124,9 +125,14 @@ class _MapAnalysisScreenState extends State<MapAnalysisScreen> {
                             ),
                             children: [
                               TileLayer(
-                                urlTemplate:
-                                    'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                                key: ValueKey(
+                                  _isSatellite ? 'satellite' : 'streets',
+                                ),
+                                urlTemplate: _isSatellite
+                                    ? 'https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}'
+                                    : 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                                 userAgentPackageName: 'com.example.uvip',
+                                maxZoom: 19,
                               ),
                               MarkerLayer(
                                 markers: [
@@ -156,15 +162,59 @@ class _MapAnalysisScreenState extends State<MapAnalysisScreen> {
                               ),
                             ],
                           ),
-                          // Loading indicator overlay (Top Left)
+                          // Map Mode Switcher (Peta / Satelit) (Top Left)
+                          Positioned(
+                            top: 16,
+                            left: 16,
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(20),
+                                boxShadow: const [
+                                  BoxShadow(
+                                    color: Colors.black12,
+                                    blurRadius: 4,
+                                    offset: Offset(0, 2),
+                                  ),
+                                ],
+                              ),
+                              padding: const EdgeInsets.all(3),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  _buildMapModeButton(
+                                    label: 'Peta',
+                                    icon: Icons.map_outlined,
+                                    isSelected: !_isSatellite,
+                                    onTap: () {
+                                      if (_isSatellite) {
+                                        setState(() => _isSatellite = false);
+                                      }
+                                    },
+                                  ),
+                                  _buildMapModeButton(
+                                    label: 'Satelit',
+                                    icon: Icons.satellite_alt_outlined,
+                                    isSelected: _isSatellite,
+                                    onTap: () {
+                                      if (!_isSatellite) {
+                                        setState(() => _isSatellite = true);
+                                      }
+                                    },
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          // Loading indicator overlay (Top Left - dibawah switcher)
                           if (provider.isLoadingLocations)
                             Positioned(
-                              top: 16,
+                              top: 56,
                               left: 16,
                               child: Container(
                                 padding: const EdgeInsets.symmetric(
                                   horizontal: 10,
-                                  vertical: 6,
+                                  vertical: 5,
                                 ),
                                 decoration: BoxDecoration(
                                   color: Colors.white.withValues(alpha: 0.9),
@@ -206,6 +256,20 @@ class _MapAnalysisScreenState extends State<MapAnalysisScreen> {
                             right: 16,
                             child: Column(
                               children: [
+                                GestureDetector(
+                                  onTap: () {
+                                    setState(() {
+                                      _isSatellite = !_isSatellite;
+                                    });
+                                  },
+                                  child: _buildFloatingMapButton(
+                                    _isSatellite
+                                        ? Icons.map_rounded
+                                        : Icons.satellite_alt_rounded,
+                                    isActive: _isSatellite,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
                                 GestureDetector(
                                   onTap: () {
                                     final mapProvider =
@@ -944,17 +1008,56 @@ class _MapAnalysisScreenState extends State<MapAnalysisScreen> {
     );
   }
 
-  Widget _buildFloatingMapButton(IconData icon) {
+  Widget _buildMapModeButton({
+    required String label,
+    required IconData icon,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeInOut,
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(
+          color: isSelected ? AppTheme.primaryColor : Colors.transparent,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              size: 15,
+              color: isSelected ? Colors.white : Colors.black87,
+            ),
+            const SizedBox(width: 4),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                color: isSelected ? Colors.white : Colors.black87,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFloatingMapButton(IconData icon, {bool isActive = false}) {
     return Container(
       padding: const EdgeInsets.all(8.0),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isActive ? AppTheme.primaryColor : Colors.white,
         borderRadius: BorderRadius.circular(8.0),
         boxShadow: const [
           BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 2)),
         ],
       ),
-      child: Icon(icon, color: Colors.black87),
+      child: Icon(icon, color: isActive ? Colors.white : Colors.black87),
     );
   }
 }
