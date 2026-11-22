@@ -910,6 +910,7 @@ class _UploadScreenState extends State<UploadScreen> {
 
                   // 3. Tab Switcher & Action Icons
                   Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       // Capsule Tab Switcher (Foto vs Video)
                       Container(
@@ -974,6 +975,22 @@ class _UploadScreenState extends State<UploadScreen> {
                             ),
                           ],
                         ),
+                      ),
+
+                      // refresh button
+                      IconButton(
+                        icon: const Icon(
+                          Icons.refresh,
+                          color: Colors.black,
+                          size: 24,
+                        ),
+                        onPressed: () async {
+                          if (_currentTab == 0) {
+                            await provider.fetchStreetPhotos(isRefresh: true);
+                          } else {
+                            await provider.fetchStreetVideos(isRefresh: true);
+                          }
+                        },
                       ),
                     ],
                   ),
