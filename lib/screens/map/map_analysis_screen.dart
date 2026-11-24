@@ -370,7 +370,7 @@ class _MapAnalysisScreenState extends State<MapAnalysisScreen> {
                                       borderRadius: BorderRadius.circular(6.0),
                                       gradient: const LinearGradient(
                                         colors: [
-                                          Colors.lightGreen,
+                                          AppTheme.primaryColor,
                                           Colors.yellow,
                                           Colors.orange,
                                           Colors.red,
