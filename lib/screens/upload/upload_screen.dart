@@ -10,6 +10,7 @@ import 'package:uvip/providers/project_provider.dart';
 import 'package:uvip/providers/map_provider.dart';
 import 'package:uvip/screens/result/result_screen.dart';
 import 'package:uvip/widgets/video_preview_dialog.dart';
+import 'package:uvip/widgets/video_thumbnail_widget.dart';
 
 class UploadScreen extends StatefulWidget {
   final int initialTab;
@@ -1171,6 +1172,34 @@ class _UploadScreenState extends State<UploadScreen> {
         final fileName = photo.originalFilename.isNotEmpty
             ? photo.originalFilename.toUpperCase()
             : 'IMG_${index + 123}.JPG';
+        final num? rawScore = photo.prediction?.uviScore;
+        final double uviScore = rawScore?.toDouble() ?? 0.0;
+
+        String uviDisplay = "-";
+        if (rawScore != null) {
+          if (uviScore % 1 == 0) {
+            uviDisplay = uviScore.toInt().toString();
+          } else {
+            uviDisplay = uviScore.toString();
+          }
+        }
+        Color uviColor = const Color(0xFFC62828);
+
+        if (rawScore == null || uviScore < 0.0) {
+          uviColor = const Color(0xFFC62828);
+        } else if (uviScore < 0.0492) {
+          uviColor = const Color(0xFFE53935);
+        } else if (uviScore < 0.1704) {
+          uviColor = const Color(0xFFFF7043);
+        } else if (uviScore < 0.2917) {
+          uviColor = const Color(0xFFFFA000);
+        } else if (uviScore < 0.4130) {
+          uviColor = const Color(0xFF4CAF50);
+        } else if (uviScore < 0.5343) {
+          uviColor = const Color(0xFF00BFA5);
+        } else {
+          uviColor = AppTheme.primaryColor;
+        }
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -1217,23 +1246,66 @@ class _UploadScreenState extends State<UploadScreen> {
                 onTap: () => _showImagePreview(context, fullUrl),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(10),
-                  child: Container(
-                    width: double.infinity,
-                    color: const Color(0xFFE2E8F0),
-                    child: Image.network(
-                      fullUrl,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) => Container(
-                        color: const Color(0xFFF1F5F9),
-                        child: const Center(
-                          child: Icon(
-                            Icons.streetview,
-                            color: Color(0xFF94A3B8),
-                            size: 28,
-                          ),
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      Container(
+                        width: double.infinity,
+                        color: const Color(0xFFE2E8F0),
+                        child: Image.network(
+                          fullUrl,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) =>
+                              Container(
+                                color: const Color(0xFFF1F5F9),
+                                child: const Center(
+                                  child: Icon(
+                                    Icons.streetview,
+                                    color: Color(0xFF94A3B8),
+                                    size: 28,
+                                  ),
+                                ),
+                              ),
                         ),
                       ),
-                    ),
+                      if (photo.prediction?.uviScore != null)
+                        Positioned(
+                          top: 8,
+                          left: 8,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.black.withValues(alpha: 0.65),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Container(
+                                  width: 7,
+                                  height: 7,
+                                  decoration: BoxDecoration(
+                                    color: uviColor,
+                                    shape: BoxShape.circle,
+                                  ),
+                                ),
+                                const SizedBox(width: 5),
+                                Text(
+                                  'UVI $uviDisplay',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                    ],
                   ),
                 ),
               ),
@@ -1337,6 +1409,34 @@ class _UploadScreenState extends State<UploadScreen> {
         final fileName = photo.originalFilename.isNotEmpty
             ? photo.originalFilename.toUpperCase()
             : 'IMG_${index + 123}.JPG';
+        final num? rawScore = photo.prediction?.uviScore;
+        final double uviScore = rawScore?.toDouble() ?? 0.0;
+
+        String uviDisplay = "-";
+        if (rawScore != null) {
+          if (uviScore % 1 == 0) {
+            uviDisplay = uviScore.toInt().toString();
+          } else {
+            uviDisplay = uviScore.toString();
+          }
+        }
+
+        Color uviColor = const Color(0xFFC62828);
+        if (rawScore == null || uviScore < 0.0) {
+          uviColor = const Color(0xFFC62828);
+        } else if (uviScore < 0.0492) {
+          uviColor = const Color(0xFFE53935);
+        } else if (uviScore < 0.1704) {
+          uviColor = const Color(0xFFFF7043);
+        } else if (uviScore < 0.2917) {
+          uviColor = const Color(0xFFFFA000);
+        } else if (uviScore < 0.4130) {
+          uviColor = const Color(0xFF4CAF50);
+        } else if (uviScore < 0.5343) {
+          uviColor = const Color(0xFF00BFA5);
+        } else {
+          uviColor = AppTheme.primaryColor;
+        }
 
         return Container(
           margin: const EdgeInsets.only(bottom: 14),
@@ -1348,20 +1448,62 @@ class _UploadScreenState extends State<UploadScreen> {
           ),
           child: Row(
             children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: SizedBox(
-                  width: 60,
-                  height: 60,
-                  child: Image.network(
-                    fullUrl,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) => Container(
-                      color: const Color(0xFFF1F5F9),
-                      child: const Icon(
-                        Icons.streetview,
-                        color: Color(0xFF94A3B8),
-                      ),
+              GestureDetector(
+                onTap: () => _showImagePreview(context, fullUrl),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: SizedBox(
+                    width: 60,
+                    height: 60,
+                    child: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        Image.network(
+                          fullUrl,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) =>
+                              Container(
+                                color: const Color(0xFFF1F5F9),
+                                child: const Icon(
+                                  Icons.streetview,
+                                  color: Color(0xFF94A3B8),
+                                ),
+                              ),
+                        ),
+                        if (photo.prediction?.uviScore != null)
+                          Positioned(
+                            bottom: 0,
+                            left: 0,
+                            right: 0,
+                            child: Container(
+                              color: Colors.black.withValues(alpha: 0.65),
+                              padding: const EdgeInsets.symmetric(vertical: 2),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Container(
+                                    width: 5,
+                                    height: 5,
+                                    decoration: BoxDecoration(
+                                      color: uviColor,
+                                      shape: BoxShape.circle,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 3),
+                                  Text(
+                                    uviDisplay,
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 9,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                      ],
                     ),
                   ),
                 ),
@@ -1479,6 +1621,34 @@ class _UploadScreenState extends State<UploadScreen> {
         final fileName = video.originalFilename.isNotEmpty
             ? video.originalFilename.toUpperCase()
             : 'IMG_${index + 123}.JPG';
+        final num? rawScore = video.prediction?.uviScore;
+        final double uviScore = rawScore?.toDouble() ?? 0.0;
+
+        String uviDisplay = "-";
+        if (rawScore != null) {
+          if (uviScore % 1 == 0) {
+            uviDisplay = uviScore.toInt().toString();
+          } else {
+            uviDisplay = uviScore.toString();
+          }
+        }
+        Color uviColor = const Color(0xFFC62828);
+
+        if (rawScore == null || uviScore < 0.0) {
+          uviColor = const Color(0xFFC62828);
+        } else if (uviScore < 0.0492) {
+          uviColor = const Color(0xFFE53935);
+        } else if (uviScore < 0.1704) {
+          uviColor = const Color(0xFFFF7043);
+        } else if (uviScore < 0.2917) {
+          uviColor = const Color(0xFFFFA000);
+        } else if (uviScore < 0.4130) {
+          uviColor = const Color(0xFF4CAF50);
+        } else if (uviScore < 0.5343) {
+          uviColor = const Color(0xFF00BFA5);
+        } else {
+          uviColor = AppTheme.primaryColor;
+        }
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -1536,23 +1706,52 @@ class _UploadScreenState extends State<UploadScreen> {
                     _showVideoPreview(context, fullUrl, video.originalFilename),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(10),
-                  child: Container(
-                    width: double.infinity,
-                    color: const Color(0xFFE2E8F0),
-                    child: Image.network(
-                      fullUrl,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) => Container(
-                        color: const Color(0xFFF1F5F9),
-                        child: const Center(
-                          child: Icon(
-                            Icons.videocam_outlined,
-                            color: Color(0xFF94A3B8),
-                            size: 28,
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      Container(
+                        width: double.infinity,
+                        color: const Color(0xFFE2E8F0),
+                        child: VideoThumbnailWidget(videoUrl: fullUrl),
+                      ),
+                      if (video.prediction?.uviScore != null)
+                        Positioned(
+                          top: 8,
+                          left: 8,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.black.withValues(alpha: 0.65),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Container(
+                                  width: 7,
+                                  height: 7,
+                                  decoration: BoxDecoration(
+                                    color: uviColor,
+                                    shape: BoxShape.circle,
+                                  ),
+                                ),
+                                const SizedBox(width: 5),
+                                Text(
+                                  'UVI $uviDisplay',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
-                      ),
-                    ),
+                    ],
                   ),
                 ),
               ),
@@ -1657,6 +1856,34 @@ class _UploadScreenState extends State<UploadScreen> {
         final fileName = video.originalFilename.isNotEmpty
             ? video.originalFilename.toUpperCase()
             : 'IMG_${index + 123}.JPG';
+        final num? rawScore = video.prediction?.uviScore;
+        final double uviScore = rawScore?.toDouble() ?? 0.0;
+
+        String uviDisplay = "-";
+        if (rawScore != null) {
+          if (uviScore % 1 == 0) {
+            uviDisplay = uviScore.toInt().toString();
+          } else {
+            uviDisplay = uviScore.toString();
+          }
+        }
+
+        Color uviColor = const Color(0xFFC62828);
+        if (rawScore == null || uviScore < 0.0) {
+          uviColor = const Color(0xFFC62828);
+        } else if (uviScore < 0.0492) {
+          uviColor = const Color(0xFFE53935);
+        } else if (uviScore < 0.1704) {
+          uviColor = const Color(0xFFFF7043);
+        } else if (uviScore < 0.2917) {
+          uviColor = const Color(0xFFFFA000);
+        } else if (uviScore < 0.4130) {
+          uviColor = const Color(0xFF4CAF50);
+        } else if (uviScore < 0.5343) {
+          uviColor = const Color(0xFF00BFA5);
+        } else {
+          uviColor = AppTheme.primaryColor;
+        }
 
         return Container(
           margin: const EdgeInsets.only(bottom: 14),
@@ -1668,20 +1895,52 @@ class _UploadScreenState extends State<UploadScreen> {
           ),
           child: Row(
             children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: SizedBox(
-                  width: 60,
-                  height: 60,
-                  child: Image.network(
-                    fullUrl,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) => Container(
-                      color: const Color(0xFFF1F5F9),
-                      child: const Icon(
-                        Icons.videocam_outlined,
-                        color: Color(0xFF94A3B8),
-                      ),
+              GestureDetector(
+                onTap: () =>
+                    _showVideoPreview(context, fullUrl, video.originalFilename),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: SizedBox(
+                    width: 60,
+                    height: 60,
+                    child: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        VideoThumbnailWidget(videoUrl: fullUrl, isSmall: true),
+                        if (video.prediction?.uviScore != null)
+                          Positioned(
+                            bottom: 0,
+                            left: 0,
+                            right: 0,
+                            child: Container(
+                              color: Colors.black.withValues(alpha: 0.65),
+                              padding: const EdgeInsets.symmetric(vertical: 2),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Container(
+                                    width: 5,
+                                    height: 5,
+                                    decoration: BoxDecoration(
+                                      color: uviColor,
+                                      shape: BoxShape.circle,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 3),
+                                  Text(
+                                    uviDisplay,
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 9,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                      ],
                     ),
                   ),
                 ),
