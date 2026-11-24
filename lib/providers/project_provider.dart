@@ -115,6 +115,58 @@ class ProjectProvider with ChangeNotifier {
     }
   }
 
+  Future<ProjectModel?> updateProject(
+    String projectId, {
+    required String name,
+    required String location,
+    required String description,
+  }) async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      final response = await _projectService.updateProject(
+        projectId,
+        name: name,
+        location: location,
+        description: description,
+      );
+
+      dynamic data = response.data;
+      if (data is Map && data.containsKey('data') && data['data'] is Map) {
+        data = data['data'];
+      }
+      final updatedProject = ProjectModel.fromJson(data);
+
+      final index = _projects.indexWhere((p) => p.id == projectId);
+      final finalProject = updatedProject.id.isNotEmpty
+          ? updatedProject
+          : (index != -1
+              ? _projects[index].copyWith(
+                  name: name,
+                  location: location,
+                  description: description,
+                )
+              : updatedProject);
+
+      if (index != -1) {
+        _projects[index] = finalProject;
+      }
+      if (_selectedProject?.id == projectId) {
+        _selectedProject = finalProject;
+      }
+      _isLoading = false;
+      notifyListeners();
+      return finalProject;
+    } catch (e) {
+      _isLoading = false;
+      _errorMessage = 'Gagal memperbarui project: $e';
+      notifyListeners();
+      return null;
+    }
+  }
+
   Future<void> openProject(String projectId) async {
     try {
       final response = await _projectService.openProject(projectId);

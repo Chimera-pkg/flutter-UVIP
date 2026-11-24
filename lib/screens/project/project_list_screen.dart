@@ -12,10 +12,7 @@ import 'package:uvip/widgets/project_card.dart';
 class ProjectListScreen extends StatefulWidget {
   final bool isActive;
 
-  const ProjectListScreen({
-    super.key,
-    this.isActive = true,
-  });
+  const ProjectListScreen({super.key, this.isActive = true});
 
   @override
   State<ProjectListScreen> createState() => _ProjectListScreenState();
@@ -110,6 +107,17 @@ class _ProjectListScreenState extends State<ProjectListScreen> with RouteAware {
 
   Future<void> _createProject() async {
     final result = await showCreateProjectBottomSheet(context);
+    if (result != null && mounted) {
+      final provider = Provider.of<ProjectProvider>(context, listen: false);
+      await provider.fetchProjects();
+    }
+  }
+
+  Future<void> _editProject(ProjectModel project) async {
+    final result = await showCreateProjectBottomSheet(
+      context,
+      project: project,
+    );
     if (result != null && mounted) {
       final provider = Provider.of<ProjectProvider>(context, listen: false);
       await provider.fetchProjects();
@@ -248,6 +256,34 @@ class _ProjectListScreenState extends State<ProjectListScreen> with RouteAware {
         ),
         const _CustomMenuDivider(),
         PopupMenuItem<String>(
+          value: 'edit',
+          height: 48,
+          padding: const EdgeInsets.symmetric(horizontal: 18),
+          child: Row(
+            children: [
+              const Icon(
+                Icons.edit_outlined,
+                color: Color(0xFF03182C),
+                size: 22,
+              ),
+              const SizedBox(width: 14),
+              const Expanded(
+                child: Text(
+                  'Edit proyek',
+                  style: TextStyle(
+                    color: Color(0xFF03182C),
+                    fontSize: 15,
+                    fontWeight: FontWeight.w500,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const _CustomMenuDivider(),
+        PopupMenuItem<String>(
           value: 'delete',
           height: 48,
           padding: const EdgeInsets.symmetric(horizontal: 18),
@@ -279,6 +315,8 @@ class _ProjectListScreenState extends State<ProjectListScreen> with RouteAware {
 
     if (selected == 'open') {
       _openProject(project);
+    } else if (selected == 'edit') {
+      _editProject(project);
     } else if (selected == 'delete') {
       _deleteProject(project.id, project.name);
     }
@@ -333,7 +371,11 @@ class _ProjectListScreenState extends State<ProjectListScreen> with RouteAware {
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            const Icon(Icons.error_outline, size: 64, color: Colors.red),
+                            const Icon(
+                              Icons.error_outline,
+                              size: 64,
+                              color: Colors.red,
+                            ),
                             const SizedBox(height: 16),
                             Text(
                               provider.errorMessage!,
@@ -383,7 +425,11 @@ class _ProjectListScreenState extends State<ProjectListScreen> with RouteAware {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.folder_open, size: 80, color: Colors.grey[400]),
+                          Icon(
+                            Icons.folder_open,
+                            size: 80,
+                            color: Colors.grey[400],
+                          ),
                           const SizedBox(height: 16),
                           Text(
                             'Belum ada project',
@@ -396,7 +442,10 @@ class _ProjectListScreenState extends State<ProjectListScreen> with RouteAware {
                           const SizedBox(height: 8),
                           Text(
                             'Mulai dengan membuat project baru',
-                            style: TextStyle(fontSize: 14, color: Colors.grey[500]),
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey[500],
+                            ),
                           ),
                         ],
                       ),

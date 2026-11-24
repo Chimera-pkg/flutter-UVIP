@@ -4,18 +4,23 @@ import 'package:uvip/core/theme/app_theme.dart';
 import 'package:uvip/models/project_model.dart';
 import 'package:uvip/providers/project_provider.dart';
 
-/// Modal bottom sheet untuk membuat proyek baru sesuai desain terkini.
-Future<ProjectModel?> showCreateProjectBottomSheet(BuildContext context) {
+/// Modal bottom sheet untuk membuat atau mengedit proyek sesuai desain terkini.
+Future<ProjectModel?> showCreateProjectBottomSheet(
+  BuildContext context, {
+  ProjectModel? project,
+}) {
   return showModalBottomSheet<ProjectModel>(
     context: context,
     isScrollControlled: true,
     backgroundColor: Colors.transparent,
-    builder: (context) => const CreateProjectBottomSheet(),
+    builder: (context) => CreateProjectBottomSheet(project: project),
   );
 }
 
 class CreateProjectBottomSheet extends StatefulWidget {
-  const CreateProjectBottomSheet({super.key});
+  final ProjectModel? project;
+
+  const CreateProjectBottomSheet({super.key, this.project});
 
   @override
   State<CreateProjectBottomSheet> createState() =>
@@ -30,6 +35,8 @@ class _CreateProjectBottomSheetState extends State<CreateProjectBottomSheet> {
 
   bool _isSubmitting = false;
 
+  bool get _isEditMode => widget.project != null;
+
   bool get _isValid =>
       _nameController.text.trim().isNotEmpty &&
       _locationController.text.trim().isNotEmpty &&
@@ -38,6 +45,11 @@ class _CreateProjectBottomSheetState extends State<CreateProjectBottomSheet> {
   @override
   void initState() {
     super.initState();
+    if (_isEditMode) {
+      _nameController.text = widget.project!.name;
+      _locationController.text = widget.project!.location;
+      _descriptionController.text = widget.project!.description;
+    }
     _nameController.addListener(_onFieldChanged);
     _locationController.addListener(_onFieldChanged);
     _descriptionController.addListener(_onFieldChanged);
@@ -65,32 +77,63 @@ class _CreateProjectBottomSheetState extends State<CreateProjectBottomSheet> {
       listen: false,
     );
 
-    final newProject = await projectProvider.createProject(
-      name: _nameController.text.trim(),
-      location: _locationController.text.trim(),
-      description: _descriptionController.text.trim(),
-    );
-
-    if (!mounted) return;
-    setState(() => _isSubmitting = false);
-
-    if (newProject != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Project berhasil dibuat'),
-          backgroundColor: Colors.green,
-        ),
+    if (_isEditMode) {
+      final updatedProject = await projectProvider.updateProject(
+        widget.project!.id,
+        name: _nameController.text.trim(),
+        location: _locationController.text.trim(),
+        description: _descriptionController.text.trim(),
       );
-      Navigator.pop(context, newProject);
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            projectProvider.errorMessage ?? 'Gagal membuat project',
+
+      if (!mounted) return;
+      setState(() => _isSubmitting = false);
+
+      if (updatedProject != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Project berhasil diperbarui'),
+            backgroundColor: Colors.green,
           ),
-          backgroundColor: Colors.red,
-        ),
+        );
+        Navigator.pop(context, updatedProject);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              projectProvider.errorMessage ?? 'Gagal memperbarui project',
+            ),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } else {
+      final newProject = await projectProvider.createProject(
+        name: _nameController.text.trim(),
+        location: _locationController.text.trim(),
+        description: _descriptionController.text.trim(),
       );
+
+      if (!mounted) return;
+      setState(() => _isSubmitting = false);
+
+      if (newProject != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Project berhasil dibuat'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        Navigator.pop(context, newProject);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              projectProvider.errorMessage ?? 'Gagal membuat project',
+            ),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
@@ -116,9 +159,9 @@ class _CreateProjectBottomSheetState extends State<CreateProjectBottomSheet> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
-                    'Buat Proyek Baru',
-                    style: TextStyle(
+                  Text(
+                    _isEditMode ? 'Edit Proyek' : 'Buat Proyek Baru',
+                    style: const TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
                       color: Color(0xFF0F172A),
@@ -208,7 +251,9 @@ class _CreateProjectBottomSheetState extends State<CreateProjectBottomSheet> {
                           ),
                         )
                       : Text(
-                          'Buat Proyek Baru',
+                          _isEditMode
+                              ? 'Simpan Perubahan'
+                              : 'Buat Proyek Baru',
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
