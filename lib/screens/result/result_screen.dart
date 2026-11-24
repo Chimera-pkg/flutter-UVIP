@@ -1183,6 +1183,68 @@ class _ResultScreenState extends State<ResultScreen> {
     );
   }
 
+  Widget _buildUviBadge(num? rawScore) {
+    if (rawScore == null) return const SizedBox.shrink();
+
+    final double uviScore = rawScore.toDouble();
+    String uviDisplay;
+    if (uviScore % 1 == 0) {
+      uviDisplay = uviScore.toInt().toString();
+    } else {
+      uviDisplay = uviScore.toString();
+    }
+
+    Color uviColor;
+    if (uviScore < 0.0) {
+      uviColor = const Color(0xFFC62828);
+    } else if (uviScore < 0.0492) {
+      uviColor = const Color(0xFFE53935);
+    } else if (uviScore < 0.1704) {
+      uviColor = const Color(0xFFFF7043);
+    } else if (uviScore < 0.2917) {
+      uviColor = const Color(0xFFFFA000);
+    } else if (uviScore < 0.4130) {
+      uviColor = const Color(0xFF4CAF50);
+    } else if (uviScore < 0.5343) {
+      uviColor = const Color(0xFF00BFA5);
+    } else {
+      uviColor = AppTheme.primaryColor;
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: 8,
+        vertical: 4,
+      ),
+      decoration: BoxDecoration(
+        color: Colors.black.withValues(alpha: 0.65),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 7,
+            height: 7,
+            decoration: BoxDecoration(
+              color: uviColor,
+              shape: BoxShape.circle,
+            ),
+          ),
+          const SizedBox(width: 5),
+          Text(
+            'UVI $uviDisplay',
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 11,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildRekomendasiAiSection(
     BuildContext context,
     ResultProvider provider,
@@ -1241,6 +1303,25 @@ class _ResultScreenState extends State<ResultScreen> {
           '$baseUrl/${originalUrl.startsWith('/') ? originalUrl.substring(1) : originalUrl}';
     }
 
+    final num? rawScoreOld = provider.currentPrediction?.uviScore ??
+        provider.currentPrediction?.llmGenerateResponse?.evaluation?.before?.scores?.uviScore ??
+        provider.currentPrediction?.llmGenerateResponse?.target?.perceptionPrediction?.uviScore ??
+        widget.photo?.prediction?.uviScore ??
+        widget.video?.prediction?.uviScore;
+
+    final num? rawScoreNew = provider
+            .currentPrediction
+            ?.llmGenerateResponse
+            ?.generatedScores
+            ?.uviScore ??
+        provider
+            .currentPrediction
+            ?.llmGenerateResponse
+            ?.evaluation
+            ?.after
+            ?.scores
+            ?.uviScore;
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24.0),
       child: Column(
@@ -1294,46 +1375,56 @@ class _ResultScreenState extends State<ResultScreen> {
                 const SizedBox(height: 10),
 
                 // Generated Image
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: fullGeneratedUrl.isNotEmpty
-                      ? Image.network(
-                          fullGeneratedUrl,
-                          height: 200,
-                          width: double.infinity,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) =>
-                              Container(
-                                height: 200,
-                                width: double.infinity,
-                                color: Colors.grey.shade200,
-                                child: const Center(
-                                  child: Icon(
-                                    Icons.image_not_supported_outlined,
-                                    size: 48,
-                                    color: Colors.grey,
+                Stack(
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: fullGeneratedUrl.isNotEmpty
+                          ? Image.network(
+                              fullGeneratedUrl,
+                              height: 200,
+                              width: double.infinity,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) =>
+                                  Container(
+                                    height: 200,
+                                    width: double.infinity,
+                                    color: Colors.grey.shade200,
+                                    child: const Center(
+                                      child: Icon(
+                                        Icons.image_not_supported_outlined,
+                                        size: 48,
+                                        color: Colors.grey,
+                                      ),
+                                    ),
                                   ),
+                            )
+                          : Container(
+                              height: 200,
+                              width: double.infinity,
+                              color: Colors.grey.shade200,
+                              child: const Center(
+                                child: Icon(
+                                  Icons.image_outlined,
+                                  size: 48,
+                                  color: Colors.grey,
                                 ),
                               ),
-                        )
-                      : Container(
-                          height: 200,
-                          width: double.infinity,
-                          color: Colors.grey.shade200,
-                          child: const Center(
-                            child: Icon(
-                              Icons.image_outlined,
-                              size: 48,
-                              color: Colors.grey,
                             ),
-                          ),
-                        ),
+                    ),
+                    if (rawScoreNew != null)
+                      Positioned(
+                        top: 8,
+                        left: 8,
+                        child: _buildUviBadge(rawScoreNew),
+                      ),
+                  ],
                 ),
                 const SizedBox(height: 40),
 
-                // Gambar Mentah
+                // Foto Awalan
                 const Text(
-                  'Gambar Mentah',
+                  'Foto Awalan',
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 13,
@@ -1343,36 +1434,46 @@ class _ResultScreenState extends State<ResultScreen> {
                 const SizedBox(height: 10),
 
                 // Raw Image
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(12.0),
-                  child: originalUrl.isNotEmpty
-                      ? Image.network(
-                          originalUrl,
-                          height: 200,
-                          width: double.infinity,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) =>
-                              Container(
-                                height: 200,
-                                width: double.infinity,
-                                color: Colors.grey.shade300,
-                                child: const Icon(
-                                  Icons.broken_image,
-                                  size: 64,
-                                  color: Colors.grey,
-                                ),
+                Stack(
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(12.0),
+                      child: originalUrl.isNotEmpty
+                          ? Image.network(
+                              originalUrl,
+                              height: 200,
+                              width: double.infinity,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) =>
+                                  Container(
+                                    height: 200,
+                                    width: double.infinity,
+                                    color: Colors.grey.shade300,
+                                    child: const Icon(
+                                      Icons.broken_image,
+                                      size: 64,
+                                      color: Colors.grey,
+                                    ),
+                                  ),
+                            )
+                          : Container(
+                              height: 200,
+                              width: double.infinity,
+                              color: Colors.grey.shade300,
+                              child: const Icon(
+                                Icons.image,
+                                size: 64,
+                                color: Colors.grey,
                               ),
-                        )
-                      : Container(
-                          height: 200,
-                          width: double.infinity,
-                          color: Colors.grey.shade300,
-                          child: const Icon(
-                            Icons.image,
-                            size: 64,
-                            color: Colors.grey,
-                          ),
-                        ),
+                            ),
+                    ),
+                    if (rawScoreOld != null)
+                      Positioned(
+                        top: 8,
+                        left: 8,
+                        child: _buildUviBadge(rawScoreOld),
+                      ),
+                  ],
                 ),
                 const SizedBox(height: 8),
 

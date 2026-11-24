@@ -13,7 +13,6 @@ import 'package:uvip/providers/map_provider.dart';
 import 'package:uvip/providers/home_provider.dart';
 import 'package:uvip/widgets/summary_card.dart';
 import 'package:uvip/widgets/common/section_header.dart';
-import 'package:uvip/widgets/common/time_filter_dropdown.dart';
 
 class MapAnalysisScreen extends StatefulWidget {
   const MapAnalysisScreen({super.key});
@@ -529,7 +528,7 @@ class _MapAnalysisScreenState extends State<MapAnalysisScreen> {
                                     ),
                                   ],
                                 ),
-                                const TimeFilterDropdown(),
+                                // const TimeFilterDropdown(),
                               ],
                             ),
                             const SizedBox(height: 24),

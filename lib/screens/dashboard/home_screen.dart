@@ -11,7 +11,6 @@ import 'package:uvip/screens/upload/upload_screen.dart';
 import 'package:uvip/widgets/summary_card.dart';
 import 'package:uvip/widgets/survey_item_tile.dart';
 import 'package:uvip/widgets/common/section_header.dart';
-import 'package:uvip/widgets/common/time_filter_dropdown.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -406,7 +405,6 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ],
                 ),
-                const TimeFilterDropdown(),
               ],
             ),
             const SizedBox(height: 24),
