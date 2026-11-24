@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:video_player/video_player.dart';
@@ -26,6 +27,7 @@ class ResultScreen extends StatefulWidget {
 
 class _ResultScreenState extends State<ResultScreen> {
   final ScreenshotController _screenshotController = ScreenshotController();
+  bool _isDownloadingOverlay = false;
 
   bool get _isVideo => widget.isVideo || widget.video != null;
 
@@ -340,12 +342,68 @@ class _ResultScreenState extends State<ResultScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text(
-                              'Foto Overlay AI',
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
-                              ),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                const Text(
+                                  'Foto Overlay AI',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16,
+                                  ),
+                                ),
+                                if (fullImageUrl.isNotEmpty)
+                                  InkWell(
+                                    onTap: _isDownloadingOverlay
+                                        ? null
+                                        : () => _downloadOverlayImage(
+                                            fullImageUrl ?? "",
+                                            isVideo: isVideoMedia,
+                                          ),
+                                    borderRadius: BorderRadius.circular(8),
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 10,
+                                        vertical: 6,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: AppTheme.primaryColor.withValues(
+                                          alpha: 0.1,
+                                        ),
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: _isDownloadingOverlay
+                                          ? const SizedBox(
+                                              width: 14,
+                                              height: 14,
+                                              child: CircularProgressIndicator(
+                                                strokeWidth: 2,
+                                                color: AppTheme.primaryColor,
+                                              ),
+                                            )
+                                          : const Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                Icon(
+                                                  Icons.download_rounded,
+                                                  size: 16,
+                                                  color: AppTheme.primaryColor,
+                                                ),
+                                                SizedBox(width: 4),
+                                                Text(
+                                                  'Unduh',
+                                                  style: TextStyle(
+                                                    color:
+                                                        AppTheme.primaryColor,
+                                                    fontSize: 12,
+                                                    fontWeight: FontWeight.w600,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                    ),
+                                  ),
+                              ],
                             ),
                             const SizedBox(height: 16),
                             ClipRRect(
@@ -549,6 +607,92 @@ class _ResultScreenState extends State<ResultScreen> {
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text('Gagal menyimpan laporan: $e')));
+      }
+    }
+  }
+
+  Future<void> _downloadOverlayImage(String url, {bool isVideo = false}) async {
+    if (url.isEmpty) return;
+
+    setState(() {
+      _isDownloadingOverlay = true;
+    });
+
+    try {
+      final hasAccess = await Gal.hasAccess(toAlbum: false);
+      if (!hasAccess) {
+        final granted = await Gal.requestAccess(toAlbum: false);
+        if (!granted) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Izin akses galeri ditolak'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+          return;
+        }
+      }
+
+      String cleanUrl = url.replaceAll('\\', '/');
+      final uri = Uri.parse(Uri.encodeFull(cleanUrl));
+
+      String ext = 'jpg';
+      final pathLower = uri.path.toLowerCase();
+      if (pathLower.endsWith('.png')) {
+        ext = 'png';
+      } else if (pathLower.endsWith('.mp4')) {
+        ext = 'mp4';
+      } else if (pathLower.endsWith('.mov')) {
+        ext = 'mov';
+      } else if (pathLower.endsWith('.jpeg')) {
+        ext = 'jpeg';
+      } else if (isVideo) {
+        ext = 'mp4';
+      }
+
+      final tempDir = await getTemporaryDirectory();
+      final savePath =
+          '${tempDir.path}/overlay_${DateTime.now().millisecondsSinceEpoch}.$ext';
+
+      final dio = Dio();
+      await dio.download(uri.toString(), savePath);
+
+      final isVideoFile = ext == 'mp4' || ext == 'mov' || isVideo;
+      if (isVideoFile) {
+        await Gal.putVideo(savePath);
+      } else {
+        await Gal.putImage(savePath);
+      }
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              isVideoFile
+                  ? 'Video overlay berhasil disimpan ke galeri'
+                  : 'Gambar overlay berhasil disimpan ke galeri',
+            ),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      debugPrint('Error downloading overlay image: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Gagal mengunduh overlay: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isDownloadingOverlay = false;
+        });
       }
     }
   }
