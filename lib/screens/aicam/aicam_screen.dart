@@ -569,15 +569,41 @@ class _AiCamScreenState extends State<AiCamScreen> with WidgetsBindingObserver {
                     ),
                   )
                 : _controller != null && _controller!.value.isInitialized
-                ? SizedBox.expand(
-                    child: FittedBox(
-                      fit: BoxFit.cover,
-                      child: SizedBox(
-                        width: 100,
-                        height: 100 / _controller!.value.aspectRatio,
-                        child: CameraPreview(_controller!),
-                      ),
-                    ),
+                ? LayoutBuilder(
+                    builder: (context, constraints) {
+                      final previewSize = _controller!.value.previewSize;
+                      if (previewSize == null) {
+                        return const Center(
+                          child: CircularProgressIndicator(
+                            color: AppTheme.primaryColor,
+                          ),
+                        );
+                      }
+
+                      final isLandscape =
+                          constraints.maxWidth > constraints.maxHeight;
+                      final previewWidth = isLandscape
+                          ? previewSize.width
+                          : previewSize.height;
+                      final previewHeight = isLandscape
+                          ? previewSize.height
+                          : previewSize.width;
+
+                      return SizedBox(
+                        width: constraints.maxWidth,
+                        height: constraints.maxHeight,
+                        child: ClipRect(
+                          child: FittedBox(
+                            fit: BoxFit.cover,
+                            child: SizedBox(
+                              width: previewWidth,
+                              height: previewHeight,
+                              child: CameraPreview(_controller!),
+                            ),
+                          ),
+                        ),
+                      );
+                    },
                   )
                 : const Center(
                     child: CircularProgressIndicator(
