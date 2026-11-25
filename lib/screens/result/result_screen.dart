@@ -457,7 +457,7 @@ class _ResultScreenState extends State<ResultScreen> {
                                 ),
                                 _buildLegendItem(Color(0xFF00b4d8), 'Sky'),
                                 _buildLegendItem(Color(0xFFef4444), 'Vehicles'),
-                                _buildLegendItem(Color(0xFF8b5cf6), 'Building'),
+                                _buildLegendItem(Color(0xFF8b5cf6), 'Human'),
                                 _buildLegendItem(Color(0xFFeab308), 'Sidewalk'),
                                 _buildLegendItem(Color(0xFF334155), 'Road'),
                               ],
@@ -1212,10 +1212,7 @@ class _ResultScreenState extends State<ResultScreen> {
     }
 
     return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: 8,
-        vertical: 4,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
         color: Colors.black.withValues(alpha: 0.65),
         borderRadius: BorderRadius.circular(6),
@@ -1226,10 +1223,7 @@ class _ResultScreenState extends State<ResultScreen> {
           Container(
             width: 7,
             height: 7,
-            decoration: BoxDecoration(
-              color: uviColor,
-              shape: BoxShape.circle,
-            ),
+            decoration: BoxDecoration(color: uviColor, shape: BoxShape.circle),
           ),
           const SizedBox(width: 5),
           Text(
@@ -1303,13 +1297,26 @@ class _ResultScreenState extends State<ResultScreen> {
           '$baseUrl/${originalUrl.startsWith('/') ? originalUrl.substring(1) : originalUrl}';
     }
 
-    final num? rawScoreOld = provider.currentPrediction?.uviScore ??
-        provider.currentPrediction?.llmGenerateResponse?.evaluation?.before?.scores?.uviScore ??
-        provider.currentPrediction?.llmGenerateResponse?.target?.perceptionPrediction?.uviScore ??
+    final num? rawScoreOld =
+        provider.currentPrediction?.uviScore ??
+        provider
+            .currentPrediction
+            ?.llmGenerateResponse
+            ?.evaluation
+            ?.before
+            ?.scores
+            ?.uviScore ??
+        provider
+            .currentPrediction
+            ?.llmGenerateResponse
+            ?.target
+            ?.perceptionPrediction
+            ?.uviScore ??
         widget.photo?.prediction?.uviScore ??
         widget.video?.prediction?.uviScore;
 
-    final num? rawScoreNew = provider
+    final num? rawScoreNew =
+        provider
             .currentPrediction
             ?.llmGenerateResponse
             ?.generatedScores
