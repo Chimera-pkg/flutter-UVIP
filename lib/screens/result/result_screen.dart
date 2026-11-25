@@ -458,7 +458,7 @@ class _ResultScreenState extends State<ResultScreen> {
                                 _buildLegendItem(Color(0xFF00b4d8), 'Sky'),
                                 _buildLegendItem(Color(0xFFef4444), 'Vehicles'),
                                 _buildLegendItem(Color(0xFF8b5cf6), 'Building'),
-                                _buildLegendItem(Color(0xFFf97316), 'Manusia'),
+                                _buildLegendItem(Color(0xFFf97316), 'Human'),
                                 _buildLegendItem(Color(0xFFeab308), 'Sidewalk'),
                                 _buildLegendItem(Color(0xFF334155), 'Road'),
                                 _buildLegendItem(Color(0xFF1C2494), 'Human'),
