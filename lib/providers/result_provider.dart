@@ -114,7 +114,7 @@ class ResultProvider with ChangeNotifier {
 
   List<ShapFactor> get negativeFactors => [
     ShapFactor(
-      name: 'Kepadatan Reklame',
+      name: 'Kepadatan Rambu',
       value: currentSegmentation?.signagePct?.toDouble() ?? 0,
       icon: Icons.ad_units_outlined,
     ),
